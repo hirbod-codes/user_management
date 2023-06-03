@@ -7,4 +7,5 @@ using user_management.Models;
 public interface IUserRepository
 {
     public Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id);
+    public Task<User?> RetrieveByTokenValue(string value);
 }

@@ -30,4 +30,6 @@ public class UserRepository : IUserRepository
         return user.UserPrivileges;
     }
 
+    public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
+
 }
