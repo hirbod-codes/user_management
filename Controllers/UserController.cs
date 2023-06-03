@@ -1,4 +1,5 @@
 namespace user_management.Controllers;
+
 using System.Net.Mail;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -329,4 +330,18 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    [Permissions(Permissions = new string[] { "delete_account" })]
+    [HttpDelete("user")]
+    public async Task<ActionResult> Delete([FromBody] string id)
+    {
+        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (actorId == null) return Unauthorized();
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+
+        bool? r = await _userRepository.Delete(actorObjectId, ObjectId.Parse(id), _authHelper.GetAuthenticationType(User) != "JWT");
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        return Ok();
+    }
 }
