@@ -18,9 +18,13 @@ public class MongoContext
         MongoClient client = new MongoClient(mongoContext.ConnectionString);
         IMongoDatabase database = client.GetDatabase(mongoContext.DatabaseName);
         IMongoCollection<Models.User> userCollection = database.GetCollection<Models.User>(mongoContext.Collections.Users);
+        IMongoCollection<Models.Client> clientCollection = database.GetCollection<Models.Client>(mongoContext.Collections.Clients);
         FilterDefinitionBuilder<Models.User> fb = Builders<Models.User>.Filter;
 
         await ClearDatabaseAsync(database);
+
+        IndexKeysDefinition<Models.Client> clientSecretIndex = Builders<Models.Client>.IndexKeys.Ascending(Models.Client.SECRET);
+        await clientCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.Client>(clientSecretIndex, new CreateIndexOptions() { Unique = true }));
 
         IndexKeysDefinition<Models.User> userEmailIndex = Builders<Models.User>.IndexKeys.Ascending(Models.User.EMAIL);
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(userEmailIndex, new CreateIndexOptions() { Unique = true }));
@@ -83,4 +87,5 @@ public class MongoContext
 public class Collections
 {
     public string Users { get; set; } = null!;
+    public string Clients { get; set; } = null!;
 }
