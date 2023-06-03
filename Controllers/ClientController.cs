@@ -2,6 +2,7 @@ namespace user_management.Controllers;
 
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Authorization.Attributes;
 using user_management.Data.Client;
@@ -95,4 +96,28 @@ public class ClientController : ControllerBase
         return Ok();
     }
 
+    [Permissions(Permissions = new string[] { "delete_client" })]
+    [HttpDelete]
+    public async Task<ActionResult> Delete(ClientDeleteDto clientDeleteDto)
+    {
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+
+        if (!ObjectId.TryParse(clientDeleteDto.Id, out ObjectId clientId)) return BadRequest();
+
+        Client? client = await _clientRepository.RetrieveById(clientId);
+        if (client == null) return NotFound();
+
+        string? hashedSecret = _stringHelper.HashWithoutSalt(clientDeleteDto.Secret);
+        if (hashedSecret == null) return BadRequest();
+
+        try
+        {
+            if (hashedSecret != client.Secret) return BadRequest();
+
+            await _clientRepository.DeleteBySecret(hashedSecret!);
+        }
+        catch (System.Exception) { return Problem(); }
+
+        return Ok();
+    }
 }
