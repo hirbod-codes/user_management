@@ -43,6 +43,8 @@ public class UserRepository : IUserRepository
             Builders<User>.Filter.Eq(User.LAST_NAME, fullName.Split("-")[2])
         ))).FirstOrDefault<User?>();
 
+    public async Task<User?> RetrieveByUsernameForUniqueCheck(string username) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.USERNAME, username))).FirstOrDefault<User?>();
+
     public async Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetReaderFilterDefinition(actorId, forClients)))).FirstOrDefault<User?>();
 
     public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
