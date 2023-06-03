@@ -201,6 +201,28 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> AddToken(User user, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null)
+    {
+        List<UserClient> userClients = user.Clients.ToList();
+        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == clientId);
+        if (userClient == null)
+            return false;
+
+        userClient.Token = new Token() { Value = tokenValue, ExpirationDate = expirationDate, IsRevoked = false };
+        userClient.RefreshToken!.IsVerified = true;
+        userClient.RefreshToken!.Code = null;
+
+        ReplaceOneResult result;
+        if (session != null)
+            result = await _userCollection.ReplaceOneAsync(session, Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!), user);
+        else
+            result = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!), user);
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
     public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
     {
         List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
