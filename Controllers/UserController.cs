@@ -216,4 +216,27 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    [Authorize]
+    [HttpPost("remove-client")]
+    public async Task<ActionResult> RemoveClient(string clientId)
+    {
+        string authType = _authHelper.GetAuthenticationType(User);
+        if (authType != "JWT") return StatusCode(403);
+
+        string? id = await _authHelper.GetIdentifier(User, _userRepository);
+        if (id == null) return Unauthorized();
+
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
+        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) return BadRequest();
+
+        User? user = await _userRepository.RetrieveById(userId, userId);
+        if (user == null) return NotFound();
+
+        bool? r = await _userRepository.RemoveClient(user, clientObjectId);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        return Ok();
+    }
+
 }
