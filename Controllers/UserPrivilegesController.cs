@@ -115,4 +115,25 @@ public class UserPrivilegesController : ControllerBase
 
         return Ok();
     }
+
+    [Permissions(Permissions = new string[] { "update_deleters" })]
+    [HttpPatch("update-deleters")]
+    public async Task<IActionResult> UpdateDeleters(string id, UserPrivileges userPrivileges)
+    {
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
+
+        User? user = await GetAuthenticatedUser();
+        if (user == null) return Unauthorized();
+
+        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (updatingUser == null) return NotFound();
+
+        updatingUser.UserPrivileges!.Deleters = userPrivileges.Deleters;
+
+        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (result == null) return NotFound();
+        if (result == false) return Problem();
+
+        return Ok();
+    }
 }
