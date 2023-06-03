@@ -79,4 +79,31 @@ public class UserController : ControllerBase
         return Ok(unverifiedUser.Id.ToString());
     }
 
+    [HttpPost("resend-email-verification-message")]
+    public async Task<ActionResult> ResendEmailVerificationMessage([FromBody] string email)
+    {
+        string verificationMessage = _stringHelper.GenerateRandomString(6);
+
+        User? user = await _userRepository.RetrieveUserByLoginCredentials(email, null);
+        if (user == null) return NotFound();
+
+        if (user.IsVerified == true) return BadRequest("The user is already verified.");
+
+        bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        try
+        {
+            _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
+        }
+        catch (ArgumentNullException) { return Problem(); }
+        catch (ObjectDisposedException) { return Problem(); }
+        catch (InvalidOperationException) { return Problem(); }
+        catch (SmtpException) { return Problem(); }
+        catch (System.Exception) { return Problem(); }
+
+        return Ok();
+    }
+
 }
