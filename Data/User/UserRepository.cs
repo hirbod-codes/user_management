@@ -36,6 +36,8 @@ public class UserRepository : IUserRepository
         return user;
     }
 
+    public async Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetReaderFilterDefinition(actorId, forClients)))).FirstOrDefault<User?>();
+
     public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
     {
         User? user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
