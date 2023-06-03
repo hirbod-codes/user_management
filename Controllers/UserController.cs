@@ -2,6 +2,7 @@ namespace user_management.Controllers;
 using System.Net.Mail;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data.User;
 using user_management.Dtos.User;
@@ -104,6 +105,29 @@ public class UserController : ControllerBase
         catch (System.Exception) { return Problem(); }
 
         return Ok();
+    }
+
+    [HttpPost("activate")]
+    public async Task<ActionResult> Activate(Activation activatingUser)
+    {
+        User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
+        if (user == null) return NotFound();
+
+        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
+        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
+
+        if (activatingUser.VerificationSecret != user.VerificationSecret) return BadRequest("The provided email is not valid.");
+
+        if (!_stringHelper.DoesHashMatch(user.Password!, activatingUser.Password)) return BadRequest("Password is incorrect.");
+
+        if ((bool)user.IsVerified!) return Ok("User is already verified.");
+
+        bool? r = await _userRepository.Verify((ObjectId)user.Id!);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        return Ok("Your account has been registered successfully.");
     }
 
 }
