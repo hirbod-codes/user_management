@@ -21,6 +21,21 @@ public class UserRepository : IUserRepository
         _userCollection = mongoDatabase.GetCollection<User>(MongoContext.Value.Collections.Users);
     }
 
+    public async Task<User?> Create(User user)
+    {
+        user.Id = ObjectId.GenerateNewId();
+
+        DateTime dt = DateTime.UtcNow;
+        user.UpdatedAt = dt;
+        user.CreatedAt = dt;
+
+        user.UserPrivileges = User.GetDefaultUserPrivileges((ObjectId)user.Id);
+
+        await _userCollection.InsertOneAsync(user);
+
+        return user;
+    }
+
     public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
     {
         User? user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();

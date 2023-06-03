@@ -80,4 +80,34 @@ public class User
     [BsonRequired]
     public DateTime? CreatedAt { get; set; }
     public const string CREATED_AT = "created_at";
+    public static UserPrivileges GetDefaultUserPrivileges(ObjectId userId) => new UserPrivileges()
+    {
+        Privileges = StaticData.GetDefaultUserPrivileges().ToArray(),
+        Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultReadableFields().ToArray() } },
+        AllReaders = new AllReaders() { ArePermitted = false, Fields = GetDefaultReadableFields().ToArray() },
+        Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultUpdatableFields().ToArray() } },
+        AllUpdaters = new AllUpdaters() { ArePermitted = false, Fields = GetDefaultReadableFields().ToArray() },
+        Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = userId, IsPermitted = true } }
+    };
+    public static List<Field> GetDefaultReadableFields() => GetFields().Where(f => f.Name != PASSWORD || f.Name != VERIFICATION_SECRET || f.Name != VERIFICATION_SECRET_UPDATED_AT || f.Name != LOGGED_OUT_AT).ToList();
+    public static List<Field> GetDefaultUpdatableFields() => GetDefaultReadableFields().Where(f => f.Name == FIRST_NAME || f.Name == MIDDLE_NAME || f.Name == LAST_NAME).ToList();
+    public static List<Field> GetFields() => new List<Field>()
+        {
+            new Field() { Name = "_id", IsPermitted = true },
+            new Field() { Name = USER_PRIVILEGES, IsPermitted = true },
+            new Field() { Name = CLIENTS, IsPermitted = true },
+            new Field() { Name = FIRST_NAME, IsPermitted = true },
+            new Field() { Name = MIDDLE_NAME, IsPermitted = true },
+            new Field() { Name = LAST_NAME, IsPermitted = true },
+            new Field() { Name = EMAIL, IsPermitted = true },
+            new Field() { Name = PHONE_NUMBER, IsPermitted = true },
+            new Field() { Name = USERNAME, IsPermitted = true },
+            new Field() { Name = PASSWORD, IsPermitted = true },
+            new Field() { Name = VERIFICATION_SECRET, IsPermitted = true },
+            new Field() { Name = VERIFICATION_SECRET_UPDATED_AT, IsPermitted = true },
+            new Field() { Name = IS_VERIFIED, IsPermitted = true },
+            new Field() { Name = LOGGED_OUT_AT, IsPermitted = true },
+            new Field() { Name = UPDATED_AT, IsPermitted = true },
+            new Field() { Name = CREATED_AT, IsPermitted = true }
+        };
 }
