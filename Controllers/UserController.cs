@@ -18,14 +18,16 @@ public class UserController : ControllerBase
     private const int EXPIRATION_MINUTES = 6;
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
+    private readonly IAuthHelper _authHelper;
     private readonly IStringHelper _stringHelper;
     private readonly INotificationHelper _notificationHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public UserController(IUserRepository userRepository, IMapper mapper, IStringHelper stringHelper, INotificationHelper notificationHelper, IDateTimeProvider dateTimeProvider)
+    public UserController(IUserRepository userRepository, IMapper mapper, IStringHelper stringHelper, INotificationHelper notificationHelper, IAuthHelper authHelper, IDateTimeProvider dateTimeProvider)
     {
         _mapper = mapper;
         _userRepository = userRepository;
+        _authHelper = authHelper;
         _notificationHelper = notificationHelper;
         _stringHelper = stringHelper;
         _dateTimeProvider = dateTimeProvider;
@@ -194,6 +196,24 @@ public class UserController : ControllerBase
             string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
 
             return Ok(new { jwt = jwt, user = user.GetReadable((ObjectId)user.Id, _mapper) });
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<ActionResult> Logout()
+        {
+            string? idString = await _authHelper.GetIdentifier(User, _userRepository);
+            if (idString == null) return Unauthorized();
+
+            if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
+
+            if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
+
+            bool? r = await _userRepository.Logout(id);
+            if (r == null) return NotFound();
+            if (r == false) return Problem();
+
+            return Ok();
         }
 
 }
