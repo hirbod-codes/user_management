@@ -1,0 +1,14 @@
+/.vscode
+
+/obj
+/bin
+/node_modules
+
+/mongodb
+
+/Data/Seeders/Logs/*
+
+.env*
+!.env.example
+
+package-lock.json
