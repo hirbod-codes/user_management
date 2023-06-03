@@ -16,6 +16,11 @@ public class User
     public UserPrivileges? UserPrivileges { get; set; }
     public const string USER_PRIVILEGES = "user_privileges";
 
+    [BsonElement(CLIENTS)]
+    [BsonRequired]
+    public UserClient[] Clients { get; set; } = new UserClient[] { };
+    public const string CLIENTS = "clients";
+
     [BsonElement(FIRST_NAME)]
     public string? FirstName { get; set; }
     public const string FIRST_NAME = "first_name";
