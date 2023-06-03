@@ -78,4 +78,21 @@ public class ClientController : ControllerBase
 
         return Ok(_mapper.Map<ClientRetrieveDto>(client));
     }
+
+    [Permissions(Permissions = new string[] { "update_client" })]
+    [HttpPatch]
+    public async Task<ActionResult> Update(ClientPutDto clientPutDto)
+    {
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+
+        if (!ObjectId.TryParse(clientPutDto.Id, out ObjectId clientId)) return BadRequest();
+
+        string? hashedSecret = _stringHelper.HashWithoutSalt(clientPutDto.Secret);
+        if (hashedSecret == null) return BadRequest();
+
+        if (!(await _clientRepository.UpdateRedirectUrl(clientPutDto.RedirectUrl, clientId, hashedSecret))) return Problem();
+
+        return Ok();
+    }
+
 }
