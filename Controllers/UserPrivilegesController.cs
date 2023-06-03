@@ -1,6 +1,5 @@
 namespace user_management.Controllers;
 
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using user_management.Authorization.Attributes;
@@ -46,6 +45,27 @@ public class UserPrivilegesController : ControllerBase
         if (updatingUser == null) return NotFound();
 
         updatingUser.UserPrivileges!.Readers = userPrivileges.Readers;
+
+        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (result == null) return NotFound();
+        if (result == false) return Problem();
+
+        return Ok();
+    }
+
+    [Permissions(Permissions = new string[] { "update_all_readers" })]
+    [HttpPatch("update-all-readers")]
+    public async Task<IActionResult> UpdateAllReaders(string id, UserPrivileges userPrivileges)
+    {
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
+
+        User? user = await GetAuthenticatedUser();
+        if (user == null) return Unauthorized();
+
+        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (updatingUser == null) return NotFound();
+
+        updatingUser.UserPrivileges!.AllReaders = userPrivileges.AllReaders;
 
         bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
         if (result == null) return NotFound();
