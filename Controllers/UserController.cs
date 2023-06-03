@@ -155,4 +155,25 @@ public class UserController : ControllerBase
             return Ok();
         }
 
+        [HttpPost("change-password")]
+        public async Task<ActionResult> ChangePassword(ChangePassword dto)
+        {
+            if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password");
+
+            User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
+            if (user == null) return NotFound();
+
+            DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
+            expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
+            if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
+
+            if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
+
+            bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
+            if (r == null) return NotFound();
+            if (r == false) return Problem();
+
+            return Ok();
+        }
+
 }
