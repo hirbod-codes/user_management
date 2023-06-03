@@ -223,6 +223,44 @@ public class UserRepository : IUserRepository
 
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
+
+    public async Task<bool?> AddTokenPrivileges(User user, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null)
+    {
+        if (tokenPrivileges.ReadsFields.Length > 0)
+        {
+            List<Reader> readers = user.UserPrivileges!.Readers.ToList();
+            readers.RemoveAll(r => r != null && r.Author == Reader.CLIENT && r.AuthorId == clientId);
+            readers.Add(new Reader() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true, Fields = tokenPrivileges.ReadsFields });
+            user.UserPrivileges!.Readers = readers.ToArray();
+        }
+
+        if (tokenPrivileges.UpdatesFields.Length > 0)
+        {
+            List<Updater> updaters = user.UserPrivileges!.Updaters.ToList();
+            updaters.RemoveAll(u => u != null && u.Author == Updater.CLIENT && u.AuthorId == clientId);
+            updaters.Add(new Updater() { AuthorId = clientId, Author = Updater.CLIENT, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields });
+            user.UserPrivileges!.Updaters = updaters.ToArray();
+        }
+
+        if (tokenPrivileges.DeletesUser)
+        {
+            List<Deleter> deleters = user.UserPrivileges!.Deleters.ToList();
+            deleters.RemoveAll(d => d != null && d.Author == Deleter.CLIENT && d.AuthorId == clientId);
+            deleters.Add(new Deleter() { AuthorId = clientId, Author = Deleter.CLIENT, IsPermitted = true });
+            user.UserPrivileges!.Deleters = deleters.ToArray();
+        }
+
+        user.UpdatedAt = DateTime.UtcNow;
+
+        ReplaceOneResult r;
+        if (session != null) r = await _userCollection.ReplaceOneAsync(session, Builders<User>.Filter.Eq<ObjectId>("_id", (ObjectId)user.Id!), user);
+        else r = await _userCollection.ReplaceOneAsync(session, Builders<User>.Filter.Eq<ObjectId>("_id", (ObjectId)user.Id!), user);
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
+
     public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
     {
         List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
