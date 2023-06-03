@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using user_management.Authentication.JWT;
 using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -174,6 +175,25 @@ public class UserController : ControllerBase
             if (r == false) return Problem();
 
             return Ok();
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult> Login(Login loggingInUser, [FromServices] IJWTAuthenticationHandler jwtAuthenticationHandler)
+        {
+            if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("Credentials are not provided.");
+
+            User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
+            if (user == null) return NotFound();
+
+            if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return Unauthorized();
+
+            bool? r = await _userRepository.Login(user);
+            if (r == null) return NotFound();
+            if (r == false) return Problem();
+
+            string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
+
+            return Ok(new { jwt = jwt, user = user.GetReadable((ObjectId)user.Id, _mapper) });
         }
 
 }
