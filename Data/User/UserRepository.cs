@@ -96,4 +96,29 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
+                    Builders<User>.Filter.And(
+                        Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
+                        Builders<User>.Filter.ElemMatch(User.USER_PRIVILEGES + "." + UserPrivileges.READERS,
+                        (fields == null || fields.Count == 0) ?
+                        Builders<User>.Filter.And(
+                            Builders<User>.Filter.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
+                            Builders<User>.Filter.Eq(Reader.AUTHOR_ID, id),
+                            Builders<User>.Filter.Eq(Reader.IS_PERMITTED, true)
+                        ) :
+                        Builders<User>.Filter.And(
+                            Builders<User>.Filter.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
+                            Builders<User>.Filter.Eq(Reader.AUTHOR_ID, id),
+                            Builders<User>.Filter.Eq(Reader.IS_PERMITTED, true),
+                            Builders<User>.Filter.All(Reader.FIELDS, fields)
+                        ))
+                    ),
+                    (fields == null || fields.Count == 0) ?
+                    Builders<User>.Filter.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true) :
+                    Builders<User>.Filter.And(
+                        Builders<User>.Filter.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true),
+                        Builders<User>.Filter.All(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.FIELDS, fields)
+                    )
+                );
+
 }
