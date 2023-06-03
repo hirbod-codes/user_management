@@ -51,6 +51,60 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetReaderFilterDefinition(actorId, forClients)))).FirstOrDefault<User?>();
 
+    public async Task<List<User>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false)
+    {
+        if (limit <= 0)
+            limit = 5;
+
+        FilterLogics<User> logics = new FilterLogics<User>();
+        IFilterLogic<User> iLogic = logics.BuildILogic(logicsString);
+        FilterDefinition<User> filter = iLogic.BuildDefinition();
+        List<string> filterFieldsList = logics.Fields;
+
+        FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
+        SortDefinitionBuilder<User> sortBuilder = Builders<User>.Sort;
+        SortDefinition<User> sort;
+        if (ascending)
+            sort = sortBuilder.Ascending(sortBy ?? User.UPDATED_AT);
+        else
+            sort = sortBuilder.Ascending(sortBy ?? User.UPDATED_AT);
+
+        List<Field> filterFields = filterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        FilterDefinition<User> readPrivilegeFilter = GetReaderFilterDefinition(actorId, forClients, filterFields);
+
+        AggregateFacet<User, AggregateCountResult> countFacet = AggregateFacet.Create("count",
+            PipelineDefinition<User, AggregateCountResult>.Create(new[]
+            {
+                PipelineStageDefinitionBuilder.Count<User>()
+            })
+        );
+
+        AggregateFacet<User> dataFacet = AggregateFacet.Create("data",
+        PipelineDefinition<User, User>.Create(new[]
+            {
+                PipelineStageDefinitionBuilder.Skip<User>(iteration * limit),
+                PipelineStageDefinitionBuilder.Limit<User>(limit),
+            })
+        );
+
+        List<AggregateFacetResults> aggregation = await _userCollection.Aggregate()
+            .Match(filterBuilder.And(filter, readPrivilegeFilter))
+            .Sort(sort)
+            .Facet(countFacet, dataFacet)
+            .ToListAsync();
+
+        long count = aggregation.First().Facets.First(x => x.Name == "count").Output<AggregateCountResult>()?.FirstOrDefault()?.Count ?? 0;
+
+        int totalIterations = (int)Math.Ceiling((double)count / iteration);
+
+        return aggregation
+            .First()
+            .Facets
+            .First(x => x.Name == "data")
+            .Output<User>()
+            .ToList();
+    }
+
     public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
     {
         User? user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
