@@ -77,6 +77,7 @@ if (app.Environment.IsDevelopment())
     if (jsonObj["MongoDB"]["IsSeeded"] == false)
     {
         await MongoContext.Initialize(app.Services.GetService<IOptions<MongoContext>>()!);
+        await (new Seeder(app.Services.GetService<IOptions<MongoContext>>()!, app.Services.GetService<IUserRepository>()!, env.ContentRootPath)).Seed();
     }
     else
         System.Console.WriteLine("The database is already seeded.");
