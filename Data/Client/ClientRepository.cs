@@ -36,4 +36,10 @@ public class ClientRepository : IClientRepository
     {
         return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
     }
+
+    public async Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId id, string hashedSecret)
+    {
+        UpdateResult r = await _clientCollection.UpdateOneAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)), Builders<Client>.Update.Set(Client.REDIRECT_URL, redirectUrl));
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
 }

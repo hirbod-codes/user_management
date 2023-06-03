@@ -7,4 +7,5 @@ public interface IClientRepository
 {
     public Task<Client> Create(Client client);
     public Task<Client?> RetrieveBySecret(string secret);
+    public Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId id, string hashedSecret);
 }
