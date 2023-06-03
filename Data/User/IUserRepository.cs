@@ -24,4 +24,5 @@ public interface IUserRepository
     public Task<bool?> Logout(ObjectId id);
     public Task<bool?> RemoveClient(User user, ObjectId clientId);
     public Task<bool?> RemoveAllClients(User user);
+    public Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false);
 }

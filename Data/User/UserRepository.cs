@@ -199,6 +199,30 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
+    {
+        List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
+
+        FilterLogics<User> logics = new FilterLogics<User>();
+        IFilterLogic<User> iLogic = logics.BuildILogic(filtersString);
+        filters.Add(iLogic.BuildDefinition());
+        List<Field> filterFieldsList = logics.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+
+        UpdateLogics<User> logic = new UpdateLogics<User>();
+        UpdateDefinition<User>? updates = logic.BuildILogic(updatesString).BuildDefinition().Set(User.UPDATED_AT, DateTime.UtcNow);
+        List<Field> updateFieldsList = logic.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+
+        FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
+        filters.Add(GetReaderFilterDefinition(actorId, forClients, filterFieldsList));
+        filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
+
+        UpdateResult result = await _userCollection.UpdateManyAsync(filterBuilder.And(filters.ToArray()), updates);
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
+    }
+
     private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
@@ -221,6 +245,31 @@ public class UserRepository : IUserRepository
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true),
                         Builders<User>.Filter.All(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.FIELDS, fields)
+                    )
+                );
+
+    private FilterDefinition<User> GetUpdaterFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
+                    Builders<User>.Filter.And(
+                        Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.UPDATERS, 0),
+                        Builders<User>.Filter.ElemMatch(User.USER_PRIVILEGES + "." + UserPrivileges.UPDATERS,
+                        (fields == null || fields.Count == 0) ?
+                        Builders<User>.Filter.And(
+                            Builders<User>.Filter.Eq(Updater.AUTHOR, isClient ? Updater.CLIENT : Updater.USER),
+                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, id),
+                            Builders<User>.Filter.Eq(Updater.IS_PERMITTED, true)
+                        ) :
+                        Builders<User>.Filter.And(
+                            Builders<User>.Filter.Eq(Updater.AUTHOR, isClient ? Updater.CLIENT : Updater.USER),
+                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, id),
+                            Builders<User>.Filter.Eq(Updater.IS_PERMITTED, true),
+                            Builders<User>.Filter.All(Updater.FIELDS, fields)
+                        ))
+                    ),
+                    (fields == null || fields.Count == 0) ?
+                    Builders<User>.Filter.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_UPDATERS + "." + AllUpdaters.ARE_PERMITTED, true) :
+                    Builders<User>.Filter.And(
+                        Builders<User>.Filter.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_UPDATERS + "." + AllUpdaters.ARE_PERMITTED, true),
+                        Builders<User>.Filter.All(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_UPDATERS + "." + AllUpdaters.FIELDS, fields)
                     )
                 );
 
