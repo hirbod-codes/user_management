@@ -133,87 +133,87 @@ public class UserController : ControllerBase
         return Ok("Your account has been registered successfully.");
     }
 
-        [HttpPost("forgot-password")]
-        public async Task<ActionResult> ForgotPassword([FromBody] string email)
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult> ForgotPassword([FromBody] string email)
+    {
+        User? user = await _userRepository.RetrieveUserForPasswordChange(email);
+        if (user == null) return NotFound();
+
+        string verificationMessage = _stringHelper.GenerateRandomString(6);
+
+        bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        try
         {
-            User? user = await _userRepository.RetrieveUserForPasswordChange(email);
-            if (user == null) return NotFound();
-
-            string verificationMessage = _stringHelper.GenerateRandomString(6);
-
-            bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
-            if (r == null) return NotFound();
-            if (r == false) return Problem();
-
-            try
-            {
-                _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
-            }
-            catch (ArgumentNullException) { return Problem(); }
-            catch (ObjectDisposedException) { return Problem(); }
-            catch (InvalidOperationException) { return Problem(); }
-            catch (SmtpException) { return Problem(); }
-            catch (System.Exception) { return Problem(); }
-
-            return Ok();
+            _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
         }
+        catch (ArgumentNullException) { return Problem(); }
+        catch (ObjectDisposedException) { return Problem(); }
+        catch (InvalidOperationException) { return Problem(); }
+        catch (SmtpException) { return Problem(); }
+        catch (System.Exception) { return Problem(); }
 
-        [HttpPost("change-password")]
-        public async Task<ActionResult> ChangePassword(ChangePassword dto)
-        {
-            if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password");
+        return Ok();
+    }
 
-            User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
-            if (user == null) return NotFound();
+    [HttpPost("change-password")]
+    public async Task<ActionResult> ChangePassword(ChangePassword dto)
+    {
+        if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password");
 
-            DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-            expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-            if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
+        User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
+        if (user == null) return NotFound();
 
-            if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
+        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
+        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
 
-            bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
-            if (r == null) return NotFound();
-            if (r == false) return Problem();
+        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
 
-            return Ok();
-        }
+        bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
 
-        [HttpPost("login")]
-        public async Task<ActionResult> Login(Login loggingInUser, [FromServices] IJWTAuthenticationHandler jwtAuthenticationHandler)
-        {
-            if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("Credentials are not provided.");
+        return Ok();
+    }
 
-            User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
-            if (user == null) return NotFound();
+    [HttpPost("login")]
+    public async Task<ActionResult> Login(Login loggingInUser, [FromServices] IJWTAuthenticationHandler jwtAuthenticationHandler)
+    {
+        if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("Credentials are not provided.");
 
-            if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return Unauthorized();
+        User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
+        if (user == null) return NotFound();
 
-            bool? r = await _userRepository.Login(user);
-            if (r == null) return NotFound();
-            if (r == false) return Problem();
+        if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return Unauthorized();
 
-            string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
+        bool? r = await _userRepository.Login(user);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
 
-            return Ok(new { jwt = jwt, user = user.GetReadable((ObjectId)user.Id, _mapper) });
-        }
+        string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
 
-        [Authorize]
-        [HttpPost("logout")]
-        public async Task<ActionResult> Logout()
-        {
-            string? idString = await _authHelper.GetIdentifier(User, _userRepository);
-            if (idString == null) return Unauthorized();
+        return Ok(new { jwt = jwt, user = user.GetReadable((ObjectId)user.Id, _mapper) });
+    }
 
-            if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<ActionResult> Logout()
+    {
+        string? idString = await _authHelper.GetIdentifier(User, _userRepository);
+        if (idString == null) return Unauthorized();
 
-            if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
+        if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
 
-            bool? r = await _userRepository.Logout(id);
-            if (r == null) return NotFound();
-            if (r == false) return Problem();
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
 
-            return Ok();
-        }
+        bool? r = await _userRepository.Logout(id);
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        return Ok();
+    }
 
 }
