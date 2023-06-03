@@ -1,7 +1,12 @@
 namespace user_management.Models;
 
+using System.Dynamic;
+using AutoMapper;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using user_management.Data;
+using user_management.Dtos.User;
+using user_management.Utilities;
 
 [BsonIgnoreExtraElements]
 public class User
@@ -80,6 +85,66 @@ public class User
     [BsonRequired]
     public DateTime? CreatedAt { get; set; }
     public const string CREATED_AT = "created_at";
+
+    public static List<object> GetReadables(List<User> users, ObjectId actorId, IMapper IMapper, bool forClients = false)
+    {
+        if (users == null || users.Count == 0)
+            return new List<object>() { };
+
+        IEnumerable<object> rawUsers = users.ConvertAll<object?>(user => user.GetReadable(actorId, IMapper, forClients)) as IEnumerable<object>;
+
+        return rawUsers.Where<object>(o => o != null).ToList();
+    }
+
+    public object? GetReadable(ObjectId actorId, IMapper IMapper, bool forClients = false)
+    {
+        var userRetrieveDto = new ExpandoObject() as IDictionary<string, Object?>;
+        List<Field>? fields = new List<Field>() { };
+        Action<Field> action = field =>
+            {
+                dynamic? value;
+                if (field.Name == "_id")
+                    value = typeof(User).GetProperty("Id")!.GetValue(this);
+                else
+                    value = typeof(User).GetProperty(field.Name.ToPascalCase())!.GetValue(this);
+
+                if (value != null && field.Name == "_id")
+                    value = value!.ToString();
+
+                if (value != null && field.Name.ToPascalCase() == CLIENTS.ToPascalCase())
+                    value = (value as UserClient[])!.ToList().ConvertAll<UserClientRetrieveDto>(v => IMapper.Map<UserClientRetrieveDto>(v));
+
+                if (value != null && field.Name.ToPascalCase() == USER_PRIVILEGES.ToPascalCase())
+                    value = IMapper.Map<UserPrivilegesRetrieveDto>(value);
+
+                if (field.IsPermitted)
+                    userRetrieveDto.Add(field.Name, value);
+            };
+
+        try
+        {
+            if (UserPrivileges!.AllReaders != null && UserPrivileges!.AllReaders.ArePermitted)
+                fields = fields.Concat(UserPrivileges!.AllReaders.Fields).ToList();
+        }
+        catch (NullReferenceException) { }
+        catch (InvalidOperationException) { }
+
+        try
+        {
+            if (UserPrivileges!.Readers.Length != 0)
+                fields = fields.Concat(UserPrivileges!.Readers.First(r => r != null && r.Author == (forClients ? Reader.CLIENT : Reader.USER) && r.AuthorId == actorId && r.IsPermitted == true).Fields).ToList();
+        }
+        catch (NullReferenceException) { }
+        catch (InvalidOperationException) { }
+
+        if (fields.Count == 0)
+            return null;
+
+        fields.ForEach(action);
+
+        return userRetrieveDto;
+    }
+
     public static UserPrivileges GetDefaultUserPrivileges(ObjectId userId) => new UserPrivileges()
     {
         Privileges = StaticData.GetDefaultUserPrivileges().ToArray(),
