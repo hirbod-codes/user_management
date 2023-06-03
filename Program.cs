@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using user_management.Data;
 using user_management.Data.User;
+using user_management.Data.Client;
 using user_management.Authentication.JWT;
 using user_management.Authentication.Bearer;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +28,8 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetSection("MongoDB").GetValue<string>("ConnectionString")));
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IClientRepository, ClientRepository>();
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
