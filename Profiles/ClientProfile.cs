@@ -17,6 +17,8 @@ class ClientProfile : Profile
     private void MapClientCreateDto()
     {
         CreateMap<ClientCreateDto, Client>();
+
+        CreateMap<TokenPrivilegesCreateDto, TokenPrivileges>();
     }
 
     private void MapClientRetrieveDto()
