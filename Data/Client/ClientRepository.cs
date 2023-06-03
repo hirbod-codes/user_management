@@ -47,4 +47,9 @@ public class ClientRepository : IClientRepository
         UpdateResult r = await _clientCollection.UpdateOneAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)), Builders<Client>.Update.Set(Client.REDIRECT_URL, redirectUrl));
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
+
+    public async Task DeleteBySecret(string secret)
+    {
+        await _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret));
+    }
 }
