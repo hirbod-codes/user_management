@@ -7,6 +7,32 @@ public class StringHelper : IStringHelper
 {
     public readonly char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
 
+    public string? HashWithoutSalt(string input, string method = "SHA512")
+    {
+        StringBuilder sb = new StringBuilder();
+
+        byte[] hash;
+        switch (method)
+        {
+            case "SHA256":
+                using (HashAlgorithm algorithm = SHA256.Create())
+                    hash = algorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
+                break;
+
+            case "SHA512":
+                using (HashAlgorithm algorithm = SHA512.Create())
+                    hash = algorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
+                break;
+            default:
+                return null;
+        }
+
+        foreach (byte b in hash)
+            sb.Append(b.ToString("X2"));
+
+        return sb.ToString();
+    }
+
     public string Hash(string str)
     {
         byte[] salt = RandomNumberGenerator.GetBytes(16);

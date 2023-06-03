@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using user_management.Data;
 using user_management.Data.User;
 using user_management.Authentication.JWT;
+using user_management.Authentication.Bearer;
 using Microsoft.AspNetCore.Authorization;
 using user_management.Authorization;
 using user_management.Authorization.Permissions;
@@ -23,8 +24,14 @@ builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
 builder.Services.AddSingleton<JWTAuthenticationOptions>();
 builder.Services.AddSingleton<IJWTAuthenticationHandler, JWTAuthenticationHandler>();
+
+builder.Services.Configure<BearerAuthenticationOptions>(builder.Configuration.GetSection("Bearer"));
+builder.Services.AddSingleton<BearerAuthenticationOptions>();
+builder.Services.AddSingleton<BearerAuthenticationHandler>();
+
 builder.Services.AddAuthentication(defaultScheme: "JWT")
     .AddScheme<JWTAuthenticationOptions, JWTAuthenticationHandler>("JWT", null)
+    .AddScheme<BearerAuthenticationOptions, BearerAuthenticationHandler>("Bearer", "Bearer", null)
     ;
 
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionsPolicyProvider>();
