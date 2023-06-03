@@ -260,4 +260,21 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    [HttpGet("user/{id}")]
+    [Permissions(Permissions = new string[] { "read_account" })]
+    public async Task<ActionResult> RetrieveById(string id)
+    {
+        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (actorId == null) return Unauthorized();
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+
+        User? user = await _userRepository.RetrieveById(actorObjectId, ObjectId.Parse(id), _authHelper.GetAuthenticationType(User) != "JWT");
+        if (user == null) return NotFound();
+
+        object? content = user.GetReadable(actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (content == null) return NotFound();
+
+        return Ok(content);
+    }
+
 }
