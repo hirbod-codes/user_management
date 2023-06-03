@@ -37,6 +37,11 @@ public class ClientRepository : IClientRepository
         return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
     }
 
+    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId id, string redirectUrl)
+    {
+        return (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
+    }
+
     public async Task<Client?> RetrieveById(ObjectId id)
     {
         return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", id))).FirstOrDefault<Client?>();
