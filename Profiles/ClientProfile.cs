@@ -10,10 +10,16 @@ class ClientProfile : Profile
     public ClientProfile()
     {
         MapClientCreateDto();
+        MapClientRetrieveDto();
     }
 
     private void MapClientCreateDto()
     {
         CreateMap<ClientCreateDto, Client>();
+    }
+
+    private void MapClientRetrieveDto()
+    {
+        CreateMap<Client, ClientRetrieveDto>();
     }
 }
