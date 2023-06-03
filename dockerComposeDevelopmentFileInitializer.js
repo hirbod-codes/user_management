@@ -22,7 +22,7 @@ yml.services['user_management_mongo_express'].environment.ME_CONFIG_MONGODB_SERV
 yml.services['user_management_mongo_express'].environment.ME_CONFIG_MONGODB_AUTH_DATABASE = args.db;
 
 yml.services.user_management_mongodb.ports = ["8082:" + args.port];
-yml.services.user_management_mongodb.command = " mongos --configdb user_management_configReplicaSet1/user_management_configServer1:" + args.port + ",user_management_configServer2:" + args.port + ",user_management_configServer3:" + args.port + " --bind_ip 0.0.0.0 --port " + args.port;
+yml.services.user_management_mongodb.command = "mongos --configdb user_management_configReplicaSet1/user_management_configServer1:" + args.port + ",user_management_configServer2:" + args.port + ",user_management_configServer3:" + args.port + " --bind_ip 0.0.0.0 --port " + args.port;
 
 yml.services.user_management_configServer1.command = "mongod --configsvr --replSet user_management_configReplicaSet1 --port " + args.port + " --dbpath /data/db";
 yml.services.user_management_configServer2.command = "mongod --configsvr --replSet user_management_configReplicaSet1 --port " + args.port + " --dbpath /data/db";
