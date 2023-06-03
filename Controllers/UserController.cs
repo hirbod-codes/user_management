@@ -1,10 +1,12 @@
 namespace user_management.Controllers;
 using System.Net.Mail;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Authentication.JWT;
+using user_management.Authorization.Attributes;
 using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -275,6 +277,22 @@ public class UserController : ControllerBase
         if (content == null) return NotFound();
 
         return Ok(content);
+    }
+
+    [HttpGet("user/clients")]
+    [Permissions(Permissions = new string[] { "read_clients" })]
+    public async Task<ActionResult> RetrieveClients()
+    {
+        string? id = await _authHelper.GetIdentifier(User, _userRepository);
+        if (id == null) return Unauthorized();
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
+
+        User? user = await _userRepository.RetrieveById(userId, userId);
+        if (user == null) return NotFound();
+
+        List<UserClient> userClients = user.Clients.ToList();
+
+        return Ok(userClients);
     }
 
 }
