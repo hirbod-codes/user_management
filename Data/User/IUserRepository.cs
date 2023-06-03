@@ -8,5 +8,7 @@ public interface IUserRepository
 {
     public Task<User?> Create(User user);
     public Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id);
+    public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);
     public Task<User?> RetrieveByTokenValue(string value);
+    public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
 }
