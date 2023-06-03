@@ -20,4 +20,5 @@ public interface IUserRepository
     public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
     public Task<bool?> Verify(ObjectId id);
     public Task<bool?> ChangePassword(string email, string hashedPassword);
+    public Task<bool?> Logout(ObjectId id);
 }

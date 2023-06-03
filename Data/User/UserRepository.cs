@@ -106,6 +106,16 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> Logout(ObjectId id)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
     private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
