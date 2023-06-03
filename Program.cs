@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using user_management.Data;
+using user_management.Authentication.JWT;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,13 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetSection("MongoDB").GetValue<string>("ConnectionString")));
+builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
+builder.Services.AddSingleton<JWTAuthenticationOptions>();
+builder.Services.AddSingleton<IJWTAuthenticationHandler, JWTAuthenticationHandler>();
+builder.Services.AddAuthentication(defaultScheme: "JWT")
+    .AddScheme<JWTAuthenticationOptions, JWTAuthenticationHandler>("JWT", null)
+    ;
+
 
 var app = builder.Build();
 
