@@ -295,4 +295,18 @@ public class UserController : ControllerBase
         return Ok(userClients);
     }
 
+    [HttpGet("users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}")]
+    [Permissions(Permissions = new string[] { "read_account" })]
+    [Permissions(Permissions = new string[] { "read_accounts" })]
+    public async Task<ActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    {
+        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (actorId == null) return Unauthorized();
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+
+        List<User> users = await _userRepository.Retrieve(actorObjectId, logicsString, limit, iteration, sortBy, ascending, _authHelper.GetAuthenticationType(User) != "JWT");
+
+        return Ok(user_management.Models.User.GetReadables(users, actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT"));
+    }
+
 }
