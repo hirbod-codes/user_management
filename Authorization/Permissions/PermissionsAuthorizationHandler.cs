@@ -62,4 +62,19 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         return;
     }
 
+    private async Task AuthorizeBearer(string tokenValue, AuthorizationHandlerContext context, PermissionsRequirement requirement)
+    {
+        string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
+        if (requirementTokens?.Any() != true) return;
+
+        User? user = await _userRepository.RetrieveByTokenValue(tokenValue);
+        if (user == null || user.Clients.Length == 0) return;
+        List<UserClient> userClients = user.Clients.ToList();
+        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null, null);
+        if (userClient == null) return;
+
+        Utility.Succeed(context, requirement.Identifier);
+        return;
+    }
+
 }
