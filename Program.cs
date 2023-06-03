@@ -2,6 +2,11 @@ using Microsoft.Extensions.Options;
 using user_management.Data;
 using user_management.Data.User;
 using user_management.Authentication.JWT;
+using Microsoft.AspNetCore.Authorization;
+using user_management.Authorization;
+using user_management.Authorization.Permissions;
+using user_management.Authorization.Roles;
+using user_management.Authorization.Scopes;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +27,12 @@ builder.Services.AddAuthentication(defaultScheme: "JWT")
     .AddScheme<JWTAuthenticationOptions, JWTAuthenticationHandler>("JWT", null)
     ;
 
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionsPolicyProvider>();
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionsAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, RolesAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, ScopesAuthorizationHandler>();
+;
 
 var app = builder.Build();
 
