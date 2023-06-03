@@ -9,6 +9,7 @@ public interface IClientRepository
     public Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId id, string redirectUrl);
     public Task<Client?> RetrieveById(ObjectId id);
     public Task<Client?> RetrieveBySecret(string secret);
+    public Task<Client?> RetrieveByIdAndSecret(ObjectId clientId, string hashedSecret);
     public Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId id, string hashedSecret);
     public Task DeleteBySecret(string secret);
 }
