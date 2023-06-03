@@ -31,4 +31,9 @@ public class ClientRepository : IClientRepository
 
         return client;
     }
+
+    public async Task<Client?> RetrieveBySecret(string secret)
+    {
+        return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
+    }
 }

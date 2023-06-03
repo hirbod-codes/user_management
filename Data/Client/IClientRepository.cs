@@ -6,4 +6,5 @@ using user_management.Models;
 public interface IClientRepository
 {
     public Task<Client> Create(Client client);
+    public Task<Client?> RetrieveBySecret(string secret);
 }
