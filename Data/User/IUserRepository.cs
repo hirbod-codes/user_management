@@ -21,4 +21,5 @@ public interface IUserRepository
     public Task<bool?> Verify(ObjectId id);
     public Task<bool?> ChangePassword(string email, string hashedPassword);
     public Task<bool?> Logout(ObjectId id);
+    public Task<bool?> RemoveClient(User user, ObjectId clientId);
 }
