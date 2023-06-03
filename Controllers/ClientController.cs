@@ -63,4 +63,19 @@ public class ClientController : ControllerBase
 
         return Ok(clientRetrieveDto);
     }
+
+    [Permissions(Permissions = new string[] { "read_client" })]
+    [HttpGet("client/{secret}")]
+    public async Task<ActionResult> Retrieve(string secret)
+    {
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+
+        string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
+        if (hashedSecret == null) return BadRequest();
+
+        Client? client = await _clientRepository.RetrieveBySecret(hashedSecret);
+        if (client == null) return NotFound();
+
+        return Ok(_mapper.Map<ClientRetrieveDto>(client));
+    }
 }
