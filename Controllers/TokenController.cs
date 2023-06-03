@@ -150,4 +150,48 @@ public class TokenController : ControllerBase
 
         return Ok(new { access_token = tokenValue, refresh_token = refreshToken.Value });
     }
+
+    [HttpPost("retoken")]
+    public async Task<ActionResult> ReToken(ReTokenDto reTokenDto)
+    {
+        if (!ObjectId.TryParse(reTokenDto.ClientId, out ObjectId clientId)) return BadRequest();
+
+        string? hashedSecret = _stringHelper.HashWithoutSalt(reTokenDto.ClientSecret);
+        if (hashedSecret == null) return BadRequest();
+
+        Client? client = await _clientRepository.RetrieveByIdAndSecret(clientId, hashedSecret);
+        if (client == null) return BadRequest();
+
+        User? user = await _userRepository.RetrieveByRefreshTokenValue(reTokenDto.RefreshToken);
+        if (user == null) return NotFound();
+
+        List<UserClient> userClients = user.Clients.ToList();
+        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
+        if (userClient == null) return NotFound();
+        if (userClient.RefreshToken == null) return NotFound();
+        if (userClient.RefreshToken.ExpirationDate < _dateTimeProvider.ProvideUtcNow()) return BadRequest();
+        if (!userClient.RefreshToken.IsVerified || userClient.RefreshToken.Value != reTokenDto.RefreshToken) return BadRequest();
+
+        string tokenValue = null!;
+        bool again = false;
+        int safety = 0;
+        do
+        {
+            try
+            {
+                tokenValue = _stringHelper.GenerateRandomString(128);
+
+                bool? r = await _userRepository.AddToken(user, clientId, _stringHelper.HashWithoutSalt(tokenValue)!, _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION));
+                if (r == null) return NotFound();
+                if (r == false) return Problem();
+                again = false;
+            }
+            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
+            safety++;
+        } while (again && safety < 200);
+
+        if (safety >= 200) return Problem();
+
+        return Ok(tokenValue);
+    }
 }
