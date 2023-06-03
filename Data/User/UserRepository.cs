@@ -47,6 +47,8 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveByEmailForUniqueCheck(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
+    public async Task<User?> RetrieveByPhoneNumberForUniqueCheck(string phoneNumber) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber))).FirstOrDefault<User?>();
+
     public async Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetReaderFilterDefinition(actorId, forClients)))).FirstOrDefault<User?>();
 
     public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
