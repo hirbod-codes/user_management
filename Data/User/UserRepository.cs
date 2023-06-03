@@ -61,4 +61,14 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> ChangePassword(string email, string hashedPassword)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
 }

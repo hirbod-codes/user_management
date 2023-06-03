@@ -13,4 +13,5 @@ public interface IUserRepository
     public Task<User?> RetrieveByTokenValue(string value);
     public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
     public Task<bool?> Verify(ObjectId id);
+    public Task<bool?> ChangePassword(string email, string hashedPassword);
 }
