@@ -17,6 +17,7 @@ public interface IUserRepository
     public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);
     public Task<User?> RetrieveUserForPasswordChange(string email);
     public Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code);
+    public Task<User?> RetrieveByRefreshTokenValue(string value);
     public Task<User?> RetrieveByTokenValue(string value);
     public Task<bool?> Login(User user);
     public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
