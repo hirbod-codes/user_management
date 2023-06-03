@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using user_management.Data;
 using MongoDB.Driver;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -26,5 +27,28 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+if (app.Environment.IsDevelopment())
+{
+    IWebHostEnvironment? env = app.Services.GetService<IWebHostEnvironment>();
+    if (env == null)
+        throw new Exception("Failed to resolve IWebHostEnvironment.");
+
+    string filePath = Path.Combine(env.ContentRootPath, "appSettings.json");
+    string json = File.ReadAllText(filePath);
+    dynamic jsonObj = Newtonsoft.Json.JsonConvert.DeserializeObject(json)!;
+
+    if (jsonObj["MongoDB"]["IsSeeded"] == false)
+    {
+        await MongoContext.Initialize(app.Services.GetService<IOptions<MongoContext>>()!);
+    }
+    else
+        System.Console.WriteLine("The database is already seeded.");
+
+    jsonObj["MongoDB"]["IsSeeded"] = true;
+
+    string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
+    File.WriteAllText(filePath, output);
+}
 
 app.Run();
