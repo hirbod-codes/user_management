@@ -91,6 +91,7 @@ public class UserSeeder
             UpdatedAt = dt
         };
         user = await AddClient(user, dt.AddMonths(6), dt);
+
         _userCollection.InsertOne(user);
     }
     private async Task CreateSuperUserAsync(ObjectId userId, DateTime dt)
@@ -131,6 +132,111 @@ public class UserSeeder
             UpdatedAt = dt
         };
         user = await AddClient(user, dt.AddMonths(6), dt, true);
+
         _userCollection.InsertOne(user);
     }
     private async Task<User> AddClient(User user, DateTime exp, DateTime codeCreateAt, bool isSuperUser = false)
+    {
+        Faker faker = new Faker("en");
+        FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
+
+        TokenPrivileges tokenPrivileges = new TokenPrivileges();
+
+        tokenPrivileges.ReadsFields = User.GetFields().ToArray();
+        tokenPrivileges.UpdatesFields = User.GetFields().ToArray();
+        tokenPrivileges.DeletesUser = true;
+        tokenPrivileges.ReadsFields = User.GetFields().ToArray();
+
+        string codeVerifier = (new StringHelper()).GenerateRandomString(128);
+
+        string code, refreshTokenValue, tokenValue;
+
+        do
+        {
+            code = (new StringHelper()).GenerateRandomString(128);
+            refreshTokenValue = (new StringHelper()).GenerateRandomString(128);
+            tokenValue = (new StringHelper()).GenerateRandomString(128);
+        } while ((await _userCollection.FindAsync(
+            filterBuilder.Or(
+                filterBuilder.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.CODE, code),
+                filterBuilder.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, refreshTokenValue),
+                filterBuilder.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, (new StringHelper()).HashWithoutSalt(tokenValue))
+            ))).FirstOrDefault<User?>() != null);
+
+        ObjectId clientId = (ObjectId)faker.PickRandom<Client>(_clients).Id!;
+
+        UserClient userClient = new UserClient()
+        {
+            ClientId = clientId,
+            RefreshToken = new RefreshToken()
+            {
+                TokenPrivileges = tokenPrivileges,
+                Code = (new StringHelper()).GenerateRandomString(128),
+                CodeChallenge = (new StringHelper()).Base64Encode((new StringHelper()).HashWithoutSalt(codeVerifier, "SHA512")!),
+                CodeExpiresAt = codeCreateAt,
+                CodeChallengeMethod = "SHA512",
+                ExpirationDate = exp,
+                Value = refreshTokenValue,
+                IsVerified = true
+            },
+            Token = new Token()
+            {
+                ExpirationDate = exp,
+                IsRevoked = false,
+                Value = (new StringHelper()).HashWithoutSalt(tokenValue)
+            }
+        };
+
+        List<UserClient> clients = user.Clients.ToList();
+        clients.Add(userClient);
+        user.Clients = clients.ToArray();
+
+        if (tokenPrivileges.ReadsFields.Length > 0)
+        {
+            List<Reader> readers = user.UserPrivileges!.Readers.ToList();
+            if (readers.Count != 0)
+            {
+                Reader? reader = readers.FirstOrDefault<Reader?>(r => r != null && r.Author == Reader.CLIENT && r.AuthorId == clientId, null);
+                if (reader != null)
+                    readers.Remove(reader);
+            }
+            readers.Add(new Reader() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true, Fields = tokenPrivileges.ReadsFields });
+            user.UserPrivileges!.Readers = readers.ToArray();
+        }
+
+        if (tokenPrivileges.UpdatesFields.Length > 0)
+        {
+            List<Updater> updaters = user.UserPrivileges!.Updaters.ToList();
+            if (updaters.Count != 0)
+            {
+                Updater? updater = updaters.FirstOrDefault<Updater?>(r => r != null && r.Author == Reader.CLIENT && r.AuthorId == clientId, null);
+                if (updater != null)
+                    updaters.Remove(updater);
+            }
+            updaters.Add(new Updater() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields });
+            user.UserPrivileges!.Updaters = updaters.ToArray();
+        }
+
+        if (tokenPrivileges.DeletesUser)
+        {
+            List<Deleter> deleters = user.UserPrivileges!.Deleters.ToList();
+            if (deleters.Count != 0)
+            {
+                Deleter? deleter = deleters.FirstOrDefault<Deleter?>(r => r != null && r.Author == Reader.CLIENT && r.AuthorId == clientId, null);
+                if (deleter != null)
+                    deleters.Remove(deleter);
+            }
+            deleters.Add(new Deleter() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true });
+            user.UserPrivileges!.Deleters = deleters.ToArray();
+        }
+
+        await File.AppendAllTextAsync(_filePath, @$"
+UserId ==> {(ObjectId)user.Id!}
+Code verifier ==> {codeVerifier}
+Refresh Token value ==> {refreshTokenValue}
+Token value ==> {tokenValue}
+
+");
+        return user;
+    }
+}

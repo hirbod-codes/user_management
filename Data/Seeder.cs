@@ -22,6 +22,7 @@ public class Seeder
     {
         System.Console.WriteLine("Seeding...");
 
+        await (new ClientSeeder(MongoContext, _rootPath)).Seed();
         await (new UserSeeder(MongoContext, _rootPath)).Seed();
 
         System.Console.WriteLine("Seeded...");
