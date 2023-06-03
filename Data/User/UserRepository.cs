@@ -133,6 +133,18 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> RemoveAllClients(User user)
+    {
+        user.Clients = new UserClient[] { };
+
+        ReplaceOneResult result = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!), user);
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
     private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
