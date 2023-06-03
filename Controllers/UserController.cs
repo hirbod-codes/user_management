@@ -309,4 +309,24 @@ public class UserController : ControllerBase
         return Ok(user_management.Models.User.GetReadables(users, actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT"));
     }
 
+    [Permissions(Permissions = new string[] { "read_account" })]
+    [Permissions(Permissions = new string[] { "read_accounts" })]
+    [Permissions(Permissions = new string[] { "update_account" })]
+    [Permissions(Permissions = new string[] { "update_accounts" })]
+    [HttpPatch("users")]
+    public async Task<ActionResult> Update(UserPatchDto userPatchDto)
+    {
+        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null) return BadRequest();
+
+        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (actorId == null) return Unauthorized();
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+
+        bool? r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, _authHelper.GetAuthenticationType(User) != "JWT");
+        if (r == null) return NotFound();
+        if (r == false) return Problem();
+
+        return Ok();
+    }
+
 }
