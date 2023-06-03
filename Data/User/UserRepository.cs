@@ -263,6 +263,40 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
+    public async Task<bool?> AddClientById(User user, ObjectId clientId, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod)
+    {
+        List<UserClient> userClients = user.Clients.ToList();
+        UserClient? removableUerClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == clientId, null);
+        if (removableUerClient != null)
+            userClients.Remove(removableUerClient);
+
+        UserClient userClient = new UserClient()
+        {
+            ClientId = clientId,
+            RefreshToken = new RefreshToken()
+            {
+                TokenPrivileges = tokenPrivileges,
+                Code = code,
+                CodeExpiresAt = codeExpiresAt,
+                CodeChallenge = codeChallenge,
+                CodeChallengeMethod = codeChallengeMethod,
+                ExpirationDate = refreshTokenExpiration,
+                Value = refreshTokenValue,
+                IsVerified = false
+            },
+            Token = null
+        };
+        userClients.Add(userClient);
+        user.Clients = userClients.ToArray();
+        user.UpdatedAt = DateTime.UtcNow;
+
+        ReplaceOneResult r = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq<ObjectId>("_id", (ObjectId)user.Id!), user);
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
+
     public async Task<bool?> UpdateUserPrivileges(ObjectId actorId, ObjectId userId, UserPrivileges userPrivileges, bool forClients)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(
