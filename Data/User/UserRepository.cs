@@ -223,6 +223,15 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
     }
 
+    public async Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false)
+    {
+        DeleteResult r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients)));
+
+        if (r.IsAcknowledged && r.DeletedCount == 0) return null;
+
+        return r.IsAcknowledged && r.DeletedCount == 1;
+    }
+
     private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
@@ -273,4 +282,14 @@ public class UserRepository : IUserRepository
                     )
                 );
 
+    private FilterDefinition<User> GetDeleterFilterDefinition(ObjectId id, bool isClient) => Builders<User>.Filter.And(
+                    Builders<User>.Filter.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.DELETERS, 0),
+                    Builders<User>.Filter.ElemMatch(User.USER_PRIVILEGES + "." + UserPrivileges.DELETERS,
+                        Builders<User>.Filter.And(
+                            Builders<User>.Filter.Eq(Deleter.AUTHOR, isClient ? Deleter.CLIENT : Deleter.USER),
+                            Builders<User>.Filter.Eq(Deleter.AUTHOR_ID, id),
+                            Builders<User>.Filter.Eq(Deleter.IS_PERMITTED, true)
+                        )
+                    )
+                );
 }
