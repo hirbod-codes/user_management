@@ -130,4 +130,29 @@ public class UserController : ControllerBase
         return Ok("Your account has been registered successfully.");
     }
 
+        [HttpPost("forgot-password")]
+        public async Task<ActionResult> ForgotPassword([FromBody] string email)
+        {
+            User? user = await _userRepository.RetrieveUserForPasswordChange(email);
+            if (user == null) return NotFound();
+
+            string verificationMessage = _stringHelper.GenerateRandomString(6);
+
+            bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
+            if (r == null) return NotFound();
+            if (r == false) return Problem();
+
+            try
+            {
+                _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
+            }
+            catch (ArgumentNullException) { return Problem(); }
+            catch (ObjectDisposedException) { return Problem(); }
+            catch (InvalidOperationException) { return Problem(); }
+            catch (SmtpException) { return Problem(); }
+            catch (System.Exception) { return Problem(); }
+
+            return Ok();
+        }
+
 }
