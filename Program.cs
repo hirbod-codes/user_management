@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using user_management.Data;
+using user_management.Data.User;
 using user_management.Authentication.JWT;
 using MongoDB.Driver;
 
@@ -13,6 +14,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetSection("MongoDB").GetValue<string>("ConnectionString")));
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
 builder.Services.AddSingleton<JWTAuthenticationOptions>();
 builder.Services.AddSingleton<IJWTAuthenticationHandler, JWTAuthenticationHandler>();
