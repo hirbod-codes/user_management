@@ -18,14 +18,16 @@ public class TokenController : ControllerBase
 {
     public const int REFRESH_TOKEN_EXPIRATION_MONTHS = 2;
     public const int CODE_EXPIRATION_MINUTES = 3;
+    public const int TOKEN_EXPIRATION = 1;
     private readonly IMapper _mapper;
     private readonly IClientRepository _clientRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IMongoClient _mongoClient;
     private readonly IAuthHelper _authHelper;
     private readonly IStringHelper _stringHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TokenController(IMapper mapper, IClientRepository clientRepository, IUserRepository userRepository, IStringHelper stringHelper, IAuthHelper authHelper, IDateTimeProvider dateTimeProvider)
+    public TokenController(IMapper mapper, IClientRepository clientRepository, IUserRepository userRepository, IStringHelper stringHelper, IAuthHelper authHelper, IDateTimeProvider dateTimeProvider, IMongoClient iMongoClient)
     {
         _mapper = mapper;
         _clientRepository = clientRepository;
@@ -33,6 +35,7 @@ public class TokenController : ControllerBase
         _stringHelper = stringHelper;
         _authHelper = authHelper;
         _dateTimeProvider = dateTimeProvider;
+        _mongoClient = iMongoClient;
     }
 
     [Permissions(Permissions = new string[] { "authorize_client" })]
@@ -81,5 +84,70 @@ public class TokenController : ControllerBase
         if (safety >= 200) return Problem();
 
         return RedirectPermanent(tokenAuthDto.RedirectUrl + $"?code={code}&state={tokenAuthDto.State}");
+    }
+
+    [HttpPost("token")]
+    public async Task<ActionResult<object>> Token(TokenCreateDto tokenCreateDto)
+    {
+        if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
+
+        Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(ObjectId.Parse(tokenCreateDto.ClientId), tokenCreateDto.RedirectUrl);
+        if (client == null) return NotFound();
+
+        User? user = await _userRepository.RetrieveByClientIdAndCode((ObjectId)client.Id!, tokenCreateDto.Code);
+        if (user == null) return NotFound();
+
+        UserClient? userClient = user.Clients.ToList().FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
+        if (userClient == null) return NotFound();
+
+        RefreshToken? refreshToken = userClient.RefreshToken;
+        if (refreshToken == null) return NotFound();
+        if (refreshToken.ExpirationDate! < _dateTimeProvider.ProvideUtcNow() || (refreshToken.CodeExpiresAt != null && refreshToken.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())) return BadRequest();
+        if (_stringHelper.HashWithoutSalt(tokenCreateDto.CodeVerifier, refreshToken.CodeChallengeMethod!) != _stringHelper.Base64Decode(refreshToken.CodeChallenge!)) return BadRequest();
+
+        string tokenValue = null!;
+        using (IClientSessionHandle session = await _mongoClient.StartSessionAsync())
+        {
+            TransactionOptions transactionOptions = new(writeConcern: WriteConcern.WMajority);
+
+            session.StartTransaction(transactionOptions);
+
+            bool? userResult = await _userRepository.AddTokenPrivileges(user, (ObjectId)client.Id, refreshToken.TokenPrivileges!, session);
+            if (userResult == null) return NotFound();
+            if (userResult == false) return Problem();
+
+            bool again = false;
+            int safety = 0;
+            do
+            {
+                try
+                {
+                    tokenValue = _stringHelper.GenerateRandomString(128);
+
+                    bool? addTokenResult = await _userRepository.AddToken(user, (ObjectId)client.Id!, _stringHelper.HashWithoutSalt(tokenValue)!, _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION), session);
+                    if (addTokenResult == null)
+                    {
+                        await session.AbortTransactionAsync(); return NotFound();
+                    }
+                    if (addTokenResult == false)
+                    {
+                        await session.AbortTransactionAsync(); return Problem();
+                    }
+                    again = false;
+                }
+                catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
+                safety++;
+            } while (again && safety < 200);
+
+            if (safety >= 200)
+            {
+                await session.AbortTransactionAsync();
+                return Problem();
+            }
+
+            await session.CommitTransactionAsync();
+        }
+
+        return Ok(new { access_token = tokenValue, refresh_token = refreshToken.Value });
     }
 }
