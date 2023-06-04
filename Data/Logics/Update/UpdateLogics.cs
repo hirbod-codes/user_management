@@ -29,7 +29,7 @@ public class UpdateLogics<TDocument>
         string[]? updateParameterStrings;
         foreach (string updateString in updateStrings)
         {
-            // Do not remove empty entries in splited string, due to potantial need for empty strings as the value
+            // Do not remove empty entries in splitted string, due to potential need for empty strings as the value
             updateParameterStrings = updateString.Split(separator: PARAMETER_SEPARATOR, count: 4);
             Fields.Add(updateParameterStrings[0].ToSnakeCase());
 
