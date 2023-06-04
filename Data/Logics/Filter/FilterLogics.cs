@@ -31,6 +31,16 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
         }
     }
 
+    public List<string> GetRequiredFields()
+    {
+        List<string> fields = FirstLogic.GetRequiredFields().Concat(SecondLogic == null ? new List<string>() { } : SecondLogic.GetRequiredFields()).ToList();
+        if (Operator == AND)
+            fields = fields.Concat(FirstLogic.GetOptionalFields().Concat(SecondLogic == null ? new List<string>() { } : SecondLogic.GetOptionalFields())).ToList();
+        return fields;
+    }
+
+    public List<string> GetOptionalFields() => Operator == AND ? new List<string>() { } : FirstLogic.GetOptionalFields().Concat(SecondLogic == null ? new List<string>() { } : SecondLogic.GetOptionalFields()).ToList();
+
     public FilterDefinition<TDocument> BuildDefinition()
     {
         if (SecondLogic == null)

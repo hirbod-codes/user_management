@@ -22,6 +22,9 @@ public class FilterLogic<TDocument> : IFilterLogic<TDocument>
     public string Field { get; set; } = null!;
     public dynamic? Value { get; set; } = null!;
 
+    public List<string> GetRequiredFields() => new List<string>() { };
+    public List<string> GetOptionalFields() => new List<string>() { Field };
+
     public FilterDefinition<TDocument> BuildDefinition()
     {
         FilterDefinitionBuilder<TDocument> filterBuilder = Builders<TDocument>.Filter;
