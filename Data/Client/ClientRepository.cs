@@ -58,8 +58,9 @@ public class ClientRepository : IClientRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task DeleteBySecret(string secret)
+    public async Task<bool> DeleteBySecret(string secret)
     {
-        await _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret));
+        DeleteResult r = await _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret));
+        return r.IsAcknowledged && r.DeletedCount == 1;
     }
 }
