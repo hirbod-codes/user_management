@@ -20,7 +20,6 @@ Authorization: JWT {{JWT}}
     "CodeChallenge": "{{CodeChallenge}}",
     "CodeChallengeMethod": "{{CodeChallengeMethod}}",
     "Scope": {
-        "Privileges":[ { "Name": "read_account", "Value": true }, { "Name": "read_accounts", "Value": true }, { "Name": "update_account", "Value": true }, { "Name": "update_accounts", "Value": true } ], 
         "ReadsFields": [ { "Name": "last_name", "IsPermitted": true }, { "Name": "_id", "IsPermitted": true } ],
         "UpdatesFields": [ { "Name": "first_name", "IsPermitted": true }, { "Name": "last_name", "IsPermitted": true } ]
     },
