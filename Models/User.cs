@@ -151,9 +151,9 @@ public class User
     {
         Privileges = StaticData.GetDefaultUserPrivileges().ToArray(),
         Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultReadableFields().ToArray() } },
-        AllReaders = new AllReaders() { ArePermitted = false, Fields = GetDefaultReadableFields().ToArray() },
+        AllReaders = new AllReaders() { ArePermitted = false },
         Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultUpdatableFields().ToArray() } },
-        AllUpdaters = new AllUpdaters() { ArePermitted = false, Fields = GetDefaultReadableFields().ToArray() },
+        AllUpdaters = new AllUpdaters() { ArePermitted = false },
         Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = userId, IsPermitted = true } }
     };
     public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
