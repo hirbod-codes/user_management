@@ -3,7 +3,6 @@ namespace user_management.Data.Logics.Update;
 using System;
 using System.Collections.Generic;
 using MongoDB.Driver;
-using user_management.Data.Logics.Filter;
 using user_management.Utilities;
 
 public class UpdateLogics<TDocument>
@@ -68,9 +67,6 @@ public class UpdateLogics<TDocument>
                     break;
                 case "object_array":
                     updateLogic.Value = updateParameterStrings[2].Split(ELEMENT_SEPARATOR, StringSplitOptions.RemoveEmptyEntries).Cast<object>().ToArray();
-                    break;
-                case "filter":
-                    updateLogic.Value = (new FilterLogics<TDocument>()).BuildILogic(updateParameterStrings[2]).BuildDefinition();
                     break;
                 default:
                     throw new ArgumentException("Invalid value type provided");
