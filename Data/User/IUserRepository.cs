@@ -8,10 +8,10 @@ public interface IUserRepository
 {
     public Task<User?> Create(User user);
     public Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false);
-    public Task<User?> RetrieveByFullNameForUniqueCheck(string fullName);
-    public Task<User?> RetrieveByUsernameForUniqueCheck(string username);
-    public Task<User?> RetrieveByEmailForUniqueCheck(string email);
-    public Task<User?> RetrieveByPhoneNumberForUniqueCheck(string phoneNumber);
+    public Task<User?> RetrieveByFullNameForExistenceCheck(string fullName);
+    public Task<User?> RetrieveByUsernameForExistenceCheck(string username);
+    public Task<User?> RetrieveByEmailForExistenceCheck(string email);
+    public Task<User?> RetrieveByPhoneNumberForExistenceCheck(string phoneNumber);
     public Task<List<User>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
     public Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id);
     public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);

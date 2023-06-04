@@ -39,17 +39,17 @@ public class UserController : ControllerBase
     /// <summary>
     /// fullName: <first name>-<middle name>-<last name>, for example: foo-bar-zar or foo--bar for no middle name
     /// </summary>
-    [HttpGet("full-name-unique-check/{fullName}")]
-    public async Task<IActionResult> FullNameUniqueCheck(string fullName) => (await _userRepository.RetrieveByFullNameForUniqueCheck(fullName)) == null ? NotFound() : Ok();
+    [HttpGet("full-name-existence-check/{fullName}")]
+    public async Task<IActionResult> FullNameExistenceCheck(string fullName) => (await _userRepository.RetrieveByFullNameForExistenceCheck(fullName)) == null ? NotFound() : Ok();
 
-    [HttpGet("username-unique-check/{username}")]
-    public async Task<IActionResult> UsernameUniqueCheck(string username) => (await _userRepository.RetrieveByUsernameForUniqueCheck(username)) == null ? NotFound() : Ok();
+    [HttpGet("username-existence-check/{username}")]
+    public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userRepository.RetrieveByUsernameForExistenceCheck(username)) == null ? NotFound() : Ok();
 
-    [HttpGet("email-unique-check/{email}")]
-    public async Task<IActionResult> EmailUniqueCheck(string email) => (await _userRepository.RetrieveByEmailForUniqueCheck(email)) == null ? NotFound() : Ok();
+    [HttpGet("email-existence-check/{email}")]
+    public async Task<IActionResult> EmailExistenceCheck(string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) == null ? NotFound() : Ok();
 
-    [HttpGet("phone-number-unique-check/{phoneNumber}")]
-    public async Task<IActionResult> PhoneNumberUniqueCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForUniqueCheck(phoneNumber)) == null ? NotFound() : Ok();
+    [HttpGet("phone-number-existence-check/{phoneNumber}")]
+    public async Task<IActionResult> PhoneNumberExistenceCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) == null ? NotFound() : Ok();
 
     [HttpPost("register")]
     public async Task<ActionResult<string>> Register(UserCreateDto user)

@@ -36,18 +36,18 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User?> RetrieveByFullNameForUniqueCheck(string fullName) => fullName.Split("-").Length != 3 ? null : (await _userCollection.FindAsync(
+    public async Task<User?> RetrieveByFullNameForExistenceCheck(string fullName) => fullName.Split("-").Length != 3 ? null : (await _userCollection.FindAsync(
         Builders<User>.Filter.And(
             Builders<User>.Filter.Eq(User.FIRST_NAME, fullName.Split("-")[0]),
             Builders<User>.Filter.Eq(User.MIDDLE_NAME, fullName.Split("-")[1]),
             Builders<User>.Filter.Eq(User.LAST_NAME, fullName.Split("-")[2])
         ))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByUsernameForUniqueCheck(string username) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.USERNAME, username))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByUsernameForExistenceCheck(string username) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.USERNAME, username))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByEmailForUniqueCheck(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByEmailForExistenceCheck(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByPhoneNumberForUniqueCheck(string phoneNumber) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByPhoneNumberForExistenceCheck(string phoneNumber) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetReaderFilterDefinition(actorId, forClients)))).FirstOrDefault<User?>();
 
