@@ -13,8 +13,6 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
     public const string AND = "&&";
     public const string OR = "||";
 
-    public List<string> Fields { get; set; } = new List<string>();
-
     public IFilterLogic<TDocument> FirstLogic { get; set; } = null!;
     public IFilterLogic<TDocument>? SecondLogic { get; set; }
 
@@ -146,8 +144,6 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
             logics.SecondLogic = listOfLogics[0];
         }
 
-        logics.Fields = Fields;
-
         return logics;
     }
 
@@ -223,8 +219,6 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
         }
         logic.Field = logicParts[0].ToSnakeCase();
         logic.Operation = logicParts[1];
-
-        Fields.Add(logicParts[0].ToSnakeCase());
 
         return logic;
     }
