@@ -70,6 +70,11 @@ public static class StaticData
             },
             new Privilege()
             {
+                Name = "delete_clients",
+                Value = true
+            },
+            new Privilege()
+            {
                 Name = "authorize_client",
                 Value = true
             }

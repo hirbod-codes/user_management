@@ -236,7 +236,7 @@ public class UserController : ControllerBase
         return Ok("The client removed successfully.");
     }
 
-    [Authorize]
+    [Permissions(Permissions = new string[] { "delete_clients" })]
     [HttpPost("remove-clients")]
     public async Task<ActionResult> RemoveClients()
     {
