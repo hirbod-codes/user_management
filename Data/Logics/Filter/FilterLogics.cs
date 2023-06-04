@@ -55,8 +55,8 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
         throw new ArgumentException("Invalid operator property.");
     }
 
-    // logicsString: Name::Eq::namee::string||(Price::Gt::100::int&&CreatedAt::Gt::2023-04-29T09:07:07.250Z::datetime
-    // logicsString: Name::Eq::namee::string||(Price::Gt::100::int&&Description::Eq::null::null)
+    // logicsString: Name::Eq::name::string||(Price::Gt::100::int&&CreatedAt::Gt::2023-04-29T09:07:07.250Z::datetime
+    // logicsString: Name::Eq::name::string||(Price::Gt::100::int&&Description::Eq::null::null)
     public static IFilterLogic<TDocument> BuildILogic(string logicsString)
     {
         if (logicsString.IsNullOrEmpty())
@@ -181,7 +181,7 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
             return logics;
         }
 
-        // Do not remove empty entries in splited string, due to potantial need for empty strings as the value
+        // Do not remove empty entries in splitted string, due to potential need for empty strings as the value
         string[] logicParts = logicsString.Split(separator: "::", count: 4);
         FilterLogic<TDocument> logic = new FilterLogic<TDocument>();
         switch (logicParts[3])
