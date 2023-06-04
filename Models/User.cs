@@ -102,6 +102,8 @@ public class User
         List<Field>? fields = new List<Field>() { };
         Action<Field> action = field =>
             {
+                if (GetHiddenFields().FirstOrDefault<Field?>(f => f != null && f.Name == field.Name, null) != null) return;
+
                 dynamic? value;
                 if (field.Name == "_id")
                     value = typeof(User).GetProperty("Id")!.GetValue(this);
@@ -156,6 +158,8 @@ public class User
     };
     public static List<Field> GetDefaultReadableFields() => GetFields().Where(f => f.Name != PASSWORD && f.Name != VERIFICATION_SECRET && f.Name != VERIFICATION_SECRET_UPDATED_AT && f.Name != LOGGED_OUT_AT).ToList();
     public static List<Field> GetDefaultUpdatableFields() => GetDefaultReadableFields().Where(f => f.Name == FIRST_NAME && f.Name == MIDDLE_NAME && f.Name == LAST_NAME).ToList();
+    public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
+    public static List<Field> GetUnHiddenFields() => GetFields().Where(f => f.Name != PASSWORD && f.Name != VERIFICATION_SECRET && f.Name != VERIFICATION_SECRET_UPDATED_AT && f.Name != LOGGED_OUT_AT).ToList();
     public static List<Field> GetFields() => new List<Field>()
         {
             new Field() { Name = "_id", IsPermitted = true },
