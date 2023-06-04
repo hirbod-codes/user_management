@@ -42,7 +42,7 @@ public class TokenController : ControllerBase
     [HttpPost("auth")]
     public async Task<ActionResult> Authorize(TokenAuthDto tokenAuthDto)
     {
-        if (tokenAuthDto.State.Length < 40 || tokenAuthDto.ResponseType != "code" || (new List<string>() { "SHA256", "SHA512" }).FirstOrDefault<string?>(s => s != null && s == tokenAuthDto.CodeChallengeMethod) == null) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT" || tokenAuthDto.State.Length < 40 || tokenAuthDto.ResponseType != "code" || (new List<string>() { "SHA256", "SHA512" }).FirstOrDefault<string?>(s => s != null && s == tokenAuthDto.CodeChallengeMethod) == null) return BadRequest();
 
         string? id = await _authHelper.GetIdentifier(User, _userRepository);
         if (id == null) return NotFound();
