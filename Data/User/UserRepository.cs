@@ -126,7 +126,7 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> Login(User user)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", user.Id), Builders<User>.Update.Unset(User.LOGGED_OUT_AT).Set(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", user.Id), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null).Set(User.UPDATED_AT, DateTime.UtcNow));
 
         if (result.IsAcknowledged && result.MatchedCount == 0)
             return null;
