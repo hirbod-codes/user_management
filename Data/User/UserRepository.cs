@@ -145,6 +145,16 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
     public async Task<bool?> Verify(ObjectId id)
     {
         UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true).Set(User.UPDATED_AT, DateTime.UtcNow));
