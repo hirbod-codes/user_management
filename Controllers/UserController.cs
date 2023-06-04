@@ -214,9 +214,9 @@ public class UserController : ControllerBase
         return Ok();
     }
 
-    [Authorize]
+    [Permissions(Permissions = new string[] { "delete_client" })]
     [HttpPost("remove-client")]
-    public async Task<ActionResult> RemoveClient(string clientId)
+    public async Task<ActionResult> RemoveClient([FromBody] string clientId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
