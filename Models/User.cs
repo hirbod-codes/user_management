@@ -119,7 +119,7 @@ public class User
                 if (value != null && field.Name.ToPascalCase() == USER_PRIVILEGES.ToPascalCase())
                     value = IMapper.Map<UserPrivilegesRetrieveDto>(value);
 
-                if (field.IsPermitted)
+                if (field.IsPermitted && !userRetrieveDto.ContainsKey(field.Name))
                     userRetrieveDto.Add(field.Name, value);
             };
 
