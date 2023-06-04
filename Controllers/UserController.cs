@@ -60,11 +60,11 @@ public class UserController : ControllerBase
         {
             _notificationHelper.SendVerificationMessage(user.Email, verificationMessage);
         }
-        catch (ArgumentNullException) { return Problem(); }
-        catch (ObjectDisposedException) { return Problem(); }
-        catch (InvalidOperationException) { return Problem(); }
-        catch (SmtpException) { return Problem(); }
-        catch (System.Exception) { return Problem(); }
+        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
 
         User? unverifiedUser = _mapper.Map<User>(user);
         unverifiedUser.Password = _stringHelper.Hash(user.Password);
@@ -80,7 +80,7 @@ public class UserController : ControllerBase
         }
         catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
         {
-            return Problem("Sorry someone just took the username you chose, please choose another username.");
+            return BadRequest("The username or email you chose is no longer unique, please choose another.");
         }
 
         return Ok(unverifiedUser.Id.ToString());
@@ -91,24 +91,19 @@ public class UserController : ControllerBase
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
 
-        User? user = await _userRepository.RetrieveUserByLoginCredentials(email, null);
-        if (user == null) return NotFound();
-
-        if (user.IsVerified == true) return BadRequest("The user is already verified.");
-
         bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't verify the user.");
 
         try
         {
-            _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
+            _notificationHelper.SendVerificationMessage(email, verificationMessage);
         }
-        catch (ArgumentNullException) { return Problem(); }
-        catch (ObjectDisposedException) { return Problem(); }
-        catch (InvalidOperationException) { return Problem(); }
-        catch (SmtpException) { return Problem(); }
-        catch (System.Exception) { return Problem(); }
+        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
 
         return Ok();
     }
@@ -117,7 +112,7 @@ public class UserController : ControllerBase
     public async Task<ActionResult> Activate(Activation activatingUser)
     {
         User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find a user with this email.");
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -130,8 +125,8 @@ public class UserController : ControllerBase
         if ((bool)user.IsVerified!) return Ok("User is already verified.");
 
         bool? r = await _userRepository.Verify((ObjectId)user.Id!);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't verify user.");
 
         return Ok("Your account has been registered successfully.");
     }
@@ -140,23 +135,23 @@ public class UserController : ControllerBase
     public async Task<ActionResult> ForgotPassword([FromBody] string email)
     {
         User? user = await _userRepository.RetrieveUserForPasswordChange(email);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find a user with this email.");
 
         string verificationMessage = _stringHelper.GenerateRandomString(6);
 
-        bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        bool? r = await _userRepository.UpdateVerificationSecretForPasswordChange(verificationMessage, email);
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't add verification secret for user.");
 
         try
         {
             _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
         }
-        catch (ArgumentNullException) { return Problem(); }
-        catch (ObjectDisposedException) { return Problem(); }
-        catch (InvalidOperationException) { return Problem(); }
-        catch (SmtpException) { return Problem(); }
-        catch (System.Exception) { return Problem(); }
+        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
 
         return Ok();
     }
@@ -164,10 +159,10 @@ public class UserController : ControllerBase
     [HttpPost("change-password")]
     public async Task<ActionResult> ChangePassword(ChangePassword dto)
     {
-        if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password");
+        if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password.");
 
         User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find a user with this email.");
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -176,10 +171,10 @@ public class UserController : ControllerBase
         if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
 
         bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't change the user's password.");
 
-        return Ok();
+        return Ok("the password changed successfully.");
     }
 
     [HttpPost("login")]
@@ -188,13 +183,13 @@ public class UserController : ControllerBase
         if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("Credentials are not provided.");
 
         User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find a user with this email or username.");
 
         if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return Unauthorized();
 
         bool? r = await _userRepository.Login(user);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't change the user's password.");
 
         string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
 
@@ -213,8 +208,8 @@ public class UserController : ControllerBase
         if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
 
         bool? r = await _userRepository.Logout(id);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("We couldn't find your account.");
+        if (r == false) return Problem("We couldn't log you out.");
 
         return Ok();
     }
@@ -223,44 +218,42 @@ public class UserController : ControllerBase
     [HttpPost("remove-client")]
     public async Task<ActionResult> RemoveClient(string clientId)
     {
-        string authType = _authHelper.GetAuthenticationType(User);
-        if (authType != "JWT") return StatusCode(403);
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? id = await _authHelper.GetIdentifier(User, _userRepository);
         if (id == null) return Unauthorized();
 
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) return BadRequest();
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return Unauthorized();
+        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) return BadRequest("The client id is not valid.");
 
         User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find your account.");
 
         bool? r = await _userRepository.RemoveClient(user, clientObjectId);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("You don't have a client with this client id.");
+        if (r == false) return Problem("We couldn't remove the client.");
 
-        return Ok();
+        return Ok("The client removed successfully.");
     }
 
     [Authorize]
     [HttpPost("remove-clients")]
     public async Task<ActionResult> RemoveClients()
     {
-        string authType = _authHelper.GetAuthenticationType(User);
-        if (authType != "JWT") return StatusCode(403);
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? id = await _authHelper.GetIdentifier(User, _userRepository);
         if (id == null) return Unauthorized();
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
+        if (!ObjectId.TryParse(id, out ObjectId userId)) return Unauthorized();
 
         User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound("We couldn't find your account.");
 
         bool? r = await _userRepository.RemoveAllClients(user);
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        if (r == null) return NotFound("You don't have any client.");
+        if (r == false) return Problem("We couldn't remove your clients.");
 
-        return Ok();
+        return Ok("All of the clients removed successfully.");
     }
 
     [HttpGet("user/{id}")]
