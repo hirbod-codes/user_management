@@ -1,0 +1,37 @@
+### 
+# @name register
+POST {{scheme}}://{{host}}:{{port}}/api/client HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "RedirectUrl": "https://host/path/to/redirection"
+}
+
+### 
+# @name retrieve
+GET {{scheme}}://{{host}}:{{port}}/api/client/{{register.response.body.$.secret}} HTTP/1.1
+Authorization: JWT {{JWT}}
+
+### 
+# @name update
+PATCH {{scheme}}://{{host}}:{{port}}/api/client HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "Id": "{{register.response.body.$.id}}",
+    "Secret": "{{register.response.body.$.secret}}",
+    "RedirectUrl": "https://host/path/to/another/redirection"
+}
+
+### 
+# @name delete
+DELETE {{scheme}}://{{host}}:{{port}}/api/client HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "Id": "{{register.response.body.$.id}}",
+    "Secret": "{{register.response.body.$.secret}}"
+}
