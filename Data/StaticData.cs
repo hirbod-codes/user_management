@@ -14,70 +14,103 @@ public static class StaticData
     public const string READ_CLIENT = "read_client";
     public const string UPDATE_CLIENT = "update_client";
     public const string DELETE_CLIENT = "delete_client";
+    public const string DELETE_CLIENTS = "delete_clients";
     public const string AUTHORIZE_CLIENT = "authorize_client";
+    public const string UPDATE_READERS = "update_readers";
+    public const string UPDATE_ALL_READERS = "update_all_readers";
+    public const string UPDATE_UPDATERS = "update_updaters";
+    public const string UPDATE_ALL_UPDATERS = "update_all_updaters";
+    public const string UPDATE_DELETERS = "update_deleters";
+
     public static List<Privilege> Privileges = new() {
             // Accounts
             new Privilege()
             {
-                Name = "read_account",
+                Name = READ_ACCOUNT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "read_accounts",
+                Name = READ_ACCOUNTS,
                 Value = true
             },
             new Privilege()
             {
-                Name = "update_account",
+                Name = UPDATE_ACCOUNT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "update_accounts",
+                Name = UPDATE_ACCOUNTS,
                 Value = true
             },
             new Privilege()
             {
-                Name = "delete_account",
+                Name = DELETE_ACCOUNT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "delete_accounts",
+                Name = DELETE_ACCOUNTS,
                 Value = true
             },
             // Clients
             new Privilege()
             {
-                Name = "register_client",
+                Name = REGISTER_CLIENT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "read_client",
+                Name = READ_CLIENT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "update_client",
+                Name = UPDATE_CLIENT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "delete_client",
+                Name = DELETE_CLIENT,
                 Value = true
             },
             new Privilege()
             {
-                Name = "delete_clients",
+                Name = DELETE_CLIENTS,
                 Value = true
             },
             new Privilege()
             {
-                Name = "authorize_client",
+                Name = AUTHORIZE_CLIENT,
                 Value = true
-            }
+            },
+            // Privileges
+            new Privilege()
+            {
+                Name = UPDATE_READERS,
+                Value = true
+            },
+            new Privilege()
+            {
+                Name = UPDATE_ALL_READERS,
+                Value = true
+            },
+            new Privilege()
+            {
+                Name = UPDATE_UPDATERS,
+                Value = true
+            },
+            new Privilege()
+            {
+                Name = UPDATE_ALL_UPDATERS,
+                Value = true
+            },
+            new Privilege()
+            {
+                Name = UPDATE_DELETERS,
+                Value = true
+            },
         };
 
     public static List<Privilege> GetDefaultUserPrivileges()
