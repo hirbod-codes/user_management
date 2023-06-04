@@ -328,20 +328,23 @@ public class UserRepository : IUserRepository
     {
         List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
 
-        FilterLogics<User> logics = new FilterLogics<User>();
-        IFilterLogic<User> iLogic = logics.BuildILogic(filtersString);
+        IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(filtersString);
         filters.Add(iLogic.BuildDefinition());
-        List<Field> filterFieldsList = logics.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+
+        List<string> requiredFilterFieldsList = iLogic.GetRequiredFields();
+        List<string> optionalFilterFieldsList = iLogic.GetOptionalFields();
+        List<Field> requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        List<Field> optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+
+        filters.Add(GetReaderFilterDefinition(actorId, forClients, requiredFilterFields, optionalFilterFields));
 
         UpdateLogics<User> logic = new UpdateLogics<User>();
         UpdateDefinition<User>? updates = logic.BuildILogic(updatesString).BuildDefinition().Set(User.UPDATED_AT, DateTime.UtcNow);
         List<Field> updateFieldsList = logic.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
 
-        FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
-        filters.Add(GetReaderFilterDefinition(actorId, forClients, filterFieldsList));
         filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
 
-        UpdateResult result = await _userCollection.UpdateManyAsync(filterBuilder.And(filters.ToArray()), updates);
+        UpdateResult result = await _userCollection.UpdateManyAsync(Builders<User>.Filter.And(filters.ToArray()), updates);
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
