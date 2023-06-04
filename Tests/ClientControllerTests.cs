@@ -116,7 +116,7 @@ public class ClientControllerTests
         ControllerFixture.IStringHelper.Setup<string?>(ish => ish.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
 
         ControllerFixture.IClientRepository.Setup<Task<Client?>>(icr => icr.RetrieveById(id)).Returns(Task.FromResult<Client?>(client));
-        ControllerFixture.IClientRepository.Setup<Task>(icr => icr.DeleteBySecret(hashedSecret));
+        ControllerFixture.IClientRepository.Setup<Task<bool>>(icr => icr.DeleteBySecret(hashedSecret)).Returns(Task.FromResult(true));
 
         var result = await InstantiateController().Delete(clientDeleteDto);
 

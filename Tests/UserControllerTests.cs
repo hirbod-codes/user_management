@@ -134,15 +134,15 @@ public class UserControllerTests
         retrievedUser.Email = email;
 
         ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveUserForPasswordChange(email)).Returns(Task.FromResult<User?>(retrievedUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateVerificationSecret(verificationMessage, email)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateVerificationSecretForPasswordChange(verificationMessage, email)).Returns(Task.FromResult<bool?>(true));
 
         ControllerFixture.IStringHelper.Setup<string>(ish => ish.GenerateRandomString(6)).Returns(verificationMessage);
 
         ControllerFixture.INotificationHelper.Setup(inh => inh.SendVerificationMessage(retrievedUser.Email, verificationMessage));
 
-        var result = await InstantiateUserController().ForgotPassword(email) as OkResult;
+        var result = await InstantiateUserController().ForgotPassword(email) as IStatusCodeActionResult;
 
-        Assert.Equal<int>(200, result!.StatusCode);
+        Assert.Equal<int?>(200, result!.StatusCode);
     }
 
     [Fact]
@@ -172,9 +172,9 @@ public class UserControllerTests
         ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveUserForPasswordChange(dto.Email)).Returns(Task.FromResult<User?>(retrievedUser));
         ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.ChangePassword(dto.Email, hashedPassword)).Returns(Task.FromResult<bool?>(true));
 
-        var result = await InstantiateUserController().ChangePassword(dto) as OkResult;
+        var result = await InstantiateUserController().ChangePassword(dto) as OkObjectResult;
 
-        Assert.Equal<int>(200, result!.StatusCode);
+        Assert.Equal<int?>(200, result!.StatusCode);
     }
 
     [Fact]

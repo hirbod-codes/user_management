@@ -26,7 +26,7 @@ public class UserPrivilegesControllerTest
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new();
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
         User actorUser = new() { Id = actorId };
         User updatingUser = new() { Id = id, UserPrivileges = new() };
 
@@ -51,7 +51,7 @@ public class UserPrivilegesControllerTest
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new();
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
         User actorUser = new() { Id = actorId };
         User updatingUser = new() { Id = id, UserPrivileges = new() };
 
@@ -76,7 +76,7 @@ public class UserPrivilegesControllerTest
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new();
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
         User actorUser = new() { Id = actorId };
         User updatingUser = new() { Id = id, UserPrivileges = new() };
 
@@ -101,7 +101,7 @@ public class UserPrivilegesControllerTest
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new();
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
         User actorUser = new() { Id = actorId };
         User updatingUser = new() { Id = id, UserPrivileges = new() };
 
@@ -126,7 +126,7 @@ public class UserPrivilegesControllerTest
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new();
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
         User actorUser = new() { Id = actorId };
         User updatingUser = new() { Id = id, UserPrivileges = new() };
 
