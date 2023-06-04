@@ -56,10 +56,14 @@ public class UserRepository : IUserRepository
         if (limit <= 0)
             limit = 5;
 
-        FilterLogics<User> logics = new FilterLogics<User>();
-        IFilterLogic<User> iLogic = logics.BuildILogic(logicsString);
+        IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(logicsString);
         FilterDefinition<User> filter = iLogic.BuildDefinition();
-        List<string> filterFieldsList = logics.Fields;
+        List<string> requiredFilterFieldsList = iLogic.GetRequiredFields();
+        List<string> optionalFilterFieldsList = iLogic.GetOptionalFields();
+
+        List<Field> requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        List<Field> optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        FilterDefinition<User> readPrivilegeFilter = GetReaderFilterDefinition(actorId, forClients, requiredFilterFields, optionalFilterFields);
 
         FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
         SortDefinitionBuilder<User> sortBuilder = Builders<User>.Sort;
@@ -68,9 +72,6 @@ public class UserRepository : IUserRepository
             sort = sortBuilder.Ascending(sortBy ?? User.UPDATED_AT);
         else
             sort = sortBuilder.Ascending(sortBy ?? User.UPDATED_AT);
-
-        List<Field> filterFields = filterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-        FilterDefinition<User> readPrivilegeFilter = GetReaderFilterDefinition(actorId, forClients, filterFields);
 
         AggregateFacet<User, AggregateCountResult> countFacet = AggregateFacet.Create("count",
             PipelineDefinition<User, AggregateCountResult>.Create(new[]
