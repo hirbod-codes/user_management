@@ -9,35 +9,45 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
+using user_management.Data.User;
+using user_management.Models;
 
 public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationOptions>, IJWTAuthenticationHandler
 {
     private JWTAuthenticationOptions _options;
+    private readonly IUserRepository _userRepository;
 
     public string? Error { get; private set; }
 
-    public JWTAuthenticationHandler(IOptionsMonitor<JWTAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+    public JWTAuthenticationHandler(IUserRepository userRepository, IOptionsMonitor<JWTAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
     {
         _options = options.CurrentValue;
+        _userRepository = userRepository;
     }
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!AuthenticationHeaderValue.TryParse(Request.Headers["Authorization"], out var authenticationHeaderValue)) return Task.FromResult<AuthenticateResult>(AuthenticateResult.NoResult());
+        if (!AuthenticationHeaderValue.TryParse(Request.Headers["Authorization"], out var authenticationHeaderValue)) return AuthenticateResult.NoResult();
 
         string[] authenticationHeaderParts = authenticationHeaderValue.ToString().Split(" ");
         string token = authenticationHeaderParts[1];
 
-        if (authenticationHeaderParts[0] != "JWT") return Task.FromResult<AuthenticateResult>(AuthenticateResult.Fail("No JWT token provided."));
+        if (authenticationHeaderParts[0] != "JWT") return AuthenticateResult.Fail("No JWT token provided.");
 
-        if (!ValidateJwt(token, out SecurityToken validatedToken)) return Task.FromResult<AuthenticateResult>(AuthenticateResult.Fail(Error!));
+        if (!ValidateJwt(token, out SecurityToken validatedToken)) return AuthenticateResult.Fail(Error!);
 
         List<Claim> claims = GetTokenClaims(token).ToList();
 
         string userId;
         try { userId = claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value; }
-        catch (ArgumentNullException) { return Task.FromResult<AuthenticateResult>(AuthenticateResult.Fail("Subject is not provided.")); }
-        catch (InvalidOperationException) { return Task.FromResult<AuthenticateResult>(AuthenticateResult.Fail("Invalid subject provided.")); }
+        catch (ArgumentNullException) { return AuthenticateResult.Fail("Subject is not provided.");}
+        catch (InvalidOperationException) { return AuthenticateResult.Fail("Invalid subject provided.");}
+
+        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) return AuthenticateResult.Fail("This JWT token is not valid.");
+
+        User? user = await _userRepository.RetrieveByIdForAuthentication(userObjectId);
+        if (user == null) return AuthenticateResult.Fail("This JWT token is no longer valid.");
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);
 
@@ -45,7 +55,7 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 
         AuthenticationTicket ticket = new AuthenticationTicket(claimPrincipal, authenticationScheme: "JWT");
 
-        return Task.FromResult<AuthenticateResult>(AuthenticateResult.Success(ticket));
+        return AuthenticateResult.Success(ticket);
     }
 
     public string GenerateEmailVerificationJWT(string email) => GenerateJwt(new Claim[] { new Claim(ClaimTypes.Email, email) });
