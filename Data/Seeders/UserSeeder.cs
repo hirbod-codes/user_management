@@ -30,6 +30,7 @@ public class UserSeeder
         await File.WriteAllTextAsync(_filePath, "");
         System.Console.WriteLine("Seeding Users...");
 
+        List<User> users = new() { };
         ObjectId superUserId = ObjectId.GenerateNewId();
         DateTime dt = DateTime.UtcNow;
         for (int i = 0; i < count; i++)
@@ -41,13 +42,46 @@ public class UserSeeder
                 continue;
             }
 
-            await CreateUserAsync(superUserId, dt);
+            users.Add(await CreateUserAsync(superUserId, dt, users));
             dt = dt.AddMinutes(10);
         }
 
+        users.ForEach(user =>
+            {
+                Faker faker = new Faker("en");
+                UserPrivileges userPrivileges = User.GetDefaultUserPrivileges((ObjectId)user.Id!);
+
+                List<Reader> readers = userPrivileges.Readers.ToList();
+                List<Updater> updaters = userPrivileges.Updaters.ToList();
+                List<Deleter> deleters = userPrivileges.Deleters.ToList();
+                Field[] readableFields = User.GetDefaultReadableFields().ToArray();
+                Field[] updatableFields = User.GetDefaultUpdatableFields().ToArray();
+
+                if (readableFields.Length == 0)
+                    throw new Exception();
+                if (updatableFields.Length == 0)
+                    throw new Exception();
+
+                readableFields = faker.PickRandom<Field>(items: readableFields, amountToPick: faker.Random.Int(1, readableFields.Length)).ToArray();
+                updatableFields = faker.PickRandom<Field>(items: updatableFields, amountToPick: faker.Random.Int(1, updatableFields.Length)).ToArray();
+
+                faker.PickRandom<User>(users, faker.Random.Int(1, users.Count)).ToList().ForEach(u => readers.Add(new Reader() { Author = Reader.USER, AuthorId = (ObjectId)u.Id!, IsPermitted = true, Fields = readableFields }));
+                faker.PickRandom<User>(users, faker.Random.Int(1, users.Count)).ToList().ForEach(u => updaters.Add(new Updater() { Author = Updater.USER, AuthorId = (ObjectId)u.Id!, IsPermitted = true, Fields = updatableFields }));
+                faker.PickRandom<User>(users, faker.Random.Int(1, users.Count)).ToList().ForEach(u => deleters.Add(new Deleter() { Author = Deleter.USER, AuthorId = (ObjectId)u.Id!, IsPermitted = true }));
+
+                userPrivileges.Readers = readers.ToArray();
+                userPrivileges.Updaters = updaters.ToArray();
+                userPrivileges.Deleters = deleters.ToArray();
+
+                user.UserPrivileges = userPrivileges;
+
+                _userCollection.ReplaceOne(Builders<User>.Filter.Eq("_id", user.Id), user);
+            }
+        );
+
         System.Console.WriteLine("Seeded Users...");
     }
-    private async Task CreateUserAsync(ObjectId superUserId, DateTime dt)
+    private async Task<User> CreateUserAsync(ObjectId superUserId, DateTime dt, List<User> users)
     {
         Faker faker = new Faker("en");
         ObjectId userId = ObjectId.GenerateNewId();
@@ -72,6 +106,29 @@ public class UserSeeder
                 )
         )).FirstOrDefault<User?>() != null);
 
+        UserPrivileges userPrivileges = User.GetDefaultUserPrivileges(userId);
+
+        List<Reader> readers = userPrivileges.Readers.ToList();
+        List<Updater> updaters = userPrivileges.Updaters.ToList();
+        List<Deleter> deleters = userPrivileges.Deleters.ToList();
+        Field[] readableFields = User.GetDefaultReadableFields().ToArray();
+        Field[] updatableFields = User.GetDefaultUpdatableFields().ToArray();
+        if (readableFields.Length == 0)
+            throw new Exception();
+        if (updatableFields.Length == 0)
+            throw new Exception();
+
+        readableFields = faker.PickRandom<Field>(items: readableFields, amountToPick: faker.Random.Int(1, readableFields.Length)).ToArray();
+        updatableFields = faker.PickRandom<Field>(items: updatableFields, amountToPick: faker.Random.Int(1, updatableFields.Length)).ToArray();
+
+        readers.Add(new Reader() { Author = Reader.USER, AuthorId = superUserId, IsPermitted = true, Fields = readableFields });
+        updaters.Add(new Updater() { Author = Updater.USER, AuthorId = superUserId, IsPermitted = true, Fields = updatableFields });
+        deleters.Add(new Deleter() { Author = Deleter.USER, AuthorId = superUserId, IsPermitted = true });
+
+        userPrivileges.Readers = readers.ToArray();
+        userPrivileges.Updaters = updaters.ToArray();
+        userPrivileges.Deleters = deleters.ToArray();
+
         User user = new User()
         {
             Id = userId,
@@ -93,6 +150,8 @@ public class UserSeeder
         user = await AddClient(user, dt.AddMonths(6), dt);
 
         _userCollection.InsertOne(user);
+
+        return user;
     }
     private async Task CreateSuperUserAsync(ObjectId userId, DateTime dt)
     {
