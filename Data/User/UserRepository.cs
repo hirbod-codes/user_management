@@ -363,7 +363,11 @@ public class UserRepository : IUserRepository
     private FilterDefinition<User> GetReaderFilterDefinition(ObjectId id, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
     {
         FilterDefinitionBuilder<User> builder = Builders<User>.Filter;
-        List<FilterDefinition<User>> filters = new() { };
+        List<FilterDefinition<User>> filters = new() {
+            builder.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
+            builder.Eq(Reader.AUTHOR_ID, id),
+            builder.Eq(Reader.IS_PERMITTED, true)
+        };
 
         if (requiredFields != null && requiredFields.Count != 0)
             filters.Add(builder.All(Reader.FIELDS, requiredFields));
@@ -371,16 +375,22 @@ public class UserRepository : IUserRepository
         if (optionalFields != null && optionalFields.Count != 0)
             filters.Add(builder.In(Reader.FIELDS, optionalFields));
 
+        List<FilterDefinition<User>> allFilters = new() {
+            builder.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true)
+        };
+
+        if (requiredFields != null && requiredFields.Count != 0)
+            allFilters.Add(builder.All(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.FIELDS, requiredFields));
+
+        if (optionalFields != null && optionalFields.Count != 0)
+            allFilters.Add(builder.In(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.FIELDS, optionalFields));
+
         return builder.Or(
                     builder.And(
                         builder.SizeGt(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, 0),
-                        builder.ElemMatch(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, builder.And(filters.Concat(new List<FilterDefinition<User>>() {
-                                builder.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
-                                builder.Eq(Reader.AUTHOR_ID, id),
-                                builder.Eq(Reader.IS_PERMITTED, true)
-                            }))
-                        )
-                    ), builder.And(filters.Concat(new List<FilterDefinition<User>>() { builder.Eq(User.USER_PRIVILEGES + "." + UserPrivileges.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true) }))
+                        builder.ElemMatch(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, builder.And(filters))
+                    ),
+                    builder.And(allFilters)
                 );
     }
 
