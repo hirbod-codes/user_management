@@ -57,7 +57,7 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
 
     // logicsString: Name::Eq::namee::string||(Price::Gt::100::int&&CreatedAt::Gt::2023-04-29T09:07:07.250Z::datetime
     // logicsString: Name::Eq::namee::string||(Price::Gt::100::int&&Description::Eq::null::null)
-    public IFilterLogic<TDocument> BuildILogic(string logicsString)
+    public static IFilterLogic<TDocument> BuildILogic(string logicsString)
     {
         if (logicsString.IsNullOrEmpty())
             throw new ArgumentNullException();
@@ -147,7 +147,7 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
         return logics;
     }
 
-    private IFilterLogic<TDocument> ExtractLogic(string logicsString)
+    private static IFilterLogic<TDocument> ExtractLogic(string logicsString)
     {
         if (logicsString.IsNullOrEmpty())
             throw new ArgumentNullException();
