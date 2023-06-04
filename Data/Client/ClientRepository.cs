@@ -32,25 +32,13 @@ public class ClientRepository : IClientRepository
         return client;
     }
 
-    public async Task<Client?> RetrieveBySecret(string secret)
-    {
-        return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
-    }
+    public async Task<Client?> RetrieveBySecret(string secret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
 
-    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId id, string redirectUrl)
-    {
-        return (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
-    }
+    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId id, string redirectUrl) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
 
-    public async Task<Client?> RetrieveById(ObjectId id)
-    {
-        return (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", id))).FirstOrDefault<Client?>();
-    }
+    public async Task<Client?> RetrieveById(ObjectId id) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", id))).FirstOrDefault<Client?>();
 
-    public async Task<Client?> RetrieveByIdAndSecret(ObjectId clientId, string hashedSecret)
-    {
-        return (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)))).FirstOrDefault<Client?>();
-    }
+    public async Task<Client?> RetrieveByIdAndSecret(ObjectId clientId, string hashedSecret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)))).FirstOrDefault<Client?>();
 
     public async Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId id, string hashedSecret)
     {
