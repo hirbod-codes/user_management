@@ -66,7 +66,7 @@ public class ClientController : ControllerBase
     }
 
     [Permissions(Permissions = new string[] { "read_client" })]
-    [HttpGet("client/{secret}")]
+    [HttpGet("{secret}")]
     public async Task<ActionResult> Retrieve(string secret)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
@@ -110,13 +110,10 @@ public class ClientController : ControllerBase
         string? hashedSecret = _stringHelper.HashWithoutSalt(clientDeleteDto.Secret);
         if (hashedSecret == null) return BadRequest();
 
-        try
-        {
-            if (hashedSecret != client.Secret) return BadRequest();
+        if (hashedSecret != client.Secret) return BadRequest();
 
-            await _clientRepository.DeleteBySecret(hashedSecret!);
-        }
-        catch (System.Exception) { return Problem(); }
+        if (!(await _clientRepository.DeleteBySecret(hashedSecret!)))
+            return Problem();
 
         return Ok();
     }
