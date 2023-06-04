@@ -1,0 +1,52 @@
+@ClientId = 647c6dbd42547ede05391725
+@RedirectUrl = http://sim.name/architect
+@State = daEMQ9uq7T4f0gUmWFYB88jFfauoxFYeZfkKfnVm
+@CodeChallenge = MUE4M0ZGODM2REZFQ0Y1NTkyRUU3MTJCQzRENzVCM0Y2MzhEQTZCMUU4MjQ0NjVGMUJGRUVEMzEyRkZCNTI2RUI1MjRDRjdFMDA3MTMyMDFBQjY2QzdCRUE3NzBGMjIyMDMyNzA0RkIxOUQ3MUFCRjY0MTRBNzRBQzM4Njk1RDc=
+@CodeVerifier = 2PYQa6jKBImoD0GgLRwwMQ72DT3HWUmiV5j6SD00
+@CodeChallengeMethod = SHA512
+@GrantType = authorization_code
+@ResponseType = code
+
+### 
+# @name authorize
+POST {{scheme}}://{{host}}:{{port}}/api/auth HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "ClientId": "{{ClientId}}",
+    "RedirectUrl": "{{RedirectUrl}}",
+    "State": "{{State}}",
+    "CodeChallenge": "{{CodeChallenge}}",
+    "CodeChallengeMethod": "{{CodeChallengeMethod}}",
+    "Scope": {
+        "Privileges":[ { "Name": "read_account", "Value": true }, { "Name": "read_accounts", "Value": true }, { "Name": "update_account", "Value": true }, { "Name": "update_accounts", "Value": true } ], 
+        "ReadsFields": [ { "Name": "last_name", "IsPermitted": true }, { "Name": "_id", "IsPermitted": true } ],
+        "UpdatesFields": [ { "Name": "first_name", "IsPermitted": true }, { "Name": "last_name", "IsPermitted": true } ]
+    },
+    "ResponseType": "{{ResponseType}}"
+}
+
+### 
+# @name token
+POST {{scheme}}://{{host}}:{{port}}/api/token HTTP/1.1
+Content-Type: application/json
+
+{
+    "GrantType": "{{GrantType}}",
+    "Code": "8D5zgLZaYxrnBPSYn7jT11e9S7XYecmmTUkZQttsWYqD8hk0mUoM0ohETy91jTcKNNxymYkaGMrsUbuWgNXG8hwhxNf7kTTKtLKzNCbSoQQ5t2QnyIgsUlR5PfIyaKla",
+    "ClientId": "{{ClientId}}",
+    "RedirectUrl": "{{RedirectUrl}}",
+    "CodeVerifier": "{{CodeVerifier}}"
+}
+
+### 
+# @name retoken
+POST {{scheme}}://{{host}}:{{port}}/api/retoken HTTP/1.1
+Content-Type: application/json
+
+{
+    "ClientId": "{{ClientId}}",
+    "ClientSecret": "RSvAm2rYF4z0lWeR8O02d5eEQ8SpAdGe8j1gZ6r4XQWAMHv3rxN4PlOw4Emu6VMLBqvtzeX6c3j9sdGJOGlA8ga3feFoudr28IHXtjcSaTSAZuQmEBpszyg5XrGom1YF",
+    "RefreshToken": "{{refreshToken}}"
+}
