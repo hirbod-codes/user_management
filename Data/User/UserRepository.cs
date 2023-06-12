@@ -236,6 +236,8 @@ public class UserRepository : IUserRepository
     {
         if (tokenPrivileges.ReadsFields.Length > 0)
         {
+            if (tokenPrivileges.ReadsFields.FirstOrDefault<Field?>(f => f != null && User.GetDefaultReadableFields().FirstOrDefault<Field?>(df => df != null && df.Name == f.Name, null) == null, null) != null)
+                return false;
             List<Reader> readers = user.UserPrivileges!.Readers.ToList();
             readers.RemoveAll(r => r != null && r.Author == Reader.CLIENT && r.AuthorId == clientId);
             readers.Add(new Reader() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true, Fields = tokenPrivileges.ReadsFields });
@@ -244,6 +246,8 @@ public class UserRepository : IUserRepository
 
         if (tokenPrivileges.UpdatesFields.Length > 0)
         {
+            if (tokenPrivileges.ReadsFields.FirstOrDefault<Field?>(f => f != null && User.GetDefaultUpdatableFields().FirstOrDefault<Field?>(df => df != null && df.Name == f.Name, null) == null, null) != null)
+                return false;
             List<Updater> updaters = user.UserPrivileges!.Updaters.ToList();
             updaters.RemoveAll(u => u != null && u.Author == Updater.CLIENT && u.AuthorId == clientId);
             updaters.Add(new Updater() { AuthorId = clientId, Author = Updater.CLIENT, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields });
