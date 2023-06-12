@@ -4,6 +4,14 @@ using user_management.Models;
 
 public static class StaticData
 {
+    public static bool Validate(IEnumerable<Privilege> privileges)
+    {
+        foreach (Privilege privilege in privileges)
+            if (Privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == privilege.Name, null) == null)
+                return false;
+        return true;
+    }
+
     public const string READ_ACCOUNT = "read_account";
     public const string READ_ACCOUNTS = "read_accounts";
     public const string UPDATE_ACCOUNT = "update_account";

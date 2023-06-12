@@ -5,6 +5,7 @@ using user_management.Models;
 
 public class TokenPrivilegesCreateDto
 {
+    public Privilege[] Privileges { get; set; } = new Privilege[] { };
     public Field[] ReadsFields { get; set; } = new Field[] { };
     public Field[] UpdatesFields { get; set; } = new Field[] { };
     public bool DeletesUser { get; set; } = false;

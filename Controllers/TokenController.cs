@@ -42,7 +42,7 @@ public class TokenController : ControllerBase
     [HttpPost("auth")]
     public async Task<ActionResult> Authorize(TokenAuthDto tokenAuthDto)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT" || tokenAuthDto.State.Length < 40 || tokenAuthDto.ResponseType != "code" || (new List<string>() { "SHA256", "SHA512" }).FirstOrDefault<string?>(s => s != null && s == tokenAuthDto.CodeChallengeMethod) == null) return BadRequest();
+        if (!StaticData.Validate(tokenAuthDto.Scope.Privileges) || _authHelper.GetAuthenticationType(User) != "JWT" || tokenAuthDto.State.Length < 40 || tokenAuthDto.ResponseType != "code" || (new List<string>() { "SHA256", "SHA512" }).FirstOrDefault<string?>(s => s != null && s == tokenAuthDto.CodeChallengeMethod) == null) return BadRequest();
 
         string? id = await _authHelper.GetIdentifier(User, _userRepository);
         if (id == null) return Unauthorized();
@@ -54,10 +54,21 @@ public class TokenController : ControllerBase
         User? user = await _userRepository.RetrieveById(userId, userId);
         if (user == null) return Unauthorized();
 
-        TokenPrivileges scope = _mapper.Map<TokenPrivileges>(tokenAuthDto.Scope);
-
         if ((await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, tokenAuthDto.RedirectUrl)) == null)
             return NotFound("We don't have a client with this client id: " + tokenAuthDto.ClientId + " and this redirect url: " + tokenAuthDto.RedirectUrl);
+
+        TokenPrivileges scope = _mapper.Map<TokenPrivileges>(tokenAuthDto.Scope);
+
+        foreach (Privilege scopePrivilege in scope.Privileges.ToList())
+        {
+            Privilege? privilege = user.Privileges!.FirstOrDefault<Privilege?>(p => p != null && p.Name == scopePrivilege.Name, null);
+            try
+            {
+                if (privilege == null || privilege.Value == null || (bool)privilege!.Value == false)
+                    return StatusCode(403);
+            }
+            catch (RuntimeBinderException) { return StatusCode(403); }
+        }
 
         string code = null!;
         bool again = false;
