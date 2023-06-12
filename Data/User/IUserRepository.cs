@@ -14,7 +14,7 @@ public interface IUserRepository
     public Task<User?> RetrieveByPhoneNumberForExistenceCheck(string phoneNumber);
     public Task<List<User>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
     public Task<User?> RetrieveByIdForAuthentication(ObjectId userId);
-    public Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id);
+    public Task<User?> RetrieveByIdForAuthorization(ObjectId id);
     public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);
     public Task<User?> RetrieveUserForPasswordChange(string email);
     public Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code);

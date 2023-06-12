@@ -132,6 +132,7 @@ public class UserSeeder
         User user = new User()
         {
             Id = userId,
+            Privileges = User.GetDefaultPrivileges(userId),
             UserPrivileges = User.GetDefaultUserPrivileges(userId),
             FirstName = firstName,
             MiddleName = middleName,
@@ -175,6 +176,7 @@ public class UserSeeder
         User user = new User()
         {
             Id = userId,
+            Privileges = User.GetDefaultPrivileges(userId),
             UserPrivileges = User.GetDefaultUserPrivileges(userId),
             FirstName = firstName,
             MiddleName = middleName,

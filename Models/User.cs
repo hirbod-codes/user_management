@@ -16,6 +16,11 @@ public class User
     [BsonRequired]
     public ObjectId? Id { get; set; }
 
+    [BsonElement(PRIVILEGES)]
+    [BsonRequired]
+    public Privilege[] Privileges { get; set; } = new Privilege[] { };
+    public const string PRIVILEGES = "privileges";
+
     [BsonElement(USER_PRIVILEGES)]
     [BsonRequired]
     public UserPrivileges? UserPrivileges { get; set; }
@@ -147,9 +152,9 @@ public class User
         return userRetrieveDto;
     }
 
+    public static Privilege[] GetDefaultPrivileges(ObjectId userId) => StaticData.GetDefaultUserPrivileges().ToArray();
     public static UserPrivileges GetDefaultUserPrivileges(ObjectId userId) => new UserPrivileges()
     {
-        Privileges = StaticData.GetDefaultUserPrivileges().ToArray(),
         Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultReadableFields().ToArray() } },
         AllReaders = new AllReaders() { ArePermitted = false },
         Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultUpdatableFields().ToArray() } },

@@ -47,9 +47,9 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
         if (requirementTokens?.Any() != true) return;
 
-        UserPrivileges? userPrivileges = await _userRepository.RetrieveByIdForAuthorization(userId);
-        if (userPrivileges == null) return;
-        List<Privilege> privileges = userPrivileges.Privileges!.ToList();
+        User? user = await _userRepository.RetrieveByIdForAuthorization(userId);
+        if (user == null) return;
+        List<Privilege> privileges = user.Privileges!.ToList();
         if (privileges.Count == 0) return;
 
         foreach (string requirementToken in requirementTokens)

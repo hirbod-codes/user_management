@@ -107,14 +107,8 @@ public class UserRepository : IUserRepository
     }
 
     public async Task<User?> RetrieveByIdForAuthentication(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
-    public async Task<UserPrivileges?> RetrieveByIdForAuthorization(ObjectId id)
-    {
-        User? user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
-        if (user == null)
-            return null;
 
-        return user.UserPrivileges;
-    }
+    public async Task<User?> RetrieveByIdForAuthorization(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveUserByLoginCredentials(string? email, string? username) => (await _userCollection.FindAsync(Builders<User>.Filter.Or(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.USERNAME, username)))).FirstOrDefault<User?>();
 

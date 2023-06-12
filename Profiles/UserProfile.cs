@@ -48,7 +48,6 @@ public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPrivileges, Us
 {
     public UserPrivilegesRetrieveDto Convert(UserPrivileges s, UserPrivilegesRetrieveDto d, ResolutionContext context) => new UserPrivilegesRetrieveDto()
     {
-        Privileges = s.Privileges,
         Readers = s.Readers.ToList().ConvertAll<ReaderRetrieveDto>(o => new ReaderRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
         AllReaders = s.AllReaders,
         Updaters = s.Updaters.ToList().ConvertAll<UpdaterRetrieveDto>(o => new UpdaterRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
@@ -59,15 +58,6 @@ public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPrivileges, Us
 
 public class UserPrivilegesPatchConverter : ITypeConverter<UserPrivilegesPatchDto, UserPrivileges>
 {
-    public UserPrivilegesPatchDto Convert(UserPrivileges s, UserPrivilegesPatchDto d, ResolutionContext context) => new UserPrivilegesPatchDto()
-    {
-        Readers = s.Readers.ToList().ConvertAll<ReaderPatchDto>(o => new ReaderPatchDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllReaders = s.AllReaders,
-        Updaters = s.Updaters.ToList().ConvertAll<UpdaterPatchDto>(o => new UpdaterPatchDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllUpdaters = s.AllUpdaters,
-        Deleters = s.Deleters.ToList().ConvertAll<DeleterPatchDto>(o => new DeleterPatchDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted }).ToArray(),
-    };
-
     public UserPrivileges Convert(UserPrivilegesPatchDto s, UserPrivileges d, ResolutionContext context) => new UserPrivileges()
     {
         Readers = s.Readers.ToList().ConvertAll<Reader>(o => new Reader() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),

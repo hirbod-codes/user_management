@@ -6,11 +6,6 @@ using MongoDB.Bson.Serialization.Attributes;
 [BsonIgnoreExtraElements]
 public class UserPrivileges
 {
-    [BsonElement(PRIVILEGES)]
-    [BsonRequired]
-    public Privilege[] Privileges { get; set; } = new Privilege[] { };
-    public const string PRIVILEGES = "privileges";
-
     [BsonElement(READERS)]
     [BsonRequired]
     public Reader[] Readers { get; set; } = new Reader[] { };
