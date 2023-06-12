@@ -197,11 +197,11 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> RemoveAllClients(User user)
+    public async Task<bool?> RemoveAllClients(User user, ObjectId authorId, bool isClient)
     {
         user.Clients = new UserClient[] { };
 
-        ReplaceOneResult result = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!), user);
+        ReplaceOneResult result = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.And(GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }), Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!)), user);
 
         if (result.IsAcknowledged && result.MatchedCount == 0)
             return null;

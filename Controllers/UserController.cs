@@ -249,7 +249,7 @@ public class UserController : ControllerBase
         User? user = await _userRepository.RetrieveById(userId, userId);
         if (user == null) return NotFound("We couldn't find your account.");
 
-        bool? r = await _userRepository.RemoveAllClients(user);
+        bool? r = await _userRepository.RemoveAllClients(user, userId, false);
         if (r == null) return NotFound("You don't have any client.");
         if (r == false) return Problem("We couldn't remove your clients.");
 
