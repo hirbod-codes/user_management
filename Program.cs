@@ -20,6 +20,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddGrpc();
+
 builder.Services.AddSingleton<IStringHelper, StringHelper>();
 builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
 builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
