@@ -26,8 +26,8 @@ public interface IUserRepository
     public Task<bool?> Verify(ObjectId id);
     public Task<bool?> ChangePassword(string email, string hashedPassword);
     public Task<bool?> Logout(ObjectId id);
-    public Task<bool?> RemoveClient(User user, ObjectId clientId);
     public Task<bool?> RemoveAllClients(User user);
+    public Task<bool?> RemoveClient(User user, ObjectId clientId, ObjectId authorId, bool isClient);
     public Task<bool?> AddToken(User user, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null);
     public Task<bool?> AddTokenPrivileges(User user, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
     public Task<bool?> AddClientById(User user, ObjectId clientId, ObjectId actorId, bool forClients, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod);
