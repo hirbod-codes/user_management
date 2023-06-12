@@ -162,9 +162,10 @@ public class User
         Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = userId, IsPermitted = true } }
     };
     public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
-    public static List<Field> GetUnHiddenFields() => GetFields().Where(f => f.Name != PASSWORD && f.Name != VERIFICATION_SECRET && f.Name != VERIFICATION_SECRET_UPDATED_AT && f.Name != LOGGED_OUT_AT).ToList();
+    public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetDefaultReadableFields() => GetUnHiddenFields().ToList();
-    public static List<Field> GetDefaultUpdatableFields() => GetDefaultReadableFields().Where(f => f.Name == FIRST_NAME || f.Name == MIDDLE_NAME || f.Name == LAST_NAME).ToList();
+    public static List<Field> GetDefaultUpdatableFields() => GetDefaultReadableFields().Where(f => f.Name == PASSWORD || f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == FIRST_NAME || f.Name == MIDDLE_NAME || f.Name == LAST_NAME || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
+    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetDefaultUpdatableFields().Where(f => f.Name == PASSWORD || f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
     public static List<Field> GetFields() => new List<Field>()
         {
             new Field() { Name = "_id", IsPermitted = true },

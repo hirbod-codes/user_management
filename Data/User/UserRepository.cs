@@ -335,6 +335,9 @@ public class UserRepository : IUserRepository
         UpdateLogics<User> logic = new UpdateLogics<User>();
         UpdateDefinition<User>? updates = logic.BuildILogic(updatesString).BuildDefinition().Set(User.UPDATED_AT, DateTime.UtcNow);
         List<Field> updateFieldsList = logic.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        foreach (Field field in User.GetProtectedFieldsAgainstMassUpdating())
+            if (updateFieldsList.FirstOrDefault<Field?>(f => f != null && f.Name == field.Name, null) == null)
+                return false;
 
         filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
 
