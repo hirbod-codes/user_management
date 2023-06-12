@@ -73,7 +73,7 @@ if (app.Environment.IsDevelopment())
     if (env == null)
         throw new Exception("Failed to resolve IWebHostEnvironment.");
 
-    string filePath = Path.Combine(env.ContentRootPath, "appSettings.json");
+    string filePath = Path.Combine(env.ContentRootPath, "appSettings.Development.json");
     string json = File.ReadAllText(filePath);
     dynamic jsonObj = Newtonsoft.Json.JsonConvert.DeserializeObject(json)!;
 
