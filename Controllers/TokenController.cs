@@ -2,9 +2,11 @@ namespace user_management.Controllers;
 
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CSharp.RuntimeBinder;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Authorization.Attributes;
+using user_management.Data;
 using user_management.Data.Client;
 using user_management.Data.User;
 using user_management.Dtos.Token;
@@ -81,6 +83,8 @@ public class TokenController : ControllerBase
                 await _userRepository.AddClientById(
                     user,
                     clientObjectId,
+                    userId,
+                    false,
                     scope,
                     _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS),
                     _stringHelper.GenerateRandomString(128),

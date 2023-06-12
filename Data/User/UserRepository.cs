@@ -269,7 +269,7 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task<bool?> AddClientById(User user, ObjectId clientId, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod)
+    public async Task<bool?> AddClientById(User user, ObjectId clientId, ObjectId actorId, bool forClients, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod)
     {
         List<UserClient> userClients = user.Clients.ToList();
         UserClient? removableUerClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == clientId, null);
@@ -296,7 +296,13 @@ public class UserRepository : IUserRepository
         user.Clients = userClients.ToArray();
         user.UpdatedAt = DateTime.UtcNow;
 
-        ReplaceOneResult r = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq<ObjectId>("_id", (ObjectId)user.Id!), user);
+        FilterDefinition<User> filters = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq("_id", (ObjectId)user.Id!),
+            GetReaderFilterDefinition(actorId, forClients, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetUpdaterFilterDefinition(actorId, forClients, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } })
+        );
+
+        ReplaceOneResult r = await _userCollection.ReplaceOneAsync(filters, user);
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
 
