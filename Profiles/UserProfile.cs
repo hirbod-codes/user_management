@@ -39,8 +39,11 @@ class UserProfile : Profile
         CreateMap<UserPrivilegesPatchDto, UserPrivileges>().ConvertUsing<UserPrivilegesPatchConverter>();
 
         CreateMap<ReaderPatchDto, Reader>();
+        CreateMap<ReaderPatchDto[], Reader[]>();
         CreateMap<UpdaterPatchDto, Updater>();
+        CreateMap<UpdaterPatchDto[], Updater[]>();
         CreateMap<DeleterPatchDto, Deleter>();
+        CreateMap<DeleterPatchDto[], Deleter[]>();
     }
 }
 
