@@ -273,6 +273,9 @@ public class UserController : ControllerBase
         return Ok(content);
     }
 
+    [NonAction]
+    public async Task<User?> RetrieveByIdRpc(string userId, string authorId, bool isClient) => await _userRepository.RetrieveById(ObjectId.Parse(userId), ObjectId.Parse(authorId), isClient);
+
     [HttpGet("user/clients")]
     [Permissions(Permissions = new string[] { "read_clients" })]
     public async Task<ActionResult> RetrieveClients()

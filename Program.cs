@@ -11,6 +11,7 @@ using user_management.Authorization.Roles;
 using user_management.Authorization.Scopes;
 using user_management.Utilities;
 using MongoDB.Driver;
+using user_management.GrpcServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +69,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGrpcService<UserControllerService>();
 
 if (app.Environment.IsDevelopment())
 {
