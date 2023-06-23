@@ -4,10 +4,9 @@ using user_management.Models;
 
 public class UserPrivilegesPatchDto
 {
-    public string Id { get; set; } = null!;
-    public ReaderPatchDto[] Readers { get; set; } = new ReaderPatchDto[] { };
+    public ReaderPatchDto[]? Readers { get; set; } = null;
     public AllReaders? AllReaders { get; set; }
-    public UpdaterPatchDto[] Updaters { get; set; } = new UpdaterPatchDto[] { };
+    public UpdaterPatchDto[]? Updaters { get; set; } = null;
     public AllUpdaters? AllUpdaters { get; set; }
-    public DeleterPatchDto[] Deleters { get; set; } = new DeleterPatchDto[] { };
+    public DeleterPatchDto[]? Deleters { get; set; } = null;
 }
