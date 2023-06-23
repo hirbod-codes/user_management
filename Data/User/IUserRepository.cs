@@ -7,6 +7,7 @@ using user_management.Models;
 public interface IUserRepository
 {
     public Task<User?> Create(User user);
+    public Task<User?> RetrieveById(ObjectId id);
     public Task<User?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false);
     public Task<User?> RetrieveByFullNameForExistenceCheck(string fullName);
     public Task<User?> RetrieveByUsernameForExistenceCheck(string username);
