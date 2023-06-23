@@ -60,7 +60,7 @@ public class TokenControllerTests
         ControllerFixture.IClientRepository.Setup<Task<Client?>>(icr => icr.RetrieveByIdAndRedirectUrl(clientId, redirectUrl)).Returns(Task.FromResult<Client?>(client));
 
         ControllerFixture.IUserRepository.Setup<Task<User?>>(icr => icr.RetrieveById(It.Is<ObjectId>(id => id.ToString() == actorId.ToString()), It.Is<ObjectId>(id => id.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(user));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(icr => icr.AddClientById(user, It.Is<ObjectId>(id => id.ToString() == clientId.ToString()), scope, dt.AddMonths(TokenController.REFRESH_TOKEN_EXPIRATION_MONTHS), refreshTokenValue, dt.AddMinutes(TokenController.CODE_EXPIRATION_MINUTES), code, codeChallenge, codeChallengeMethod)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(icr => icr.AddClientById(user, It.Is<ObjectId>(id => id.ToString() == clientId.ToString()), It.Is<ObjectId>(id => id.ToString() == actorId.ToString()), false, scope, dt.AddMonths(TokenController.REFRESH_TOKEN_EXPIRATION_MONTHS), refreshTokenValue, dt.AddMinutes(TokenController.CODE_EXPIRATION_MINUTES), code, codeChallenge, codeChallengeMethod)).Returns(Task.FromResult<bool?>(true));
 
         ControllerFixture.IStringHelper.Setup<string?>(ish => ish.GenerateRandomString(128)).Returns(code);
 

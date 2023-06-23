@@ -238,7 +238,7 @@ public class UserControllerTests
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
 
         ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(id, id, false)).Returns(Task.FromResult<User?>(retrievedUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.RemoveClient(retrievedUser, clientId)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.RemoveClient(retrievedUser, clientId, id, false)).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().RemoveClient(clientId.ToString()) as IStatusCodeActionResult;
 
@@ -256,7 +256,7 @@ public class UserControllerTests
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
 
         ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(id, id, false)).Returns(Task.FromResult<User?>(retrievedUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.RemoveAllClients(retrievedUser)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.RemoveAllClients(retrievedUser, id, false)).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().RemoveClients() as IStatusCodeActionResult;
 
