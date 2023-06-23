@@ -41,8 +41,8 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 
         string userId;
         try { userId = claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value; }
-        catch (ArgumentNullException) { return AuthenticateResult.Fail("Subject is not provided.");}
-        catch (InvalidOperationException) { return AuthenticateResult.Fail("Invalid subject provided.");}
+        catch (ArgumentNullException) { return AuthenticateResult.Fail("Subject is not provided."); }
+        catch (InvalidOperationException) { return AuthenticateResult.Fail("Invalid subject provided."); }
 
         if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) return AuthenticateResult.Fail("This JWT token is not valid.");
 
