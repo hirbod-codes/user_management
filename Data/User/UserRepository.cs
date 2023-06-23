@@ -316,19 +316,14 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task<bool?> UpdateUserPrivileges(ObjectId actorId, ObjectId userId, UserPrivileges userPrivileges, bool forClients)
+    public async Task<bool?> UpdateUserPrivileges(User author)
     {
-        FilterDefinition<User> filter = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq("_id", userId),
-            GetReaderFilterDefinition(actorId, forClients, new List<Field>() { new Field() { IsPermitted = true, Name = User.USER_PRIVILEGES } })
-        );
-        UpdateDefinition<User> update = Builders<User>.Update.Set(User.USER_PRIVILEGES, userPrivileges).Set(User.UPDATED_AT, DateTime.UtcNow);
-
-        UpdateResult r = await _userCollection.UpdateOneAsync(filter, update);
+        FilterDefinition<User> filters = Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", author.Id));
+        ReplaceOneResult r = await _userCollection.ReplaceOneAsync(filters, author);
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
 
-        return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
     public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
