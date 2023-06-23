@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using user_management.Authorization.Attributes;
+using user_management.Data;
 using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -25,124 +26,158 @@ public class UserPrivilegesController : ControllerBase
         _mapper = mapper;
     }
 
-    private async Task<User?> GetAuthenticatedUser()
-    {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return null;
-
-        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
-
-        if (actorId == null || !ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return null;
-
-        return await _userRepository.RetrieveById(actorObjectId, actorObjectId, _authHelper.GetAuthenticationType(User) != "JWT");
-    }
-
-    [Permissions(Permissions = new string[] { "update_readers" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS })]
     [HttpPatch("update-readers")]
     public async Task<IActionResult> UpdateReaders(UserPrivilegesPatchDto userPrivilegesDto)
     {
-        UserPrivileges userPrivileges = _mapper.Map<UserPrivileges>(userPrivilegesDto);
-        if (!ObjectId.TryParse(userPrivilegesDto.Id, out ObjectId userId)) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT")
+            return StatusCode(403);
 
-        User? user = await GetAuthenticatedUser();
-        if (user == null) return Unauthorized();
+        if (userPrivilegesDto.Readers == null)
+            return BadRequest();
 
-        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (updatingUser == null) return NotFound();
+        string? authorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (authorId == null)
+            return Unauthorized();
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId))
+            return Unauthorized();
 
-        updatingUser.UserPrivileges!.Readers = userPrivileges.Readers;
+        User? author = await _userRepository.RetrieveById(authorObjectId);
+        if (author == null)
+            return NotFound();
+        if (author.UserPrivileges == null)
+            return Problem();
 
-        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (result == null) return NotFound();
-        if (result == false) return Problem();
+        author.UserPrivileges.Readers = _mapper.Map<Reader[]>(userPrivilegesDto.Readers);
 
+        bool? r = await _userRepository.UpdateUserPrivileges(author);
+
+        if (r == null || r == false)
+            return Problem();
         return Ok();
     }
 
-    [Permissions(Permissions = new string[] { "update_all_readers" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_READERS })]
     [HttpPatch("update-all-readers")]
     public async Task<IActionResult> UpdateAllReaders(UserPrivilegesPatchDto userPrivilegesDto)
     {
-        UserPrivileges userPrivileges = _mapper.Map<UserPrivileges>(userPrivilegesDto);
-        if (!ObjectId.TryParse(userPrivilegesDto.Id, out ObjectId userId)) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT")
+            return BadRequest();
 
-        User? user = await GetAuthenticatedUser();
-        if (user == null) return Unauthorized();
+        if (userPrivilegesDto.AllReaders == null)
+            return BadRequest();
 
-        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (updatingUser == null) return NotFound();
+        string? authorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (authorId == null)
+            return Unauthorized();
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId))
+            return Unauthorized();
 
-        updatingUser.UserPrivileges!.AllReaders = userPrivileges.AllReaders;
+        User? author = await _userRepository.RetrieveById(authorObjectId);
+        if (author == null)
+            return NotFound();
+        if (author.UserPrivileges == null)
+            return Problem();
 
-        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (result == null) return NotFound();
-        if (result == false) return Problem();
+        author.UserPrivileges.AllReaders = _mapper.Map<AllReaders>(userPrivilegesDto.AllReaders);
 
+        bool? r = await _userRepository.UpdateUserPrivileges(author);
+
+        if (r == null || r == false)
+            return Problem();
         return Ok();
     }
 
-    [Permissions(Permissions = new string[] { "update_updaters" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_UPDATERS })]
     [HttpPatch("update-updaters")]
     public async Task<IActionResult> UpdateUpdaters(UserPrivilegesPatchDto userPrivilegesDto)
     {
-        UserPrivileges userPrivileges = _mapper.Map<UserPrivileges>(userPrivilegesDto);
-        if (!ObjectId.TryParse(userPrivilegesDto.Id, out ObjectId userId)) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT")
+            return BadRequest();
 
-        User? user = await GetAuthenticatedUser();
-        if (user == null) return Unauthorized();
+        if (userPrivilegesDto.Updaters == null)
+            return BadRequest();
 
-        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (updatingUser == null) return NotFound();
+        string? authorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (authorId == null)
+            return Unauthorized();
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId))
+            return Unauthorized();
 
-        updatingUser.UserPrivileges!.Updaters = userPrivileges.Updaters;
+        User? author = await _userRepository.RetrieveById(authorObjectId);
+        if (author == null)
+            return NotFound();
+        if (author.UserPrivileges == null)
+            return Problem();
 
-        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (result == null) return NotFound();
-        if (result == false) return Problem();
+        author.UserPrivileges.Updaters = _mapper.Map<Updater[]>(userPrivilegesDto.Updaters);
 
+        bool? r = await _userRepository.UpdateUserPrivileges(author);
+
+        if (r == null || r == false)
+            return Problem();
         return Ok();
     }
 
-    [Permissions(Permissions = new string[] { "update_all_updaters" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_UPDATERS })]
     [HttpPatch("update-all-updaters")]
     public async Task<IActionResult> UpdateAllUpdaters(UserPrivilegesPatchDto userPrivilegesDto)
     {
-        UserPrivileges userPrivileges = _mapper.Map<UserPrivileges>(userPrivilegesDto);
-        if (!ObjectId.TryParse(userPrivilegesDto.Id, out ObjectId userId)) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT")
+            return BadRequest();
 
-        User? user = await GetAuthenticatedUser();
-        if (user == null) return Unauthorized();
+        if (userPrivilegesDto.AllUpdaters == null)
+            return BadRequest();
 
-        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (updatingUser == null) return NotFound();
+        string? authorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (authorId == null)
+            return Unauthorized();
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId))
+            return Unauthorized();
 
-        updatingUser.UserPrivileges!.AllUpdaters = userPrivileges.AllUpdaters;
+        User? author = await _userRepository.RetrieveById(authorObjectId);
+        if (author == null)
+            return NotFound();
+        if (author.UserPrivileges == null)
+            return Problem();
 
-        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (result == null) return NotFound();
-        if (result == false) return Problem();
+        author.UserPrivileges.AllUpdaters = _mapper.Map<AllUpdaters>(userPrivilegesDto.AllUpdaters);
 
+        bool? r = await _userRepository.UpdateUserPrivileges(author);
+
+        if (r == null || r == false)
+            return Problem();
         return Ok();
     }
 
-    [Permissions(Permissions = new string[] { "update_deleters" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_DELETERS })]
     [HttpPatch("update-deleters")]
     public async Task<IActionResult> UpdateDeleters(UserPrivilegesPatchDto userPrivilegesDto)
     {
-        UserPrivileges userPrivileges = _mapper.Map<UserPrivileges>(userPrivilegesDto);
-        if (!ObjectId.TryParse(userPrivilegesDto.Id, out ObjectId userId)) return BadRequest();
+        if (_authHelper.GetAuthenticationType(User) != "JWT")
+            return BadRequest();
 
-        User? user = await GetAuthenticatedUser();
-        if (user == null) return Unauthorized();
+        if (userPrivilegesDto.Deleters == null)
+            return BadRequest();
 
-        User? updatingUser = await _userRepository.RetrieveById((ObjectId)user.Id!, userId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (updatingUser == null) return NotFound();
+        string? authorId = await _authHelper.GetIdentifier(User, _userRepository);
+        if (authorId == null)
+            return Unauthorized();
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId))
+            return Unauthorized();
 
-        updatingUser.UserPrivileges!.Deleters = userPrivileges.Deleters;
+        User? author = await _userRepository.RetrieveById(authorObjectId);
+        if (author == null)
+            return NotFound();
+        if (author.UserPrivileges == null)
+            return Problem();
 
-        bool? result = await _userRepository.UpdateUserPrivileges((ObjectId)user.Id!, (ObjectId)updatingUser.Id!, updatingUser.UserPrivileges, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (result == null) return NotFound();
-        if (result == false) return Problem();
+        author.UserPrivileges.Deleters = _mapper.Map<Deleter[]>(userPrivilegesDto.Deleters);
 
+        bool? r = await _userRepository.UpdateUserPrivileges(author);
+
+        if (r == null || r == false)
+            return Problem();
         return Ok();
     }
 }

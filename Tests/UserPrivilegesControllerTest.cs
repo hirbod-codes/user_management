@@ -22,22 +22,18 @@ public class UserPrivilegesControllerTest
     [Fact]
     public async Task api_user_privileges_update_readers()
     {
-        ObjectId actorId = ObjectId.GenerateNewId();
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
-        User actorUser = new() { Id = actorId };
-        User updatingUser = new() { Id = id, UserPrivileges = new() };
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Readers = new ReaderPatchDto[] { } };
 
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(actorId.ToString()));
+        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(id.ToString()));
 
-        ControllerFixture.IMapper.Setup<UserPrivileges>(im => im.Map<UserPrivileges>(userPrivilegesDto)).Returns(userPrivileges);
+        ControllerFixture.IMapper.Setup<Reader[]>(im => im.Map<Reader[]>(userPrivilegesDto.Readers)).Returns(new Reader[] { });
 
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(actorUser));
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), false)).Returns(Task.FromResult<User?>(updatingUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), It.IsAny<UserPrivileges>(), false)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.IsAny<ObjectId>())).Returns(Task.FromResult<User?>(new User() { UserPrivileges = new UserPrivileges() { } }));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.IsAny<User>())).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().UpdateReaders(userPrivilegesDto);
 
@@ -47,22 +43,18 @@ public class UserPrivilegesControllerTest
     [Fact]
     public async Task api_user_privileges_update_all_readers()
     {
-        ObjectId actorId = ObjectId.GenerateNewId();
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
-        User actorUser = new() { Id = actorId };
-        User updatingUser = new() { Id = id, UserPrivileges = new() };
+        UserPrivilegesPatchDto userPrivilegesDto = new() { AllReaders = new AllReaders() { } };
 
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(actorId.ToString()));
+        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(id.ToString()));
 
-        ControllerFixture.IMapper.Setup<UserPrivileges>(im => im.Map<UserPrivileges>(userPrivilegesDto)).Returns(userPrivileges);
+        ControllerFixture.IMapper.Setup<AllReaders>(im => im.Map<AllReaders>(userPrivilegesDto.AllReaders)).Returns(new AllReaders() { });
 
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(actorUser));
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), false)).Returns(Task.FromResult<User?>(updatingUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), It.IsAny<UserPrivileges>(), false)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.IsAny<ObjectId>())).Returns(Task.FromResult<User?>(new User() { UserPrivileges = new UserPrivileges() { } }));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.IsAny<User>())).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().UpdateAllReaders(userPrivilegesDto);
 
@@ -72,22 +64,18 @@ public class UserPrivilegesControllerTest
     [Fact]
     public async Task api_user_privileges_update_updaters()
     {
-        ObjectId actorId = ObjectId.GenerateNewId();
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
-        User actorUser = new() { Id = actorId };
-        User updatingUser = new() { Id = id, UserPrivileges = new() };
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Updaters = new UpdaterPatchDto[] { } };
 
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(actorId.ToString()));
+        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(id.ToString()));
 
-        ControllerFixture.IMapper.Setup<UserPrivileges>(im => im.Map<UserPrivileges>(userPrivilegesDto)).Returns(userPrivileges);
+        ControllerFixture.IMapper.Setup<Updater[]>(im => im.Map<Updater[]>(userPrivilegesDto.Updaters)).Returns(new Updater[] { });
 
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(actorUser));
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), false)).Returns(Task.FromResult<User?>(updatingUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), It.IsAny<UserPrivileges>(), false)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.IsAny<ObjectId>())).Returns(Task.FromResult<User?>(new User() { UserPrivileges = new UserPrivileges() { } }));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.IsAny<User>())).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().UpdateUpdaters(userPrivilegesDto);
 
@@ -97,22 +85,18 @@ public class UserPrivilegesControllerTest
     [Fact]
     public async Task api_user_privileges_update_all_updaters()
     {
-        ObjectId actorId = ObjectId.GenerateNewId();
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
-        User actorUser = new() { Id = actorId };
-        User updatingUser = new() { Id = id, UserPrivileges = new() };
+        UserPrivilegesPatchDto userPrivilegesDto = new() { AllUpdaters = new AllUpdaters() { } };
 
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(actorId.ToString()));
+        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(id.ToString()));
 
-        ControllerFixture.IMapper.Setup<UserPrivileges>(im => im.Map<UserPrivileges>(userPrivilegesDto)).Returns(userPrivileges);
+        ControllerFixture.IMapper.Setup<AllUpdaters>(im => im.Map<AllUpdaters>(userPrivilegesDto.AllUpdaters)).Returns(new AllUpdaters() { });
 
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(actorUser));
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), false)).Returns(Task.FromResult<User?>(updatingUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), It.IsAny<UserPrivileges>(), false)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.IsAny<ObjectId>())).Returns(Task.FromResult<User?>(new User() { UserPrivileges = new UserPrivileges() { } }));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.IsAny<User>())).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().UpdateAllUpdaters(userPrivilegesDto);
 
@@ -122,22 +106,18 @@ public class UserPrivilegesControllerTest
     [Fact]
     public async Task api_user_privileges_update_deleters()
     {
-        ObjectId actorId = ObjectId.GenerateNewId();
         ObjectId id = ObjectId.GenerateNewId();
 
         UserPrivileges userPrivileges = new();
-        UserPrivilegesPatchDto userPrivilegesDto = new() { Id = id.ToString() };
-        User actorUser = new() { Id = actorId };
-        User updatingUser = new() { Id = id, UserPrivileges = new() };
+        UserPrivilegesPatchDto userPrivilegesDto = new() { Deleters = new DeleterPatchDto[] { new() { } } };
 
         ControllerFixture.IAuthHelper.Setup<string>(iah => iah.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(actorId.ToString()));
+        ControllerFixture.IAuthHelper.Setup<Task<string?>>(iah => iah.GetIdentifier(It.IsAny<ClaimsPrincipal>(), ControllerFixture.IUserRepository.Object)).Returns(Task.FromResult<string?>(id.ToString()));
 
-        ControllerFixture.IMapper.Setup<UserPrivileges>(im => im.Map<UserPrivileges>(userPrivilegesDto)).Returns(userPrivileges);
+        ControllerFixture.IMapper.Setup<Deleter[]>(im => im.Map<Deleter[]>(userPrivilegesDto.Deleters)).Returns(new Deleter[] { });
 
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), false)).Returns(Task.FromResult<User?>(actorUser));
-        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), false)).Returns(Task.FromResult<User?>(updatingUser));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.Is<ObjectId>(o => o.ToString() == actorId.ToString()), It.Is<ObjectId>(o => o.ToString() == id.ToString()), It.IsAny<UserPrivileges>(), false)).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<User?>>(iur => iur.RetrieveById(It.IsAny<ObjectId>())).Returns(Task.FromResult<User?>(new User() { UserPrivileges = new UserPrivileges() { } }));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateUserPrivileges(It.IsAny<User>())).Returns(Task.FromResult<bool?>(true));
 
         var result = await InstantiateUserController().UpdateDeleters(userPrivilegesDto);
 
