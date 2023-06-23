@@ -29,6 +29,7 @@ public class UserRepository : IUserRepository
         user.UpdatedAt = dt;
         user.CreatedAt = dt;
 
+        user.Privileges = User.GetDefaultPrivileges((ObjectId)user.Id);
         user.UserPrivileges = User.GetDefaultUserPrivileges((ObjectId)user.Id);
 
         await _userCollection.InsertOneAsync(user);
