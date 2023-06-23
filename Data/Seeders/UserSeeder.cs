@@ -133,7 +133,7 @@ public class UserSeeder
         {
             Id = userId,
             Privileges = User.GetDefaultPrivileges(userId),
-            UserPrivileges = User.GetDefaultUserPrivileges(userId),
+            UserPrivileges = userPrivileges,
             FirstName = firstName,
             MiddleName = middleName,
             LastName = lastName,
