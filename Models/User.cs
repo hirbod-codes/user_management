@@ -153,7 +153,7 @@ public class User
     }
 
     public static Privilege[] GetDefaultPrivileges(ObjectId userId) => StaticData.GetDefaultUserPrivileges().ToArray();
-    public static UserPrivileges GetDefaultUserPrivileges(ObjectId userId) => new UserPrivileges()
+    public static UserPrivileges GetDefaultUserPrivileges(ObjectId userId) => new()
     {
         Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = userId, IsPermitted = true, Fields = GetDefaultReadableFields().ToArray() } },
         AllReaders = new AllReaders() { ArePermitted = false },
