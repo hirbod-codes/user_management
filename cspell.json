@@ -1,12 +1,12 @@
 {
     "version": "0.2",
     "ignorePaths": [
-        "appsettings.json",
         "appsettings.Development.json",
         "cspell.json",
         "Properties/*",
         "mongodb/*",
-        "dockerComposeDevelopmentFileInitializer.js"
+        "dockerComposeDevelopmentFileInitializer.js",
+        "dockerComposeProductionFileInitializer.js"
     ],
     "dictionaryDefinitions": [],
     "dictionaries": [],
