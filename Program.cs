@@ -11,7 +11,7 @@ using user_management.Authorization.Roles;
 using user_management.Authorization.Scopes;
 using user_management.Utilities;
 using MongoDB.Driver;
-using user_management.GrpcServices;
+using user_management.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,15 +21,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddGrpc();
-
 builder.Services.AddSingleton<IStringHelper, StringHelper>();
 builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
 builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
+builder.Services.Configure<GrpcOptions>(builder.Configuration.GetSection("Grpc"));
+
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
-builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetSection("MongoDB").GetValue<string>("ConnectionString")));
+MongoContext mongoContext = new();
+builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
+builder.Services.AddSingleton<IMongoClient>(MongoContext.GetMongoClient(mongoContext));
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IClientRepository, ClientRepository>();
 
@@ -70,30 +72,21 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGrpcService<UserControllerService>();
-
 if (app.Environment.IsDevelopment())
 {
     IWebHostEnvironment? env = app.Services.GetService<IWebHostEnvironment>();
     if (env == null)
         throw new Exception("Failed to resolve IWebHostEnvironment.");
 
-    string filePath = Path.Combine(env.ContentRootPath, "appSettings.Development.json");
-    string json = File.ReadAllText(filePath);
-    dynamic jsonObj = Newtonsoft.Json.JsonConvert.DeserializeObject(json)!;
-
-    if (jsonObj["MongoDB"]["IsSeeded"] == false)
+    mongoContext = app.Services.GetService<IOptions<MongoContext>>()!.Value;
+    var client = MongoContext.GetMongoClient(mongoContext);
+    if (client.GetDatabase(mongoContext.DatabaseName).GetCollection<User>(mongoContext.Collections.Users).CountDocuments(Builders<User>.Filter.Empty) == 0)
     {
         await MongoContext.Initialize(app.Services.GetService<IOptions<MongoContext>>()!);
         await (new Seeder(app.Services.GetService<IOptions<MongoContext>>()!, app.Services.GetService<IUserRepository>()!, env.ContentRootPath)).Seed();
     }
     else
         System.Console.WriteLine("The database is already seeded.");
-
-    jsonObj["MongoDB"]["IsSeeded"] = true;
-
-    string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
-    File.WriteAllText(filePath, output);
 }
 
 app.Run();
