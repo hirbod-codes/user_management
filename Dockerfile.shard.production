@@ -1,0 +1,8 @@
+FROM mongo:4.4.18
+
+COPY ./mongodb/shard_server.sh /mongodb/shard_server.sh
+COPY ./security/ca/ca.pem /security/ca.pem
+COPY ./security/user_management_shardServer1/app.pem /security/app.pem
+COPY ./security/user_management_shardServer1/member.pem /security/member.pem
+
+CMD ["bash", "-c", "/mongodb/shard_server.sh"]

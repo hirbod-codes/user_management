@@ -12,13 +12,13 @@ public class UserRepository : IUserRepository
 {
     private readonly IMongoCollection<User> _userCollection;
 
-    public UserRepository(IOptions<MongoContext> MongoContext)
+    public UserRepository(IOptions<MongoContext> mongoContext)
     {
-        MongoClient mongoClient = new MongoClient(MongoContext.Value.ConnectionString);
+        MongoClient mongoClient = MongoContext.GetMongoClient(mongoContext.Value);
 
-        IMongoDatabase mongoDatabase = mongoClient.GetDatabase(MongoContext.Value.DatabaseName);
+        IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.Value.DatabaseName);
 
-        _userCollection = mongoDatabase.GetCollection<User>(MongoContext.Value.Collections.Users);
+        _userCollection = mongoDatabase.GetCollection<User>(mongoContext.Value.Collections.Users);
     }
 
     public async Task<User?> Create(User user)

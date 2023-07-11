@@ -14,7 +14,7 @@ public class UserSeeder
     private readonly string _filePath;
     public UserSeeder(MongoContext mongoContext, string rootPath)
     {
-        MongoClient mongoClient = new MongoClient(mongoContext.ConnectionString);
+        MongoClient mongoClient = MongoContext.GetMongoClient(mongoContext);
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
 

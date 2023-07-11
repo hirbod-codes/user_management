@@ -13,7 +13,7 @@ public class ClientSeeder
     private readonly string _filePath;
     public ClientSeeder(MongoContext mongoContext, string rootPath)
     {
-        MongoClient mongoClient = new MongoClient(mongoContext.ConnectionString);
+        MongoClient mongoClient = MongoContext.GetMongoClient(mongoContext);
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
 

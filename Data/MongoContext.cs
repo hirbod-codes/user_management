@@ -1,13 +1,19 @@
 namespace user_management.Data;
 
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Configuration;
 using user_management.Models;
 
 public class MongoContext
 {
-    public bool IsSeeded { get; set; }
-    public string ConnectionString { get; set; } = null!;
+    public string Username { get; set; } = null!;
+    public string CaPem { get; set; } = null!;
+    public string CertificateP12 { get; set; } = null!;
+    public string Host { get; set; } = null!;
+    public int Port { get; set; }
     public string DatabaseName { get; set; } = null!;
     public Collections Collections { get; set; } = null!;
 
@@ -15,7 +21,7 @@ public class MongoContext
     {
         MongoContext mongoContext = mongoContextOptions.Value;
 
-        MongoClient client = new MongoClient(mongoContext.ConnectionString);
+        MongoClient client = MongoContext.GetMongoClient(mongoContext);
         IMongoDatabase database = client.GetDatabase(mongoContext.DatabaseName);
         IMongoCollection<Models.User> userCollection = database.GetCollection<Models.User>(mongoContext.Collections.Users);
         IMongoCollection<Models.Client> clientCollection = database.GetCollection<Models.Client>(mongoContext.Collections.Clients);
@@ -73,6 +79,27 @@ public class MongoContext
             )
         }));
     }
+
+    public static MongoClient GetMongoClient(MongoContext mongoContext) => new MongoClient(new MongoClientSettings()
+    {
+        Credential = MongoCredential.CreateMongoX509Credential(mongoContext.Username),
+        SslSettings = new SslSettings
+        {
+            ClientCertificates = new List<X509Certificate>()
+                {
+                    new X509Certificate2(mongoContext.CertificateP12, "") {}
+                },
+            CheckCertificateRevocation = false,
+            EnabledSslProtocols = SslProtocols.Tls12
+        },
+        AllowInsecureTls = true,
+        UseTls = true,
+        Server = new MongoServerAddress(mongoContext.Host, mongoContext.Port),
+        Scheme = ConnectionStringScheme.MongoDB,
+        WriteConcern = WriteConcern.WMajority,
+        ReadConcern = ReadConcern.Majority,
+        ReadPreference = ReadPreference.Primary
+    });
 
     private static async Task ClearDatabaseAsync(IMongoDatabase database)
     {

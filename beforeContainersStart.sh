@@ -1,96 +1,150 @@
-# set directory of this script
-if [[ $0 =~ ^\/{1}.* ]]; then
-    scriptFileDirectory=${0%/*}
-else
-    if [[ $0 =~ ^\.\/{1}.* ]]; then
-        path=$0
-    else
-        path=./$0
-    fi
-    path=${path/.\//}
-    fullScriptPath=$(pwd)/$path
-    scriptFileDirectory=${fullScriptPath%/*}
-fi
+#!/bin/bash
 
-if [[ $scriptFileDirectory == '/' ]]; then
+# This script shoudn't be called directly
+
+while [ $# -gt 0 ]; do
+    if [[ $1 == "--"* ]]; then
+        if [[ -n $2 && $2 != "-"* ]]; then
+            v="${1/--/}"
+            declare $v="$2"
+        else
+            v="${1/--/}"
+            declare $v="true"
+        fi
+    elif [[ $1 == "-"* ]]; then
+        if [[ -n $2 && $2 != "-"* ]]; then
+            v="${1/-/}"
+            declare $v="$2"
+        else
+            v="${1/-/}"
+            declare $v="true"
+        fi
+    fi
+
+    shift
+done
+
+if [[ -z $environment || -z $projectRootDirectory || -z $dbPort || -z $dbName || -z $generateCerts || -z $dbUsername || -z $dbAdminUsername || -z $dbPassword || -z $dbRootPassword || -z $ymlFile || -z $user_management_http_port || -z $user_management_https_port || -z $user_management_mongo_express_port ]]; then
+    echo "Invalid arguments"
     exit
 fi
 
+# This script shoudn't be called directly
+
+echo --------------------------------------------------------------------------------------
+
 echo 'Preparing user_management service environment variables...'
 
-username=$(cat $scriptFileDirectory/.env | grep -i DB_USERNAME)
-username=${username/DB_USERNAME=/}
-password=$(cat $scriptFileDirectory/.env | grep -i DB_PASSWORD)
-password=${password/DB_PASSWORD=/}
-rootPassword=$(cat $scriptFileDirectory/.env | grep -i DB_ROOT_PASSWORD)
-rootPassword=${rootPassword/DB_ROOT_PASSWORD=/}
-port=$(cat $scriptFileDirectory/.env | grep -i DB_PORT)
-port=${port/DB_PORT=/}
-service=$(cat $scriptFileDirectory/.env | grep -i DB_SERVICE)
-service=${service/DB_SERVICE=/}
-db=$(cat $scriptFileDirectory/.env | grep -i DB_NAME)
-db=${db/DB_NAME=/}
+if [[ $environment == "Development" ]]; then
+    appsettings=$projectRootDirectory/appsettings.Development.json
 
-echo "username: $username"
-echo "password: $password"
-echo "rootPassword: $rootPassword"
-echo "port: $port"
-echo "service: $service"
-echo "db: $db"
+    echo "Preparing $appsettings ..."
 
-# -------------------------------------------------------------------------------------
+    node >$projectRootDirectory/out.json <<EOF
+    var data = require("$appsettings");
 
-echo "Preparing $scriptFileDirectory/appsettings.json..."
+    if (!data.MongoDB) {
+        data.MongoDB = {};
+    }
 
-appsettings=$scriptFileDirectory/appsettings.json
+    data.MongoDB.username = 'CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US';
+    data.MongoDB.host = 'user_management_mongodb';
+    data.MongoDB.port = '$dbPort';
+    data.MongoDB.caPem = '/security/ca.pem';
+    data.MongoDB.certificateP12 = '/security/app.p12';
+    data.MongoDB.DatabaseName = '$dbName';
+    data.Jwt.SecretKey = 'TW9zaGVFcmV6UHJpdmF0ZUtleQ==';
 
-node >$scriptFileDirectory/out.json <<EOF
-var data = require("$appsettings");
-
-if (!data.MongoDB) {
-    data.MongoDB = {};
-}
-
-data.MongoDB.ConnectionString = 'mongodb://$username:$password@$service:$port/?retryWrites=true&w=majority';
-data.MongoDB.DatabaseName = '$db';
-data.Jwt.SecretKey = 'TW9zaGVFcmV6UHJpdmF0ZUtleQ==';
-
-console.log(JSON.stringify(data));
+    console.log(JSON.stringify(data, null, 4));
 EOF
 
-mv $scriptFileDirectory/out.json $appsettings
+    mv $projectRootDirectory/out.json $appsettings
+fi
 
-# -------------------------------------------------------------------------------------
+if [[ $generateCerts == "true" ]]; then
+    echo --------------------------------------------------------------------------------------
 
-echo "Preparing $scriptFileDirectory/mongosInitializer..."
+    createClientCert() {
+        local client=$1
 
-echo "sh.addShard(\"user_management_shardReplicaSet1/user_management_shardServer1:27017,user_management_shardServer2:27017,user_management_shardServer3:27017\") 
-sh.status() 
-use admin 
-db.createUser({ user: \"root\", pwd: \"$rootPassword\", roles: [{ role: \"userAdminAnyDatabase\", db: \"admin\" }] }) 
-db.createUser({ user: \"$username\", pwd: \"$password\", roles: [{ role: \"userAdminAnyDatabase\", db: \"admin\" }] })
-" >$scriptFileDirectory/mongodb/mongosInitializer
+        if [[ -z $2 ]]; then
+            local ou=mongodb
+        else
+            local ou=$2
+        fi
 
-# -------------------------------------------------------------------------------------
+        mkdir -p $projectRootDirectory/security/$client/
 
-echo "Preparing ./configServerInitializer..."
+        openssl req -new -sha256 -nodes -newkey rsa:4096 -keyout $projectRootDirectory/security/$client/app.key -out $projectRootDirectory/security/$client/app.csr -subj /C=US/ST=NY/O=user_management/OU=$ou/CN=$client
+        openssl req -in $projectRootDirectory/security/$client/app.csr -noout -subject
+        openssl x509 -req -sha256 -CA $projectRootDirectory/security/ca/ca.pem -CAkey $projectRootDirectory/security/ca/ca.key -days 730 -CAserial $projectRootDirectory/security/ca/ca.srl -extfile $projectRootDirectory/x509.ext -extensions client -in $projectRootDirectory/security/$client/app.csr -out $projectRootDirectory/security/$client/app.crt
+        cat $projectRootDirectory/security/$client/app.crt $projectRootDirectory/security/$client/app.key >$projectRootDirectory/security/$client/app.pem
+    }
 
-echo "rs.initiate({ _id: \"user_management_configReplicaSet1\", configsvr: true, members: [{ _id: 0, host: \"user_management_configServer1:$port\" }, { _id: 1, host: \"user_management_configServer2:$port\" }, { _id: 2, host: \"user_management_configServer3:$port\" }] }) 
-rs.status()" >$scriptFileDirectory/mongodb/configServerInitializer
+    createServiceCert() {
+        local service=$1
 
-# -------------------------------------------------------------------------------------
+        mkdir -p $projectRootDirectory/security/$service/
 
-echo "Preparing ./shardServerInitializer..."
+        openssl req -new -sha256 -nodes -newkey rsa:4096 -keyout $projectRootDirectory/security/$service/app.key -out $projectRootDirectory/security/$service/app.csr -subj /C=US/ST=NY/O=user_management/OU=mongodb/CN=$service
+        openssl req -in $projectRootDirectory/security/$service/app.csr -noout -subject
+        openssl x509 -req -sha256 -CA $projectRootDirectory/security/ca/ca.pem -CAkey $projectRootDirectory/security/ca/ca.key -days 730 -CAserial $projectRootDirectory/security/ca/ca.srl -extfile $projectRootDirectory/x509.ext -extensions server -in $projectRootDirectory/security/$service/app.csr -out $projectRootDirectory/security/$service/app.crt
+        cat $projectRootDirectory/security/$service/app.crt $projectRootDirectory/security/$service/app.key >$projectRootDirectory/security/$service/app.pem
 
-echo "rs.initiate({ _id: \"user_management_shardReplicaSet1\", members: [{ _id: 0, host: \"user_management_shardServer1:$port\" }, { _id: 1, host: \"user_management_shardServer2:$port\" }, { _id: 2, host: \"user_management_shardServer3:$port\" }] })
-rs.status()" >$scriptFileDirectory/mongodb/shardServerInitializer
+        openssl req -new -sha256 -nodes -newkey rsa:4096 -keyout $projectRootDirectory/security/$service/app.key -out $projectRootDirectory/security/$service/member.csr -subj /C=US/ST=NY/O=user_management/OU=mongodb/CN=member
+        openssl req -in $projectRootDirectory/security/$service/member.csr -noout -subject
+        openssl x509 -req -sha256 -CA $projectRootDirectory/security/ca/ca.pem -CAkey $projectRootDirectory/security/ca/ca.key -days 730 -CAserial $projectRootDirectory/security/ca/ca.srl -extfile $projectRootDirectory/x509.ext -extensions server -in $projectRootDirectory/security/$service/member.csr -out $projectRootDirectory/security/$service/member.crt
+        cat $projectRootDirectory/security/$service/member.crt $projectRootDirectory/security/$service/app.key >$projectRootDirectory/security/$service/member.pem
+    }
 
-# -------------------------------------------------------------------------------------
+    echo "Preparing services x509 certificates..."
 
-echo "Preparing ./docker-compose.development.yml..."
+    rm -r $projectRootDirectory/security
 
-node $scriptFileDirectory/dockerComposeDevelopmentFileInitializer.js ymlFile=$scriptFileDirectory/docker-compose.development.yml context=$scriptFileDirectory username=$username password=$password rootPassword=$rootPassword port=$port service=$service db=$db ouput=$scriptFileDirectory/tmp.yml
+    mkdir -p $projectRootDirectory/security/ca/
+    echo "" >$projectRootDirectory/security/ca/ca.srl
 
-mv $scriptFileDirectory/tmp.yml $scriptFileDirectory/docker-compose.development.yml
+    openssl req -new -sha256 -nodes -newkey rsa:4096 -keyout $projectRootDirectory/security/ca/ca.key -out $projectRootDirectory/security/ca/ca.csr -subj /C=US/ST=NY/O=user_management/OU=mongodb/CN=user_management_certificate_authority
+    openssl req -in $projectRootDirectory/security/ca/ca.csr -noout -subject
+    openssl x509 -req -sha256 -extfile $projectRootDirectory/x509.ext -extensions ca -in $projectRootDirectory/security/ca/ca.csr -signkey $projectRootDirectory/security/ca/ca.key -days 1095 -out $projectRootDirectory/security/ca/ca.pem
 
-# -------------------------------------------------------------------------------------
+    createClientCert localhost mongodb_client
+    createClientCert local_client mongodb_client
+
+    createClientCert user_management mongodb_client
+
+    createClientCert user_management_mongo_express mongodb_client
+
+    createServiceCert user_management_mongodb
+    openssl pkcs12 -export -password pass: -in $projectRootDirectory/security/user_management/app.crt -inkey $projectRootDirectory/security/user_management/app.key -out $projectRootDirectory/security/user_management/app.p12
+
+    createServiceCert user_management_configServer1
+    createServiceCert user_management_configServer2
+    createServiceCert user_management_configServer3
+
+    createServiceCert user_management_shardServer1
+    createServiceCert user_management_shardServer2
+    createServiceCert user_management_shardServer3
+fi
+
+echo --------------------------------------------------------------------------------------
+
+echo "Preparing docker compose yml file..."
+
+if [[ $environment == "Development" ]]; then
+    node $projectRootDirectory/dockerComposeDevelopmentFileInitializer.js \
+        dbUsername=$dbUsername \
+        dbAdminUsername=$dbAdminUsername \
+        dbPassword=$dbPassword \
+        dbPort=$dbPort \
+        dbName=$dbName \
+        ouput=$ymlFile
+elif [[ $environment == "Production" ]]; then
+    node $projectRootDirectory/dockerComposeProductionFileInitializer.js \
+        dbPort=$dbPort \
+        dbUsername=$dbUsername \
+        user_management_http_port=$user_management_http_port \
+        user_management_https_port=$user_management_https_port \
+        user_management_mongo_express_port=$user_management_mongo_express_port \
+        ouput=$ymlFile
+fi

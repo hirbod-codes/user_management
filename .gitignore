@@ -4,7 +4,9 @@
 /bin
 /node_modules
 
-/mongodb
+tmp.yml
+
+/security
 
 /Data/Seeders/Logs/*
 
