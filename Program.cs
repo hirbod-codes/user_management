@@ -26,8 +26,6 @@ builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
 builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
-builder.Services.Configure<GrpcOptions>(builder.Configuration.GetSection("Grpc"));
-
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
 builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
