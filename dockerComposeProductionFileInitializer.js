@@ -115,28 +115,28 @@ yml.services = {
             member1: "user_management_configServer2",
             member2: "user_management_configServer3"
         },
-        // volumes: [
-        //     "user_management_configServer1:/data/db",
-        //     "user_management_configServer1_config:/data/configdb"
-        // ]
+        volumes: [
+            "user_management_configServer1:/data/db",
+            "user_management_configServer1_config:/data/configdb"
+        ]
     },
     user_management_configServer2: {
         image: "ghcr.io/hirbod-codes/user_management_config_server2:latest",
         command: `mongod --configsvr --replSet user_management_configReplicaSet --bind_ip \"0.0.0.0\" --port ${args.dbPort} --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile /security/app.pem --tlsClusterFile /security/member.pem --tlsCAFile /security/ca.pem --tlsClusterCAFile /security/ca.pem`,
         networks: ["user_management_mongodb"],
-        // volumes: [
-        //     "user_management_configServer2:/data/db",
-        //     "user_management_configServer2_config:/data/configdb"
-        // ]
+        volumes: [
+            "user_management_configServer2:/data/db",
+            "user_management_configServer2_config:/data/configdb"
+        ]
     },
     user_management_configServer3: {
         image: "ghcr.io/hirbod-codes/user_management_config_server3:latest",
         command: `mongod --configsvr --replSet user_management_configReplicaSet --bind_ip \"0.0.0.0\" --port ${args.dbPort} --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile /security/app.pem --tlsClusterFile /security/member.pem --tlsCAFile /security/ca.pem --tlsClusterCAFile /security/ca.pem`,
         networks: ["user_management_mongodb"],
-        // volumes: [
-        //     "user_management_configServer3:/data/db",
-        //     "user_management_configServer3_config:/data/configdb"
-        // ]
+        volumes: [
+            "user_management_configServer3:/data/db",
+            "user_management_configServer3_config:/data/configdb"
+        ]
     },
     user_management_shardServer1: {
         image: "ghcr.io/hirbod-codes/user_management_shard_server1:latest",
