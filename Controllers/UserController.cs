@@ -132,7 +132,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("forgot-password")]
-    public async Task<ActionResult> ForgotPassword([FromBody] string email)
+    public async Task<ActionResult> ForgotPassword([FromQuery] string email)
     {
         User? user = await _userRepository.RetrieveUserForPasswordChange(email);
         if (user == null) return NotFound("We couldn't find a user with this email.");
