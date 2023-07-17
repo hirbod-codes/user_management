@@ -180,12 +180,13 @@ public class UserController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult> Login(Login loggingInUser, [FromServices] IJWTAuthenticationHandler jwtAuthenticationHandler)
     {
-        if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("Credentials are not provided.");
+        if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("No credentials provided.");
 
         User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
         if (user == null) return NotFound("We couldn't find a user with this email or username.");
+        if (user.IsVerified == false) return StatusCode(403, "Your account is not activated yet.");
 
-        if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return Unauthorized();
+        if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return NotFound("We couldn't find the provided credentials.");
 
         bool? r = await _userRepository.Login(user);
         if (r == null) return NotFound("We couldn't find a user with this email.");
