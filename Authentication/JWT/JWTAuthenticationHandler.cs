@@ -31,6 +31,9 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
         if (!AuthenticationHeaderValue.TryParse(Request.Headers["Authorization"], out var authenticationHeaderValue)) return AuthenticateResult.NoResult();
 
         string[] authenticationHeaderParts = authenticationHeaderValue.ToString().Split(" ");
+        if (authenticationHeaderParts.Length != 2)
+            return AuthenticateResult.Fail("No JWT token provided.");
+
         string token = authenticationHeaderParts[1];
 
         if (authenticationHeaderParts[0] != "JWT") return AuthenticateResult.Fail("No JWT token provided.");
@@ -115,7 +118,7 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
     private TokenValidationParameters GetTokenValidationParameters() => new TokenValidationParameters()
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ValidAudience = _options.Audience,
         ValidIssuer = _options.Issuer,
