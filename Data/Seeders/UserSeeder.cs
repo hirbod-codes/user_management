@@ -188,7 +188,7 @@ public class UserSeeder
             VerificationSecret = (new StringHelper()).GenerateRandomString(6),
             VerificationSecretUpdatedAt = dt,
             LoggedOutAt = null,
-            IsVerified = false,
+            IsVerified = true,
             CreatedAt = dt,
             UpdatedAt = dt
         };
