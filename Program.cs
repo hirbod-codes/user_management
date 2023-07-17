@@ -64,6 +64,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(cpb =>
+{
+    cpb.AllowAnyHeader();
+    cpb.AllowAnyMethod();
+    cpb.AllowAnyOrigin();
+});
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
