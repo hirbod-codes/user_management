@@ -118,7 +118,7 @@ public class UserController : ControllerBase
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
         if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
 
-        if (activatingUser.VerificationSecret != user.VerificationSecret) return BadRequest("The provided email is not valid.");
+        if (activatingUser.VerificationSecret != user.VerificationSecret) return BadRequest("The provided code is not valid.");
 
         if (!_stringHelper.DoesHashMatch(user.Password!, activatingUser.Password)) return BadRequest("Password is incorrect.");
 
@@ -183,10 +183,10 @@ public class UserController : ControllerBase
         if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("No credentials provided.");
 
         User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
-        if (user == null) return NotFound("We couldn't find a user with this email or username.");
-        if (user.IsVerified == false) return StatusCode(403, "Your account is not activated yet.");
-
+        if (user == null) return NotFound("We couldn't find the provided credentials.");
         if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return NotFound("We couldn't find the provided credentials.");
+
+        if (user.IsVerified == false) return StatusCode(403, "Your account is not activated yet.");
 
         bool? r = await _userRepository.Login(user);
         if (r == null) return NotFound("We couldn't find a user with this email.");
