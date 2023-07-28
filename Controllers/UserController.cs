@@ -86,7 +86,7 @@ public class UserController : ControllerBase
         return Ok(unverifiedUser.Id.ToString());
     }
 
-    [HttpPost("resend-email-verification-message")]
+    [HttpPost("resend-activation-email")]
     public async Task<ActionResult> ResendEmailVerificationMessage([FromQuery] string email)
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
