@@ -401,11 +401,11 @@ public class UserController : ControllerBase
     [HttpPatch("users")]
     public async Task<ActionResult> Update(UserPatchDto userPatchDto)
     {
-        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null) return BadRequest();
+        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") return BadRequest();
 
         string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
-        if (actorId == null) return Unauthorized();
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+        if (actorId == null) return BadRequest("Invalid id");
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest("Invalid id");
 
         bool? r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, _authHelper.GetAuthenticationType(User) != "JWT");
         if (r == null) return NotFound();
