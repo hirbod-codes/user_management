@@ -217,7 +217,12 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
             default:
                 throw new ArgumentException("Invalid value type provided");
         }
-        logic.Field = logicParts[0].ToSnakeCase();
+
+        if (!logicParts[0].Contains("_"))
+            logic.Field = logicParts[0].ToSnakeCase();
+        else
+            logic.Field = logicParts[0];
+
         logic.Operation = logicParts[1];
 
         return logic;
