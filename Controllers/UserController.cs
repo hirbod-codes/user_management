@@ -91,6 +91,33 @@ public class UserController : ControllerBase
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
 
+        bool? r = await _userRepository.UpdateVerificationSecretForActivation(verificationMessage, email);
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't verify the user.");
+
+        try
+        {
+            _notificationHelper.SendVerificationMessage(email, verificationMessage);
+        }
+        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
+
+        return Ok();
+    }
+
+    [Authorize]
+    [HttpPost("send-verification-email")]
+    public async Task<ActionResult> SendVerificationEmail([FromQuery] string email)
+    {
+        string? idString = await _authHelper.GetIdentifier(User, _userRepository);
+        if (idString == null) return Unauthorized();
+        if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
+
+        string verificationMessage = _stringHelper.GenerateRandomString(6);
+
         bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
         if (r == null) return NotFound("We couldn't find a user with this email.");
         if (r == false) return Problem("We couldn't verify the user.");
