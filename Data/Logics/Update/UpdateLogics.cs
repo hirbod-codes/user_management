@@ -31,11 +31,11 @@ public class UpdateLogics<TDocument>
         {
             // Do not remove empty entries in splitted string, due to potential need for empty strings as the value
             updateParameterStrings = updateString.Split(separator: PARAMETER_SEPARATOR, count: 4);
-            Fields.Add(updateParameterStrings[0].ToSnakeCase());
+            Fields.Add(updateParameterStrings[0].Contains("_") ? updateParameterStrings[0] : updateParameterStrings[0].ToSnakeCase());
 
             updateLogic = new UpdateLogic<TDocument>()
             {
-                Field = updateParameterStrings[0].ToSnakeCase(),
+                Field = updateParameterStrings[0].Contains("_") ? updateParameterStrings[0] : updateParameterStrings[0].ToSnakeCase(),
                 Operation = updateParameterStrings[1]
             };
 
