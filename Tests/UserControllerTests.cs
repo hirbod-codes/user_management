@@ -76,7 +76,7 @@ public class UserControllerTests
         user.Email = email;
 
         ControllerFixture.IUserRepository.Setup<Task<User>>(iur => iur.RetrieveUserByLoginCredentials(email, null)!).Returns(Task.FromResult<User>(user));
-        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateVerificationSecret(verificationMessage, email)!).Returns(Task.FromResult<bool?>(true));
+        ControllerFixture.IUserRepository.Setup<Task<bool?>>(iur => iur.UpdateVerificationSecretForActivation(verificationMessage, email)!).Returns(Task.FromResult<bool?>(true));
 
         ControllerFixture.INotificationHelper.Setup(nh => nh.SendVerificationMessage(email, verificationMessage));
 
