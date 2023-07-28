@@ -414,6 +414,10 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    [HttpGet("user/mass-updatable-properties")]
+    [Permissions(Permissions = new string[] { "read_account" })]
+    public ActionResult RetrieveMassUpdatableProperties() => Ok(Models.User.GetMassUpdatableFields());
+
     [Permissions(Permissions = new string[] { "delete_account" })]
     [HttpDelete("user")]
     public async Task<ActionResult> Delete([FromBody] string id)
