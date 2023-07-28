@@ -20,6 +20,7 @@ public interface IUserRepository
     public Task<User?> RetrieveUserForPasswordChange(string email);
     public Task<User?> RetrieveUserForUsernameChange(string email);
     public Task<User?> RetrieveUserForEmailChange(string email);
+    public Task<User?> RetrieveUserForPhoneNumberChange(string email);
     public Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code);
     public Task<User?> RetrieveByRefreshTokenValue(string value);
     public Task<User?> RetrieveByTokenValue(string value);
@@ -29,6 +30,7 @@ public interface IUserRepository
     public Task<bool?> Verify(ObjectId id);
     public Task<bool?> ChangePassword(string email, string hashedPassword);
     public Task<bool?> ChangeUsername(string email, string username);
+    public Task<bool?> ChangePhoneNumber(string email, string phoneNumber);
     public Task<bool?> ChangeEmail(string email, string newEmail);
     public Task<bool?> Logout(ObjectId id);
     public Task<bool?> RemoveClient(User user, ObjectId clientId, ObjectId authorId, bool isClient);
