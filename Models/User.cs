@@ -144,8 +144,8 @@ public class User
         catch (NullReferenceException) { }
         catch (InvalidOperationException) { }
 
-        if (fields.Count == 0)
-            return null;
+        if (fields.Count == 0 || fields.FirstOrDefault<Field?>(f => f != null && f.Name == "_id", null) == null)
+            fields.Add(new() { Name = "_id", IsPermitted = true });
 
         fields.ForEach(action);
 
@@ -165,7 +165,8 @@ public class User
     public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetDefaultReadableFields() => GetUnHiddenFields().ToList();
     public static List<Field> GetDefaultUpdatableFields() => GetDefaultReadableFields().Where(f => f.Name == PASSWORD || f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == FIRST_NAME || f.Name == MIDDLE_NAME || f.Name == LAST_NAME || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
-    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetDefaultUpdatableFields().Where(f => f.Name == PASSWORD || f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
+    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetDefaultUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
+    public static List<Field> GetMassUpdatableFields() => GetDefaultUpdatableFields().Where(f => GetProtectedFieldsAgainstMassUpdating().FirstOrDefault<Field?>(ff => ff != null && ff.Name == f.Name) == null).ToList();
     public static List<Field> GetFields() => new List<Field>()
         {
             new Field() { Name = "_id", IsPermitted = true },
