@@ -262,6 +262,26 @@ public class UserController : ControllerBase
         return Ok("the password changed successfully.");
     }
 
+    [Permissions(Permissions = new string[] { "update_account" })]
+    [HttpPost("change-email")]
+    public async Task<ActionResult> ChangeEmail(ChangeEmail dto)
+    {
+        User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
+        if (user == null) return NotFound("We couldn't find a user with this email.");
+
+        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
+        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
+
+        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
+
+        bool? r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail);
+        if (r == null) return NotFound("We couldn't find a user with this email.");
+        if (r == false) return Problem("We couldn't change the user's email.");
+
+        return Ok("the password changed successfully.");
+    }
+
     [Permissions(Permissions = new string[] { "delete_client" })]
     [HttpPost("remove-client")]
     public async Task<ActionResult> RemoveClient([FromBody] string clientId)
