@@ -117,6 +117,8 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveUserForPasswordChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
+    public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+
     public async Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId), Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.CODE, code)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
@@ -166,6 +168,16 @@ public class UserRepository : IUserRepository
     public async Task<bool?> ChangePassword(string email, string hashedPassword)
     {
         UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0)
+            return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> ChangeUsername(string email, string username)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.USERNAME, username).Set(User.UPDATED_AT, DateTime.UtcNow));
 
         if (result.IsAcknowledged && result.MatchedCount == 0)
             return null;
