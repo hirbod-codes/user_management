@@ -59,14 +59,22 @@ public class UserRepository : IUserRepository
         if (limit <= 0)
             limit = 5;
 
-        IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(logicsString);
-        FilterDefinition<User> filter = iLogic.BuildDefinition();
-        List<string> requiredFilterFieldsList = iLogic.GetRequiredFields();
-        List<string> optionalFilterFieldsList = iLogic.GetOptionalFields();
+        FilterDefinition<User> filter = Builders<User>.Filter.Empty;
+        List<string> requiredFilterFieldsList = new List<string> { };
+        List<string> optionalFilterFieldsList = new List<string> { };
+        List<Field> requiredFilterFields = new List<Field> { };
+        List<Field> optionalFilterFields = new List<Field> { };
+        if (logicsString != "empty")
+        {
+            IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(logicsString);
+            filter = iLogic.BuildDefinition();
+            requiredFilterFieldsList = iLogic.GetRequiredFields();
+            optionalFilterFieldsList = iLogic.GetOptionalFields();
+            requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+            optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        }
 
-        List<Field> requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-        List<Field> optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-        FilterDefinition<User> readPrivilegeFilter = GetReaderFilterDefinition(actorId, forClients, requiredFilterFields, optionalFilterFields);
+        FilterDefinition<User> readPrivilegeFilter = GetReaderFilterDefinition(actorId, forClients, requiredFilterFields.Count == 0 ? null : requiredFilterFields, optionalFilterFields.Count == 0 ? null : optionalFilterFields);
 
         FilterDefinitionBuilder<User> filterBuilder = Builders<User>.Filter;
         SortDefinitionBuilder<User> sortBuilder = Builders<User>.Sort;
