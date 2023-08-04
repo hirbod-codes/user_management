@@ -200,4 +200,9 @@ public class User
             new Field() { Name = CREATED_AT, IsPermitted = true }
     };
 
+    public static Field[] UpdaterAssignableFields() => new Field[] {
+            new Field() { Name = FIRST_NAME, IsPermitted = true },
+            new Field() { Name = MIDDLE_NAME, IsPermitted = true },
+            new Field() { Name = LAST_NAME, IsPermitted = true }
+    };
 }
