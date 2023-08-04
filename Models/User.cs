@@ -186,4 +186,18 @@ public class User
             new Field() { Name = UPDATED_AT, IsPermitted = true },
             new Field() { Name = CREATED_AT, IsPermitted = true }
         };
+
+    public static Field[] ReaderAssignableFields() => new Field[] {
+            new Field() { Name = USER_PRIVILEGES, IsPermitted = true },
+            new Field() { Name = CLIENTS, IsPermitted = true },
+            new Field() { Name = FIRST_NAME, IsPermitted = true },
+            new Field() { Name = MIDDLE_NAME, IsPermitted = true },
+            new Field() { Name = LAST_NAME, IsPermitted = true },
+            new Field() { Name = EMAIL, IsPermitted = true },
+            new Field() { Name = PHONE_NUMBER, IsPermitted = true },
+            new Field() { Name = USERNAME, IsPermitted = true },
+            new Field() { Name = UPDATED_AT, IsPermitted = true },
+            new Field() { Name = CREATED_AT, IsPermitted = true }
+    };
+
 }
