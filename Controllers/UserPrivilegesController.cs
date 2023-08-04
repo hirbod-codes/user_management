@@ -185,4 +185,7 @@ public class UserPrivilegesController : ControllerBase
     [HttpGet("reader-assignable-fields")]
     public IActionResult ReaderAssignableFields() => Ok(Models.User.ReaderAssignableFields());
 
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
+    [HttpGet("updater-assignable-fields")]
+    public IActionResult UpdaterAssignableFields() => Ok(Models.User.UpdaterAssignableFields());
 }
