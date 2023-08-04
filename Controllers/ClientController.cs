@@ -66,6 +66,20 @@ public class ClientController : ControllerBase
     }
 
     [Permissions(Permissions = new string[] { "read_client" })]
+    [HttpGet("info/{id}")]
+    public async Task<ActionResult> RetrieveClientPublicInfo(string id)
+    {
+        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+
+        if (!ObjectId.TryParse(id, out ObjectId idObject)) return BadRequest();
+
+        Client? client = await _clientRepository.RetrieveById(idObject);
+        if (client == null) return NotFound();
+
+        return Ok(_mapper.Map<ClientRetrieveDto>(client));
+    }
+
+    [Permissions(Permissions = new string[] { "read_client" })]
     [HttpGet("{secret}")]
     public async Task<ActionResult> Retrieve(string secret)
     {
