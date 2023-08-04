@@ -48,7 +48,7 @@ public class UserPrivilegesController : ControllerBase
         if (author.UserPrivileges == null)
             return Problem();
 
-        author.UserPrivileges.Readers = _mapper.Map<Reader[]>(userPrivilegesDto.Readers);
+        author.UserPrivileges.Readers = userPrivilegesDto.Readers.ToList().ConvertAll<Reader>(rpd => _mapper.Map<Reader>(rpd)).ToArray();
 
         bool? r = await _userRepository.UpdateUserPrivileges(author);
 
@@ -110,7 +110,7 @@ public class UserPrivilegesController : ControllerBase
         if (author.UserPrivileges == null)
             return Problem();
 
-        author.UserPrivileges.Updaters = _mapper.Map<Updater[]>(userPrivilegesDto.Updaters);
+        author.UserPrivileges.Updaters = userPrivilegesDto.Updaters.ToList().ConvertAll<Updater>(rpd => _mapper.Map<Updater>(rpd)).ToArray();
 
         bool? r = await _userRepository.UpdateUserPrivileges(author);
 
@@ -172,7 +172,7 @@ public class UserPrivilegesController : ControllerBase
         if (author.UserPrivileges == null)
             return Problem();
 
-        author.UserPrivileges.Deleters = _mapper.Map<Deleter[]>(userPrivilegesDto.Deleters);
+        author.UserPrivileges.Deleters = userPrivilegesDto.Deleters.ToList().ConvertAll<Deleter>(rpd => _mapper.Map<Deleter>(rpd)).ToArray();
 
         bool? r = await _userRepository.UpdateUserPrivileges(author);
 
