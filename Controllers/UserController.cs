@@ -304,7 +304,7 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_client" })]
     [HttpPost("remove-client")]
-    public async Task<ActionResult> RemoveClient([FromBody] string clientId)
+    public async Task<ActionResult> RemoveClient([FromQuery] string clientId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
@@ -424,7 +424,7 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_account" })]
     [HttpDelete("user")]
-    public async Task<ActionResult> Delete([FromBody] string id)
+    public async Task<ActionResult> Delete([FromQuery] string id)
     {
         string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
         if (actorId == null) return Unauthorized();
