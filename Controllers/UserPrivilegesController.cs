@@ -180,4 +180,9 @@ public class UserPrivilegesController : ControllerBase
             return Problem();
         return Ok();
     }
+
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
+    [HttpGet("reader-assignable-fields")]
+    public IActionResult ReaderAssignableFields() => Ok(Models.User.ReaderAssignableFields());
+
 }
