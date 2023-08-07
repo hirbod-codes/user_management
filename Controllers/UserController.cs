@@ -12,6 +12,8 @@ using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
+using System.ComponentModel.DataAnnotations;
+using user_management.Validation.Attributes;
 
 [ApiController]
 [Route("api")]
@@ -46,10 +48,10 @@ public class UserController : ControllerBase
     public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userRepository.RetrieveByUsernameForExistenceCheck(username)) == null ? NotFound() : Ok();
 
     [HttpGet("email-existence-check/{email}")]
-    public async Task<IActionResult> EmailExistenceCheck(string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) == null ? NotFound() : Ok();
+    public async Task<IActionResult> EmailExistenceCheck([EmailAddress] string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) == null ? NotFound() : Ok();
 
     [HttpGet("phone-number-existence-check/{phoneNumber}")]
-    public async Task<IActionResult> PhoneNumberExistenceCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) == null ? NotFound() : Ok();
+    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx("^[0-9]{11}$")] string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) == null ? NotFound() : Ok();
 
     [HttpPost("register")]
     public async Task<ActionResult<string>> Register(UserCreateDto user)
@@ -87,7 +89,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("resend-activation-email")]
-    public async Task<ActionResult> ResendEmailVerificationMessage([FromQuery] string email)
+    public async Task<ActionResult> ResendEmailVerificationMessage([EmailAddress][FromQuery] string email)
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
 
@@ -110,7 +112,7 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpPost("send-verification-email")]
-    public async Task<ActionResult> SendVerificationEmail([FromQuery] string email)
+    public async Task<ActionResult> SendVerificationEmail([EmailAddress][FromQuery] string email)
     {
         string? idString = await _authHelper.GetIdentifier(User, _userRepository);
         if (idString == null) return Unauthorized();
@@ -159,7 +161,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("forgot-password")]
-    public async Task<ActionResult> ForgotPassword([FromQuery] string email)
+    public async Task<ActionResult> ForgotPassword([EmailAddress][FromQuery] string email)
     {
         User? user = await _userRepository.RetrieveUserForPasswordChange(email);
         if (user == null) return NotFound("We couldn't find a user with this email.");
@@ -259,7 +261,7 @@ public class UserController : ControllerBase
         if (r == null) return NotFound("We couldn't find a user with this email.");
         if (r == false) return Problem("We couldn't change the user's username.");
 
-        return Ok("the password changed successfully.");
+        return Ok("the username changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "update_account" })]
@@ -279,7 +281,7 @@ public class UserController : ControllerBase
         if (r == null) return NotFound("We couldn't find a user with this email.");
         if (r == false) return Problem("We couldn't change the user's email.");
 
-        return Ok("the password changed successfully.");
+        return Ok("the email changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "update_account" })]
@@ -299,7 +301,7 @@ public class UserController : ControllerBase
         if (r == null) return NotFound("We couldn't find a user with this email.");
         if (r == false) return Problem("We couldn't change the user's phone number.");
 
-        return Ok("the password changed successfully.");
+        return Ok("the phone number changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "delete_client" })]
@@ -351,8 +353,9 @@ public class UserController : ControllerBase
         string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
         if (actorId == null) return Unauthorized();
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
+        if (!ObjectId.TryParse(id, out ObjectId objectId)) return BadRequest();
 
-        User? user = await _userRepository.RetrieveById(actorObjectId, ObjectId.Parse(id), _authHelper.GetAuthenticationType(User) != "JWT");
+        User? user = await _userRepository.RetrieveById(actorObjectId, objectId, _authHelper.GetAuthenticationType(User) != "JWT");
         if (user == null) return NotFound();
 
         object? content = user.GetReadable(actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT");
@@ -362,7 +365,7 @@ public class UserController : ControllerBase
     }
 
     [NonAction]
-    public async Task<User?> RetrieveByIdRpc(string userId, string authorId, bool isClient) => await _userRepository.RetrieveById(ObjectId.Parse(userId), ObjectId.Parse(authorId), isClient);
+    public async Task<User?> RetrieveByIdRpc([ObjectIdAttribute] string userId, [ObjectIdAttribute] string authorId, bool isClient) => await _userRepository.RetrieveById(ObjectId.Parse(userId), ObjectId.Parse(authorId), isClient);
 
     [HttpGet("user/clients")]
     [Permissions(Permissions = new string[] { "read_clients" })]
@@ -424,7 +427,7 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_account" })]
     [HttpDelete("user")]
-    public async Task<ActionResult> Delete([FromQuery] string id)
+    public async Task<ActionResult> Delete([ObjectIdAttribute][FromQuery] string id)
     {
         string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
         if (actorId == null) return Unauthorized();
