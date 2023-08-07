@@ -42,5 +42,5 @@ public class Reader
     public const string USER = "user";
     public const string CLIENT = "client";
 
-    private bool ValidateAuthor(string value) => value == USER || value == CLIENT;
+    public static bool ValidateAuthor(string value) => value == USER || value == CLIENT;
 }
