@@ -2,6 +2,7 @@ namespace user_management.Models;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using user_management.Validation.Attributes;
 
 public class AllReaders
 {
@@ -12,6 +13,7 @@ public class AllReaders
 
     [BsonElement(FIELDS)]
     [BsonRequired]
+    [ReaderFields]
     public Field[] Fields { get; set; } = new Field[] { };
     public const string FIELDS = "fields";
 }
