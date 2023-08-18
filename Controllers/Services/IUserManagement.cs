@@ -8,7 +8,7 @@ public interface IUserManagement
     public Task<bool> UsernameExistenceCheck(string username);
     public Task<bool> EmailExistenceCheck(string email);
     public Task<bool> PhoneNumberExistenceCheck(string phoneNumber);
-    
+
     /// <exception cref="System.Net.Mail.SmtpException"></exception>
     /// <exception cref="user_management.Services.SmtpFailureException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
@@ -27,15 +27,15 @@ public interface IUserManagement
     public Task Notify(string email, string message);
 
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpired"></exception>
-    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCode"></exception>
+    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCodeException"></exception>
     /// <exception cref="user_management.Services.Data.User.InvalidPasswordException"></exception>
     public Task Activate(Activation activatingUser);
 
-    /// <exception cref="user_management.Services.Data.User.PasswordConfirmationMismatch"></exception>
+    /// <exception cref="user_management.Services.Data.User.PasswordConfirmationMismatchException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpired"></exception>
-    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCode"></exception>
+    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCodeException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
     public Task ChangePassword(ChangePassword dto);
 
@@ -52,20 +52,20 @@ public interface IUserManagement
     public Task Logout(string identifier);
 
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpired"></exception>
-    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCode"></exception>
+    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCodeException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
     public Task ChangeUsername(ChangeUsername dto);
 
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpired"></exception>
-    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCode"></exception>
+    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCodeException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
     public Task ChangeEmail(ChangeEmail dto);
 
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpired"></exception>
-    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCode"></exception>
+    /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidVerificationCodeException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
     public Task ChangePhoneNumber(ChangePhoneNumber dto);
 
