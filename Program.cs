@@ -14,7 +14,9 @@ using MongoDB.Driver;
 using user_management.Models;
 using user_management.Middlewares;
 using static System.Net.Mime.MediaTypeNames;
+using user_management.Services;
 using user_management.Services.Data.User;
+using user_management.Controllers.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,8 @@ builder.Services.AddSingleton<IStringHelper, StringHelper>();
 builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
 builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+
+builder.Services.AddSingleton<IUserManagement, UserManagement>();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
