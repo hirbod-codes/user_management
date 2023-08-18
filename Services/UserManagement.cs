@@ -84,8 +84,8 @@ public class UserManagement : IUserManagement
     }
 
     /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpired"></exception>
-    /// <exception cref="InvalidVerificationCode"></exception>
+    /// <exception cref="VerificationCodeExpiredException"></exception>
+    /// <exception cref="InvalidVerificationCodeException"></exception>
     /// <exception cref="InvalidPasswordException"></exception>
     public async Task Activate(Activation activatingUser)
     {
@@ -96,9 +96,9 @@ public class UserManagement : IUserManagement
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpired();
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
-        if (activatingUser.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCode();
+        if (activatingUser.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
         if (!_stringHelper.DoesHashMatch(user.Password!, activatingUser.Password)) throw new InvalidPasswordException();
 
@@ -107,23 +107,23 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="PasswordConfirmationMismatch"></exception>
+    /// <exception cref="PasswordConfirmationMismatchException"></exception>
     /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpired"></exception>
-    /// <exception cref="InvalidVerificationCode"></exception>
+    /// <exception cref="VerificationCodeExpiredException"></exception>
+    /// <exception cref="InvalidVerificationCodeException"></exception>
     /// <exception cref="OperationException"></exception>
     public async Task ChangePassword(ChangePassword dto)
     {
-        if (dto.Password != dto.PasswordConfirmation) throw new PasswordConfirmationMismatch();
+        if (dto.Password != dto.PasswordConfirmation) throw new PasswordConfirmationMismatchException();
 
         Models.User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
         if (user == null) throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpired();
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
-        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCode();
+        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
         bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
         if (r == null) throw new DataNotFoundException();
@@ -167,8 +167,8 @@ public class UserManagement : IUserManagement
     }
 
     /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpired"></exception>
-    /// <exception cref="InvalidVerificationCode"></exception>
+    /// <exception cref="VerificationCodeExpiredException"></exception>
+    /// <exception cref="InvalidVerificationCodeException"></exception>
     /// <exception cref="OperationException"></exception>
     public async Task ChangeUsername(ChangeUsername dto)
     {
@@ -177,9 +177,9 @@ public class UserManagement : IUserManagement
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpired();
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
-        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCode();
+        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
         bool? r = await _userRepository.ChangeUsername(dto.Email, dto.Username);
         if (r == null) throw new DataNotFoundException();
@@ -187,8 +187,8 @@ public class UserManagement : IUserManagement
     }
 
     /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpired"></exception>
-    /// <exception cref="InvalidVerificationCode"></exception>
+    /// <exception cref="VerificationCodeExpiredException"></exception>
+    /// <exception cref="InvalidVerificationCodeException"></exception>
     /// <exception cref="OperationException"></exception>
     public async Task ChangeEmail(ChangeEmail dto)
     {
@@ -197,9 +197,9 @@ public class UserManagement : IUserManagement
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpired();
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
-        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCode();
+        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
         bool? r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail);
         if (r == null) throw new DataNotFoundException();
@@ -207,8 +207,8 @@ public class UserManagement : IUserManagement
     }
 
     /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpired"></exception>
-    /// <exception cref="InvalidVerificationCode"></exception>
+    /// <exception cref="VerificationCodeExpiredException"></exception>
+    /// <exception cref="InvalidVerificationCodeException"></exception>
     /// <exception cref="OperationException"></exception>
     public async Task ChangePhoneNumber(ChangePhoneNumber dto)
     {
@@ -217,9 +217,9 @@ public class UserManagement : IUserManagement
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpired();
+        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
-        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCode();
+        if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
         bool? r = await _userRepository.ChangePhoneNumber(dto.Email, dto.PhoneNumber);
         if (r == null) throw new DataNotFoundException();
