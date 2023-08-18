@@ -3,10 +3,12 @@ namespace user_management.Data.User;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using user_management.Models;
+using user_management.Services;
 using user_management.Services.Data.User;
 using MongoDB.Bson;
 using user_management.Data.Logics.Filter;
 using user_management.Data.Logics.Update;
+using user_management.Services.Data;
 
 public class UserRepository : IUserRepository
 {
@@ -32,7 +34,10 @@ public class UserRepository : IUserRepository
         user.Privileges = User.GetDefaultPrivileges((ObjectId)user.Id);
         user.UserPrivileges = User.GetDefaultUserPrivileges((ObjectId)user.Id);
 
-        await _userCollection.InsertOneAsync(user);
+        try { await _userCollection.InsertOneAsync(user); }
+        catch (MongoDuplicateKeyException) { throw; }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         return user;
     }
