@@ -37,11 +37,6 @@ public class UserManagement : IUserManagement
     public async Task<bool> EmailExistenceCheck(string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) != null;
     public async Task<bool> PhoneNumberExistenceCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) != null;
 
-    /// <exception cref="SmtpException"></exception>
-    /// <exception cref="SmtpFailureException"></exception>
-    /// <exception cref="DuplicationException"></exception>
-    /// <exception cref="OperationException"></exception>
-    /// <exception cref="DatabaseServerException"></exception>
     public async Task<Models.User> Register(UserCreateDto userDto)
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
@@ -61,10 +56,6 @@ public class UserManagement : IUserManagement
         return unverifiedUser;
     }
 
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="DatabaseServerException"></exception>
-    /// <exception cref="SmtpException"></exception>
-    /// <exception cref="SmtpFailureException"></exception>
     public async Task SendVerificationEmail(string email)
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
@@ -74,8 +65,6 @@ public class UserManagement : IUserManagement
         await Notify(email, verificationMessage);
     }
 
-    /// <exception cref="SmtpException"></exception>
-    /// <exception cref="SmtpFailureException"></exception>
     public async Task Notify(string email, string message)
     {
         try { await _notificationHelper.SendVerificationMessage(email, message); }
@@ -83,10 +72,6 @@ public class UserManagement : IUserManagement
         catch (System.Exception) { throw new SmtpFailureException(); }
     }
 
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpiredException"></exception>
-    /// <exception cref="InvalidVerificationCodeException"></exception>
-    /// <exception cref="InvalidPasswordException"></exception>
     public async Task Activate(Activation activatingUser)
     {
         Models.User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
@@ -107,11 +92,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="PasswordConfirmationMismatchException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpiredException"></exception>
-    /// <exception cref="InvalidVerificationCodeException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task ChangePassword(ChangePassword dto)
     {
         if (dto.Password != dto.PasswordConfirmation) throw new PasswordConfirmationMismatchException();
@@ -130,11 +110,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="MissingCredentialException"></exception>
-    /// <exception cref="InvalidPasswordException"></exception>
-    /// <exception cref="UnverifiedUserException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task<(string jwt, object user)> Login(Login loggingInUser)
     {
         if (loggingInUser.Username == null && loggingInUser.Email == null) throw new MissingCredentialException();
@@ -154,9 +129,6 @@ public class UserManagement : IUserManagement
         return (jwt, user.GetReadable((ObjectId)user.Id, _mapper));
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task Logout(string identifier)
     {
         if (!ObjectId.TryParse(identifier, out ObjectId id)) throw new ArgumentException();
@@ -166,10 +138,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpiredException"></exception>
-    /// <exception cref="InvalidVerificationCodeException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task ChangeUsername(ChangeUsername dto)
     {
         Models.User? user = await _userRepository.RetrieveUserForUsernameChange(dto.Email);
@@ -186,10 +154,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpiredException"></exception>
-    /// <exception cref="InvalidVerificationCodeException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task ChangeEmail(ChangeEmail dto)
     {
         Models.User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
@@ -206,10 +170,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="VerificationCodeExpiredException"></exception>
-    /// <exception cref="InvalidVerificationCodeException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task ChangePhoneNumber(ChangePhoneNumber dto)
     {
         Models.User? user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email);
@@ -226,9 +186,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task RemoveClient(string clientId, string userId)
     {
         if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException("userId");
@@ -242,9 +199,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task RemoveClients(string userId)
     {
         if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException();
@@ -257,8 +211,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
     public async Task<Models.User> RetrieveById(string actorId, string userId, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
@@ -270,7 +222,6 @@ public class UserManagement : IUserManagement
         return user;
     }
 
-    /// <exception cref="ArgumentException"></exception>
     public async Task<List<Models.User>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException();
@@ -278,9 +229,6 @@ public class UserManagement : IUserManagement
         return await _userRepository.Retrieve(actorObjectId, logicsString, limit, iteration, sortBy, ascending, forClients);
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task Update(string actorId, UserPatchDto userPatchDto, bool forClients)
     {
         if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") throw new ArgumentException("userPatchDto");
@@ -292,9 +240,6 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="DataNotFoundException"></exception>
-    /// <exception cref="OperationException"></exception>
     public async Task Delete(string actorId, string id, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
