@@ -6,6 +6,12 @@ using user_management.Services.Data.User;
 
 public class AuthHelper : IAuthHelper
 {
+    private readonly IUserRepository _userRepository;
+
+    public AuthHelper(IUserRepository userRepository)
+    {
+        _userRepository = userRepository;
+    }
     public string GetAuthenticationType(ClaimsPrincipal user)
     {
         if (user.Identity!.AuthenticationType == "JWT") return "JWT";
@@ -13,7 +19,7 @@ public class AuthHelper : IAuthHelper
         throw new UnauthorizedAccessException();
     }
 
-    public async Task<string?> GetIdentifier(ClaimsPrincipal user, IUserRepository userRepository)
+    public async Task<string?> GetIdentifier(ClaimsPrincipal user)
     {
         Claim? claim = user.Claims.ToList().FirstOrDefault<Claim?>(c => c != null && c.Type == ClaimTypes.NameIdentifier, null);
         if (claim == null) return null;
@@ -23,7 +29,7 @@ public class AuthHelper : IAuthHelper
         else
             try
             {
-                return (await userRepository.RetrieveByTokenValue(claim.Value))!.Clients.ToList().FirstOrDefault<UserClient?>(c => c != null && c.Token != null && c.Token.Value == claim.Value, null)!.ClientId.ToString();
+                return (await _userRepository.RetrieveByTokenValue(claim.Value))!.Clients.ToList().FirstOrDefault<UserClient?>(c => c != null && c.Token != null && c.Token.Value == claim.Value, null)!.ClientId.ToString();
             }
             catch (NullReferenceException) { return null; }
     }
