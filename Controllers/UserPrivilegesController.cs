@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using user_management.Authorization.Attributes;
 using user_management.Data;
-using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
+using user_management.Services.Data.User;
 using user_management.Utilities;
 
 [ApiController]

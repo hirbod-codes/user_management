@@ -6,9 +6,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using user_management.Data.User;
 using user_management.Models;
 using MongoDB.Bson;
+using user_management.Services.Data.User;
 
 public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsRequirement>
 {

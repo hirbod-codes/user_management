@@ -8,9 +8,9 @@ using MongoDB.Driver;
 using user_management.Authorization.Attributes;
 using user_management.Data;
 using user_management.Data.Client;
-using user_management.Data.User;
 using user_management.Dtos.Token;
 using user_management.Models;
+using user_management.Services.Data.User;
 using user_management.Utilities;
 
 [ApiController]

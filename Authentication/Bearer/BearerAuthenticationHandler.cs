@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using user_management.Data.User;
 using user_management.Models;
+using user_management.Services.Data.User;
 using user_management.Utilities;
 
 public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthenticationOptions>

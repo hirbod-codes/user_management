@@ -2,7 +2,7 @@ namespace user_management.GrpcServices;
 
 using AutoMapper;
 using Grpc.Core;
-using user_management.Data.User;
+using user_management.Services.Data.User;
 using user_management.Utilities;
 
 public class UserControllerService : UserController.UserControllerBase

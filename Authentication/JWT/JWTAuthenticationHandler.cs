@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
-using user_management.Data.User;
 using user_management.Models;
+using user_management.Services.Data.User;
 
 public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationOptions>, IJWTAuthenticationHandler
 {

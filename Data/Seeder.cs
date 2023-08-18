@@ -2,7 +2,7 @@ namespace user_management.Data;
 
 using Microsoft.Extensions.Options;
 using user_management.Data.Seeders;
-using user_management.Data.User;
+using user_management.Services.Data.User;
 
 public class Seeder
 {

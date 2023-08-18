@@ -3,7 +3,7 @@ namespace user_management.Data.User;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using user_management.Models;
-using user_management.Data;
+using user_management.Services.Data.User;
 using MongoDB.Bson;
 using user_management.Data.Logics.Filter;
 using user_management.Data.Logics.Update;

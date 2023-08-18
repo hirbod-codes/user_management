@@ -1,8 +1,8 @@
 namespace user_management.Utilities;
 
 using System.Security.Claims;
-using user_management.Data.User;
 using user_management.Models;
+using user_management.Services.Data.User;
 
 public class AuthHelper : IAuthHelper
 {

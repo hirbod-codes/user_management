@@ -8,12 +8,12 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Authentication.JWT;
 using user_management.Authorization.Attributes;
-using user_management.Data.User;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
 using System.ComponentModel.DataAnnotations;
 using user_management.Validation.Attributes;
+using user_management.Services.Data;
 
 [ApiController]
 [Route("api")]
