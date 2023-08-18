@@ -35,6 +35,9 @@ public class MongoContext
         IndexKeysDefinition<Models.User> userEmailIndex = Builders<Models.User>.IndexKeys.Ascending(Models.User.EMAIL);
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(userEmailIndex, new CreateIndexOptions() { Unique = true }));
 
+        IndexKeysDefinition<Models.User> userUsernameIndex = Builders<Models.User>.IndexKeys.Ascending(Models.User.USERNAME);
+        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(userUsernameIndex, new CreateIndexOptions() { Unique = true }));
+
         IndexKeysDefinition<Models.User> userFullNameIndex = Builders<Models.User>.IndexKeys.Ascending(Models.User.FIRST_NAME).Ascending(Models.User.MIDDLE_NAME).Ascending(Models.User.LAST_NAME);
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(userFullNameIndex, new CreateIndexOptions<Models.User>()
         {
