@@ -13,6 +13,7 @@ using user_management.Utilities;
 using MongoDB.Driver;
 using user_management.Models;
 using user_management.Middlewares;
+using static System.Net.Mime.MediaTypeNames;
 using user_management.Services.Data.User;
 
 var builder = WebApplication.CreateBuilder(args);
