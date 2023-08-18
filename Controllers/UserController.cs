@@ -6,14 +6,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using user_management.Authentication.JWT;
 using user_management.Authorization.Attributes;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
 using System.ComponentModel.DataAnnotations;
 using user_management.Validation.Attributes;
+using user_management.Services;
+using user_management.Services.Data.User;
 using user_management.Services.Data;
+using user_management.Controllers.Services;
 
 [ApiController]
 [Route("api")]
@@ -21,422 +23,300 @@ using user_management.Services.Data;
 public class UserController : ControllerBase
 {
     private const int EXPIRATION_MINUTES = 6;
+    private readonly IUserManagement _userManagement;
     private readonly IMapper _mapper;
-    private readonly IUserRepository _userRepository;
     private readonly IAuthHelper _authHelper;
-    private readonly IStringHelper _stringHelper;
-    private readonly INotificationHelper _notificationHelper;
-    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public UserController(IUserRepository userRepository, IMapper mapper, IStringHelper stringHelper, INotificationHelper notificationHelper, IAuthHelper authHelper, IDateTimeProvider dateTimeProvider)
+    public UserController(IUserManagement userManagement, IMapper mapper, IAuthHelper authHelper)
     {
+        _userManagement = userManagement;
         _mapper = mapper;
-        _userRepository = userRepository;
         _authHelper = authHelper;
-        _notificationHelper = notificationHelper;
-        _stringHelper = stringHelper;
-        _dateTimeProvider = dateTimeProvider;
     }
 
-    /// <summary>
-    /// fullName: <first name>-<middle name>-<last name>, for example: foo-bar-zar or foo--bar for no middle name
-    /// </summary>
-    [HttpGet("full-name-existence-check/{fullName}")]
-    public async Task<IActionResult> FullNameExistenceCheck(string fullName) => (await _userRepository.RetrieveByFullNameForExistenceCheck(fullName)) == null ? NotFound() : Ok();
+    [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
+    public async Task<IActionResult> FullNameExistenceCheck(string firstName, string middleName, string lastName) => (await _userManagement.FullNameExistenceCheck(firstName, middleName, lastName)) ? Ok() : NotFound();
 
-    [HttpGet("username-existence-check/{username}")]
-    public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userRepository.RetrieveByUsernameForExistenceCheck(username)) == null ? NotFound() : Ok();
+    [HttpGet(PATH_GET_USERNAME_EXISTENCE_CHECK)]
+    public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userManagement.UsernameExistenceCheck(username)) ? Ok() : NotFound();
 
-    [HttpGet("email-existence-check/{email}")]
-    public async Task<IActionResult> EmailExistenceCheck([EmailAddress] string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) == null ? NotFound() : Ok();
+    [HttpGet(PATH_GET_EMAIL_EXISTENCE_CHECK)]
+    public async Task<IActionResult> EmailExistenceCheck([EmailAddress] string email) => (await _userManagement.EmailExistenceCheck(email)) ? Ok() : NotFound();
 
-    [HttpGet("phone-number-existence-check/{phoneNumber}")]
-    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx("^[0-9]{11}$")] string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) == null ? NotFound() : Ok();
+    [HttpGet(PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK)]
+    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx("^[0-9]{11}$")] string phoneNumber) => (await _userManagement.PhoneNumberExistenceCheck(phoneNumber)) ? Ok() : NotFound();
 
-    [HttpPost("register")]
-    public async Task<ActionResult<string>> Register(UserCreateDto user)
+    [HttpPost(PATH_POST_REGISTER)]
+    public async Task<IActionResult> Register(UserCreateDto userDto)
     {
-        string verificationMessage = _stringHelper.GenerateRandomString(6);
-
-        try
-        {
-            _notificationHelper.SendVerificationMessage(user.Email, verificationMessage);
-        }
-        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        User? unverifiedUser = null;
+        try { unverifiedUser = await _userManagement.Register(userDto); }
         catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
-
-        User? unverifiedUser = _mapper.Map<User>(user);
-        unverifiedUser.Password = _stringHelper.Hash(user.Password);
-        unverifiedUser.VerificationSecret = verificationMessage;
-        unverifiedUser.VerificationSecretUpdatedAt = _dateTimeProvider.ProvideUtcNow();
-        unverifiedUser.IsVerified = false;
-
-        try
-        {
-            unverifiedUser = await _userRepository.Create(unverifiedUser);
-            if (unverifiedUser == null)
-                return Problem("System failed to register your account.");
-        }
-        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
-        {
-            return BadRequest("The username or email you chose is no longer unique, please choose another.");
-        }
+        catch (SmtpFailureException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (DuplicationException) { return BadRequest("The username or email you chose is no longer unique, please choose another."); }
+        catch (RegistrationException) { return Problem("System failed to register your account."); }
+        catch (DatabaseServerException) { return Problem("System failed to register your account."); }
 
         return Ok(unverifiedUser.Id.ToString());
     }
 
-    [HttpPost("resend-activation-email")]
-    public async Task<ActionResult> ResendEmailVerificationMessage([EmailAddress][FromQuery] string email)
+    [HttpPost(PATH_POST_SEND_VERIFICATION_EMAIL)]
+    public async Task<IActionResult> SendVerificationEmail([EmailAddress][FromQuery] string email)
     {
-        string verificationMessage = _stringHelper.GenerateRandomString(6);
-
-        bool? r = await _userRepository.UpdateVerificationSecretForActivation(verificationMessage, email);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't verify the user.");
-
-        try
-        {
-            _notificationHelper.SendVerificationMessage(email, verificationMessage);
-        }
-        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        try { await _userManagement.SendVerificationEmail(email); }
         catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (SmtpFailureException) { return Problem("We couldn't send the verification message to your email, please try again."); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (DatabaseServerException) { return Problem("Unfortunately we encountered with an internal error."); }
 
         return Ok();
     }
 
-    [Authorize]
-    [HttpPost("send-verification-email")]
-    public async Task<ActionResult> SendVerificationEmail([EmailAddress][FromQuery] string email)
+    [HttpPost(PATH_POST_ACTIVATE)]
+    public async Task<IActionResult> Activate(Activation activatingUser)
     {
-        string? idString = await _authHelper.GetIdentifier(User, _userRepository);
-        if (idString == null) return Unauthorized();
-        if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
-
-        string verificationMessage = _stringHelper.GenerateRandomString(6);
-
-        bool? r = await _userRepository.UpdateVerificationSecret(verificationMessage, email);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't verify the user.");
-
-        try
-        {
-            _notificationHelper.SendVerificationMessage(email, verificationMessage);
-        }
-        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
-
-        return Ok();
-    }
-
-    [HttpPost("activate")]
-    public async Task<ActionResult> Activate(Activation activatingUser)
-    {
-        User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
-
-        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
-
-        if (activatingUser.VerificationSecret != user.VerificationSecret) return BadRequest("The provided code is not valid.");
-
-        if (!_stringHelper.DoesHashMatch(user.Password!, activatingUser.Password)) return BadRequest("Password is incorrect.");
-
-        if ((bool)user.IsVerified!) return Ok("User is already verified.");
-
-        bool? r = await _userRepository.Verify((ObjectId)user.Id!);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't verify user.");
+        try { await _userManagement.Activate(activatingUser); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (VerificationCodeExpiredException) { return BadRequest("The verification code is expired, please ask for another one."); }
+        catch (InvalidVerificationCodeException) { return BadRequest("The provided code is not valid."); }
+        catch (InvalidPasswordException) { return BadRequest("Password is incorrect."); }
+        catch (OperationException) { return Problem("We couldn't verify user."); }
 
         return Ok("Your account has been registered successfully.");
     }
 
-    [HttpPost("forgot-password")]
-    public async Task<ActionResult> ForgotPassword([EmailAddress][FromQuery] string email)
+    [HttpPost(PATH_POST_CHANGE_PASSWORD)]
+    public async Task<IActionResult> ChangePassword(ChangePassword dto)
     {
-        User? user = await _userRepository.RetrieveUserForPasswordChange(email);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
+        try { await _userManagement.ChangePassword(dto); }
+        catch (PasswordConfirmationMismatchException) { return BadRequest("Password confirmation doesn't match with password."); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (VerificationCodeExpiredException) { return BadRequest("The verification code is expired, please ask for another one."); }
+        catch (InvalidVerificationCodeException) { return BadRequest("The verification code is incorrect."); }
+        catch (OperationException) { return Problem("We couldn't change the user's password."); }
 
-        string verificationMessage = _stringHelper.GenerateRandomString(6);
-
-        bool? r = await _userRepository.UpdateVerificationSecretForPasswordChange(verificationMessage, email);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't add verification secret for user.");
-
-        try
-        {
-            _notificationHelper.SendVerificationMessage(user.Email!, verificationMessage);
-        }
-        catch (ArgumentNullException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (ObjectDisposedException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (InvalidOperationException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
-        catch (System.Exception) { return Problem("We couldn't send the verification message to your email, please try again."); }
-
-        return Ok();
+        return Ok("The password changed successfully.");
     }
 
-    [HttpPost("change-password")]
-    public async Task<ActionResult> ChangePassword(ChangePassword dto)
+    [HttpPost(PATH_POST_LOGIN)]
+    public async Task<IActionResult> Login(Login loggingInUser)
     {
-        if (dto.Password != dto.PasswordConfirmation) return BadRequest("Password confirmation doesn't match with password.");
-
-        User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
-
-        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
-
-        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
-
-        bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't change the user's password.");
-
-        return Ok("the password changed successfully.");
-    }
-
-    [HttpPost("login")]
-    public async Task<ActionResult> Login(Login loggingInUser, [FromServices] IJWTAuthenticationHandler jwtAuthenticationHandler)
-    {
-        if (loggingInUser.Username == null && loggingInUser.Email == null) return BadRequest("No credentials provided.");
-
-        User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
-        if (user == null) return NotFound("We couldn't find the provided credentials.");
-        if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) return NotFound("We couldn't find the provided credentials.");
-
-        if (user.IsVerified == false) return StatusCode(403, "Your account is not activated yet.");
-
-        bool? r = await _userRepository.Login(user);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't change the user's password.");
-
-        string jwt = jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
-
-        return Ok(new { jwt = jwt, user = user.GetReadable((ObjectId)user.Id, _mapper) });
+        try { return Ok(await _userManagement.Login(loggingInUser)); }
+        catch (MissingCredentialException) { return BadRequest("No credentials provided."); }
+        catch (InvalidPasswordException) { return NotFound("We couldn't find a user with the provided credentials."); }
+        catch (UnverifiedUserException) { return StatusCode(403, "Your account is not activated yet."); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with the provided credentials."); }
+        catch (OperationException) { return Problem("We couldn't change the user's password."); }
     }
 
     [Authorize]
-    [HttpPost("logout")]
-    public async Task<ActionResult> Logout()
+    [HttpPost(PATH_POST_LOGOUT)]
+    public async Task<IActionResult> Logout()
     {
-        string? idString = await _authHelper.GetIdentifier(User, _userRepository);
-        if (idString == null) return Unauthorized();
-
-        if (!ObjectId.TryParse(idString, out ObjectId id)) return BadRequest();
+        string? id = await _authHelper.GetIdentifier(User);
+        if (id == null) return Unauthorized();
 
         if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
 
-        bool? r = await _userRepository.Logout(id);
-        if (r == null) return NotFound("We couldn't find your account.");
-        if (r == false) return Problem("We couldn't log you out.");
+        try { await _userManagement.Logout(id); }
+        catch (ArgumentException) { return BadRequest(); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
+        catch (OperationException) { return Problem("We couldn't log you out."); }
 
         return Ok();
     }
 
     [Permissions(Permissions = new string[] { "update_account" })]
-    [HttpPost("change-username")]
-    public async Task<ActionResult> ChangeUsername(ChangeUsername dto)
+    [HttpPost(PATH_POST_CHANGE_USERNAME)]
+    public async Task<IActionResult> ChangeUsername(ChangeUsername dto)
     {
-        User? user = await _userRepository.RetrieveUserForUsernameChange(dto.Email);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
+        try { await _userManagement.ChangeUsername(dto); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (VerificationCodeExpiredException) { return BadRequest("The verification code is expired, please ask for another one."); }
+        catch (InvalidVerificationCodeException) { return BadRequest("The verification code is incorrect."); }
+        catch (OperationException) { return Problem("We couldn't change the user's username."); }
 
-        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
-
-        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
-
-        bool? r = await _userRepository.ChangeUsername(dto.Email, dto.Username);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't change the user's username.");
-
-        return Ok("the username changed successfully.");
+        return Ok("The username changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "update_account" })]
-    [HttpPost("change-email")]
-    public async Task<ActionResult> ChangeEmail(ChangeEmail dto)
+    [HttpPost(PATH_POST_CHANGE_EMAIL)]
+    public async Task<IActionResult> ChangeEmail(ChangeEmail dto)
     {
-        User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
+        try { await _userManagement.ChangeEmail(dto); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (VerificationCodeExpiredException) { return BadRequest("The verification code is expired, please ask for another one."); }
+        catch (InvalidVerificationCodeException) { return BadRequest("The verification code is incorrect."); }
+        catch (OperationException) { return Problem("We couldn't change the user's email."); }
 
-        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
-
-        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
-
-        bool? r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't change the user's email.");
-
-        return Ok("the email changed successfully.");
+        return Ok("The email changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "update_account" })]
-    [HttpPost("change-phone-number")]
-    public async Task<ActionResult> ChangePhoneNumber(ChangePhoneNumber dto)
+    [HttpPost(PATH_POST_CHANGE_PHONE_NUMBER)]
+    public async Task<IActionResult> ChangePhoneNumber(ChangePhoneNumber dto)
     {
-        User? user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email);
-        if (user == null) return NotFound("We couldn't find a user with this email.");
+        try { await _userManagement.ChangePhoneNumber(dto); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
+        catch (VerificationCodeExpiredException) { return BadRequest("The verification code is expired, please ask for another one."); }
+        catch (InvalidVerificationCodeException) { return BadRequest("The verification code is incorrect."); }
+        catch (OperationException) { return Problem("We couldn't change the user's phone number."); }
 
-        DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
-        expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
-        if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) return BadRequest("The verification code is expired, please ask for another one.");
-
-        if (dto.VerificationSecret != user.VerificationSecret) return BadRequest("The verification code is incorrect.");
-
-        bool? r = await _userRepository.ChangePhoneNumber(dto.Email, dto.PhoneNumber);
-        if (r == null) return NotFound("We couldn't find a user with this email.");
-        if (r == false) return Problem("We couldn't change the user's phone number.");
-
-        return Ok("the phone number changed successfully.");
+        return Ok("The phone number changed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "delete_client" })]
-    [HttpPost("remove-client")]
-    public async Task<ActionResult> RemoveClient([FromQuery] string clientId)
+    [HttpPost(PATH_POST_REMOVE_CLIENT)]
+    public async Task<IActionResult> RemoveClient([FromQuery] string clientId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
-        string? id = await _authHelper.GetIdentifier(User, _userRepository);
-        if (id == null) return Unauthorized();
+        string? userId = await _authHelper.GetIdentifier(User);
+        if (userId == null) return Unauthorized();
 
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return Unauthorized();
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) return BadRequest("The client id is not valid.");
-
-        User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return NotFound("We couldn't find your account.");
-
-        bool? r = await _userRepository.RemoveClient(user, clientObjectId, userId, false);
-        if (r == null) return NotFound("You don't have a client with this client id.");
-        if (r == false) return Problem("We couldn't remove the client.");
+        try { await _userManagement.RemoveClient(clientId, userId); }
+        catch (ArgumentException ex) { return ex.Message == "clientId" ? Unauthorized() : BadRequest("The client id is not valid."); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
+        catch (OperationException) { return Problem("We couldn't remove the client."); }
 
         return Ok("The client removed successfully.");
     }
 
     [Permissions(Permissions = new string[] { "delete_clients" })]
-    [HttpPost("remove-clients")]
-    public async Task<ActionResult> RemoveClients()
+    [HttpPost(PATH_REMOVE_CLIENTS)]
+    public async Task<IActionResult> RemoveClients()
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
-        string? id = await _authHelper.GetIdentifier(User, _userRepository);
-        if (id == null) return Unauthorized();
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return Unauthorized();
+        string? userId = await _authHelper.GetIdentifier(User);
+        if (userId == null) return Unauthorized();
 
-        User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return NotFound("We couldn't find your account.");
-
-        bool? r = await _userRepository.RemoveAllClients(user, userId, false);
-        if (r == null) return NotFound("You don't have any client.");
-        if (r == false) return Problem("We couldn't remove your clients.");
+        try { await _userManagement.RemoveClients(userId); }
+        catch (ArgumentException ex) { return ex.Message == "clientId" ? Unauthorized() : BadRequest("The client id is not valid."); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
+        catch (OperationException) { return Problem("We couldn't remove the clients."); }
 
         return Ok("All of the clients removed successfully.");
     }
 
-    [HttpGet("user/{id}")]
+    [HttpGet(PATH_GET_USER)]
     [Permissions(Permissions = new string[] { "read_account" })]
-    public async Task<ActionResult> RetrieveById(string id)
+    public async Task<IActionResult> RetrieveById(string userId)
     {
-        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return Unauthorized();
+
+        User? user = null;
+
+        try { user = await _userManagement.RetrieveById(actorId, userId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException) { return BadRequest(); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
+
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
-        if (!ObjectId.TryParse(id, out ObjectId objectId)) return BadRequest();
 
-        User? user = await _userRepository.RetrieveById(actorObjectId, objectId, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (user == null) return NotFound();
-
-        object? content = user.GetReadable(actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (content == null) return NotFound();
+        object content = user.GetReadable(actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT");
 
         return Ok(content);
     }
 
-    [NonAction]
-    public async Task<User?> RetrieveByIdRpc([ObjectIdAttribute] string userId, [ObjectIdAttribute] string authorId, bool isClient) => await _userRepository.RetrieveById(ObjectId.Parse(userId), ObjectId.Parse(authorId), isClient);
-
-    [HttpGet("user/clients")]
+    [HttpGet(PATH_GET_USER_CLIENTS)]
     [Permissions(Permissions = new string[] { "read_clients" })]
-    public async Task<ActionResult> RetrieveClients()
+    public async Task<IActionResult> RetrieveClients()
     {
-        string? id = await _authHelper.GetIdentifier(User, _userRepository);
+        string? id = await _authHelper.GetIdentifier(User);
         if (id == null) return Unauthorized();
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return BadRequest();
 
-        User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return NotFound();
+        User? user = null;
+        try { user = await _userManagement.RetrieveById(id, id, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException) { return BadRequest(); }
+        catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
 
         List<UserClient> userClients = user.Clients.ToList();
 
         return Ok(userClients);
     }
 
-    [HttpGet("users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}")]
+    [HttpGet(PATH_GET_USERS)]
     [Permissions(Permissions = new string[] { "read_account" })]
     [Permissions(Permissions = new string[] { "read_accounts" })]
-    public async Task<ActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    public async Task<IActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
-        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return Unauthorized();
+
+        List<User>? users = null;
+        try { users = await _userManagement.Retrieve(actorId, _authHelper.GetAuthenticationType(User) != "JWT", logicsString, limit, iteration, sortBy, ascending); }
+        catch (ArgumentException) { return BadRequest(); }
+
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
 
-        List<User> users = await _userRepository.Retrieve(actorObjectId, logicsString, limit, iteration, sortBy, ascending, _authHelper.GetAuthenticationType(User) != "JWT");
-
-        return Ok(user_management.Models.User.GetReadables(users, actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT"));
+        return users.Count == 0 ? NotFound() : Ok(user_management.Models.User.GetReadables(users, actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT"));
     }
 
     [Permissions(Permissions = new string[] { "read_account" })]
     [Permissions(Permissions = new string[] { "read_accounts" })]
     [Permissions(Permissions = new string[] { "update_account" })]
     [Permissions(Permissions = new string[] { "update_accounts" })]
-    [HttpPatch("users")]
-    public async Task<ActionResult> Update(UserPatchDto userPatchDto)
+    [HttpPatch(PATH_PATCH_USERS)]
+    public async Task<IActionResult> Update(UserPatchDto userPatchDto)
     {
-        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") return BadRequest();
+        if (String.IsNullOrWhiteSpace(userPatchDto.UpdatesString) || String.IsNullOrWhiteSpace(userPatchDto.FiltersString) || userPatchDto.FiltersString == "empty") return BadRequest();
 
-        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return BadRequest("Invalid id");
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest("Invalid id");
 
-        bool? r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, _authHelper.GetAuthenticationType(User) != "JWT");
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        try { await _userManagement.Update(actorId, userPatchDto, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException) { return BadRequest(); }
+        catch (DataNotFoundException) { return NotFound(); }
+        catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
-    [HttpGet("user/mass-updatable-properties")]
+    [HttpGet(PATH_GET_USER_MASS_UPDATABLE_PROPERTIES)]
     [Permissions(Permissions = new string[] { "read_account" })]
-    public ActionResult RetrieveMassUpdatableProperties() => Ok(Models.User.GetMassUpdatableFields());
+    public IActionResult RetrieveMassUpdatableProperties() => Ok(Models.User.GetMassUpdatableFields());
 
-    [HttpGet("user/mass-update-protected-properties")]
+    [HttpGet(PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES)]
     [Permissions(Permissions = new string[] { "read_account" })]
-    public ActionResult RetrieveMassUpdateProtectedProperties() => Ok(Models.User.GetProtectedFieldsAgainstMassUpdating());
+    public IActionResult RetrieveMassUpdateProtectedProperties() => Ok(Models.User.GetProtectedFieldsAgainstMassUpdating());
 
     [Permissions(Permissions = new string[] { "delete_account" })]
-    [HttpDelete("user")]
-    public async Task<ActionResult> Delete([ObjectIdAttribute][FromQuery] string id)
+    [HttpDelete(PATH_DELETE_USER)]
+    public async Task<IActionResult> Delete([ObjectIdAttribute][FromQuery] string id)
     {
-        string? actorId = await _authHelper.GetIdentifier(User, _userRepository);
+        string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return Unauthorized();
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
 
-        bool? r = await _userRepository.Delete(actorObjectId, ObjectId.Parse(id), _authHelper.GetAuthenticationType(User) != "JWT");
-        if (r == null) return NotFound();
-        if (r == false) return Problem();
+        try { await _userManagement.Delete(actorId, id, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException) { return BadRequest(); }
+        catch (DataNotFoundException) { return NotFound(); }
+        catch (OperationException) { return Problem(); }
 
         return Ok();
     }
+
+    // putting api paths in constants for later use in tests.
+    public const string PATH_GET_FULL_NAME_EXISTENCE_CHECK = "full-name-existence-check/{firstName}/{middleName}/{lastName}";
+    public const string PATH_GET_USERNAME_EXISTENCE_CHECK = "username-existence-check/{username}";
+    public const string PATH_GET_EMAIL_EXISTENCE_CHECK = "email-existence-check/{email}";
+    public const string PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK = "phone-number-existence-check/{phoneNumber}";
+    public const string PATH_POST_REGISTER = "register";
+    public const string PATH_POST_SEND_VERIFICATION_EMAIL = "send-verification-email";
+    public const string PATH_POST_ACTIVATE = "activate";
+    public const string PATH_POST_CHANGE_PASSWORD = "change-password";
+    public const string PATH_POST_LOGIN = "login";
+    public const string PATH_POST_LOGOUT = "logout";
+    public const string PATH_POST_CHANGE_USERNAME = "change-username";
+    public const string PATH_POST_CHANGE_EMAIL = "change-email";
+    public const string PATH_POST_CHANGE_PHONE_NUMBER = "change-phone-number";
+    public const string PATH_POST_REMOVE_CLIENT = "remove-client";
+    public const string PATH_REMOVE_CLIENTS = "remove-clients";
+    public const string PATH_GET_USER = "user/{id}";
+    public const string PATH_GET_USER_CLIENTS = "user/clients";
+    public const string PATH_GET_USERS = "users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
+    public const string PATH_PATCH_USERS = "users";
+    public const string PATH_GET_USER_MASS_UPDATABLE_PROPERTIES = "user/mass-updatable-properties";
+    public const string PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES = "user/mass-update-protected-properties";
+    public const string PATH_DELETE_USER = "user";
 }
