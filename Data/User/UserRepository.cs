@@ -42,11 +42,11 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User?> RetrieveByFullNameForExistenceCheck(string fullName) => fullName.Split("-").Length != 3 ? null : (await _userCollection.FindAsync(
+    public async Task<User?> RetrieveByFullNameForExistenceCheck(string firstName, string middleName, string lastName) => (await _userCollection.FindAsync(
         Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(User.FIRST_NAME, fullName.Split("-")[0]),
-            Builders<User>.Filter.Eq(User.MIDDLE_NAME, fullName.Split("-")[1]),
-            Builders<User>.Filter.Eq(User.LAST_NAME, fullName.Split("-")[2])
+            Builders<User>.Filter.Eq(User.FIRST_NAME, firstName),
+            Builders<User>.Filter.Eq(User.MIDDLE_NAME, middleName),
+            Builders<User>.Filter.Eq(User.LAST_NAME, lastName)
         ))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByUsernameForExistenceCheck(string username) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.USERNAME, username))).FirstOrDefault<User?>();
