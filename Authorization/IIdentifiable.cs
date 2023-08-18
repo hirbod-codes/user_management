@@ -1,6 +1,6 @@
 namespace user_management.Authorization
 {
-    internal interface IIdentifiable
+    public interface IIdentifiable
     {
         Guid Identifier { get; }
     }
