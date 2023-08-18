@@ -1,16 +1,11 @@
 using System.Security.Claims;
-using System.Net.Mail;
 using Bogus;
-using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using user_management.Dtos.User;
-using user_management.Models;
 using user_management.Services;
 using user_management.Services.Data;
-using user_management.Services.Data.User;
 using Xunit;
 using Moq;
-using System.Dynamic;
 
 namespace user_management.Tests.UnitTests.Controllers;
 
