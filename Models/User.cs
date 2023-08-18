@@ -101,7 +101,7 @@ public class User
         return rawUsers.Where<object>(o => o != null).ToList();
     }
 
-    public object? GetReadable(ObjectId actorId, IMapper IMapper, bool forClients = false)
+    public object GetReadable(ObjectId actorId, IMapper IMapper, bool forClients = false)
     {
         var userRetrieveDto = new ExpandoObject() as IDictionary<string, Object?>;
         List<Field>? fields = new List<Field>() { };
