@@ -3,13 +3,16 @@ namespace user_management.Tests;
 using AutoMapper;
 using MongoDB.Driver;
 using Moq;
-using user_management.Data.Client;
-using user_management.Data.User;
+using user_management.Controllers.Services;
+using user_management.Services.Client;
+using user_management.Services.Data.User;
 using user_management.Utilities;
 using Xunit;
 
 public class ControllerFixture
 {
+    public Mock<IUserManagement> IUserManagement { get; private set; } = new();
+
     public Mock<IUserRepository> IUserRepository { get; private set; } = new();
     public Mock<IClientRepository> IClientRepository { get; private set; } = new();
 
@@ -22,6 +25,8 @@ public class ControllerFixture
 
     public void Reset()
     {
+        IUserManagement = new Mock<IUserManagement>();
+
         IUserRepository = new Mock<IUserRepository>();
         IClientRepository = new Mock<IClientRepository>();
 
