@@ -16,6 +16,7 @@ using user_management.Middlewares;
 using static System.Net.Mime.MediaTypeNames;
 using user_management.Services;
 using user_management.Services.Data.User;
+using user_management.Services.Client;
 using user_management.Controllers.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,14 +72,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseCors(cpb =>
 {
     cpb.AllowAnyHeader();
     cpb.AllowAnyMethod();
     cpb.AllowAnyOrigin();
 });
-
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
