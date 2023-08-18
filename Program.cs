@@ -33,6 +33,7 @@ builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
 builder.Services.AddSingleton<IUserManagement, UserManagement>();
+builder.Services.AddSingleton<IUserPrivilegesManagement, UserPrivilegesManagement>();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
