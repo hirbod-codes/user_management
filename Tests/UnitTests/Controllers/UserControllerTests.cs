@@ -36,9 +36,6 @@ public class UserControllerTests
 
         var actionResult = await InstantiateController().FullNameExistenceCheck(firstName, middleName, lastName);
 
-        StatusCodeResult? statusCodeResult = (actionResult as StatusCodeResult);
-        ObjectResult? objectResult = (actionResult as ObjectResult);
-
         HttpAsserts.IsOk(actionResult);
     }
 
@@ -65,9 +62,6 @@ public class UserControllerTests
 
         var actionResult = await InstantiateController().UsernameExistenceCheck(username);
 
-        StatusCodeResult? statusCodeResult = (actionResult as StatusCodeResult);
-        ObjectResult? objectResult = (actionResult as ObjectResult);
-
         HttpAsserts.IsOk(actionResult);
     }
 
@@ -92,9 +86,6 @@ public class UserControllerTests
 
         var actionResult = await InstantiateController().EmailExistenceCheck(email);
 
-        StatusCodeResult? statusCodeResult = (actionResult as StatusCodeResult);
-        ObjectResult? objectResult = (actionResult as ObjectResult);
-
         HttpAsserts.IsOk(actionResult);
     }
 
@@ -118,9 +109,6 @@ public class UserControllerTests
         Fixture.IUserManagement.Setup<Task<bool>>(um => um.PhoneNumberExistenceCheck(phoneNumber)).Returns(Task.FromResult(true));
 
         var actionResult = await InstantiateController().PhoneNumberExistenceCheck(phoneNumber);
-
-        StatusCodeResult? statusCodeResult = (actionResult as StatusCodeResult);
-        ObjectResult? objectResult = (actionResult as ObjectResult);
 
         HttpAsserts.IsOk(actionResult);
     }
@@ -147,7 +135,6 @@ public class UserControllerTests
         Fixture.IUserManagement.Setup<Task<User>>(um => um.Register(dto)).Returns(Task.FromResult(user));
 
         var actionResult = await InstantiateController().Register(dto);
-        var t = (actionResult as ObjectResult)!.Value;
 
         HttpAsserts<string>.IsOk(actionResult, id.ToString());
     }
@@ -185,7 +172,6 @@ public class UserControllerTests
 
         Fixture.IUserManagement.Setup<Task<User>>(um => um.Register(dto)).Throws<DuplicationException>();
         actionResult = await InstantiateController().Register(dto);
-        var t = (actionResult as ObjectResult)!.Value;
         HttpAsserts<string>.IsBadRequest(actionResult, "The username or email you chose is no longer unique, please choose another.");
     }
 
