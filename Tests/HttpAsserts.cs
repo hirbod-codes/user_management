@@ -8,7 +8,7 @@ public static class HttpAsserts
     public static void IsProblem(IActionResult actionResult, string? value, int code = 500)
     {
         Assert.Equal<int>(code, (int)(actionResult as ObjectResult)!.StatusCode!);
-        Assert.Equal<string>(value!, (string)((actionResult as ObjectResult)!.Value as ProblemDetails)!.Detail!);
+        Assert.Equal(value!, (string)((actionResult as ObjectResult)!.Value as ProblemDetails)!.Detail!);
     }
     public static void IsBadRequest(IActionResult actionResult, int code = 400) => Assert.Equal<int>(code, (int)(actionResult as StatusCodeResult)!.StatusCode!);
     public static void IsNotFound(IActionResult actionResult, int code = 404) => Assert.Equal<int>(code, (int)(actionResult as StatusCodeResult)!.StatusCode!);
