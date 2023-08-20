@@ -15,18 +15,16 @@ public class UserManagement : IUserManagement
     private const int EXPIRATION_MINUTES = 6;
     private readonly IMapper _mapper;
     private readonly IUserRepository _userRepository;
-    private readonly IAuthHelper _authHelper;
     private readonly IStringHelper _stringHelper;
     private readonly INotificationHelper _notificationHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IJWTAuthenticationHandler _jwtAuthenticationHandler;
 
-    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IAuthHelper authHelper, IUserRepository userRepository, IMapper mapper, IJWTAuthenticationHandler jwtAuthenticationHandler)
+    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IJWTAuthenticationHandler jwtAuthenticationHandler)
     {
         _dateTimeProvider = dateTimeProvider;
         _notificationHelper = notificationHelper;
         _stringHelper = stringHelper;
-        _authHelper = authHelper;
         _userRepository = userRepository;
         _mapper = mapper;
         _jwtAuthenticationHandler = jwtAuthenticationHandler;
@@ -240,10 +238,10 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task Delete(string actorId, string id, bool forClients)
+    public async Task Delete(string actorId, string userId, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
-        if (!ObjectId.TryParse(id, out ObjectId objectId)) throw new ArgumentException("id");
+        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException("userId");
 
         bool? r = await _userRepository.Delete(actorObjectId, objectId, forClients);
         if (r == null) throw new DataNotFoundException();
