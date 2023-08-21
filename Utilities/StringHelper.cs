@@ -49,7 +49,7 @@ public class StringHelper : IStringHelper
     {
         byte[] salt = RandomNumberGenerator.GetBytes(16);
 
-        Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(str, salt, 100000);
+        Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(str, salt, 100000, HashAlgorithmName.SHA512);
         byte[] hash = pbkdf2.GetBytes(20);
 
         byte[] hashBytes = new byte[36];
@@ -66,7 +66,7 @@ public class StringHelper : IStringHelper
         byte[] salt = new byte[16];
         Array.Copy(hashBytes, 0, salt, 0, 16);
 
-        Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(rawStr, salt, 100000);
+        Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(rawStr, salt, 100000, HashAlgorithmName.SHA512);
         byte[] hash = pbkdf2.GetBytes(20);
 
         for (int i = 0; i < 20; i++)
