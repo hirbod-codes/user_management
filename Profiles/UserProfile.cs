@@ -63,10 +63,10 @@ public class UserPrivilegesPatchConverter : ITypeConverter<UserPrivilegesPatchDt
 {
     public UserPrivileges Convert(UserPrivilegesPatchDto s, UserPrivileges d, ResolutionContext context) => new UserPrivileges()
     {
-        Readers = s.Readers.ToList().ConvertAll<Reader>(o => new Reader() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
+        Readers = s.Readers == null ? new Reader[] { } : s.Readers.ToList().ConvertAll<Reader>(o => new Reader() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
         AllReaders = s.AllReaders,
-        Updaters = s.Updaters.ToList().ConvertAll<Updater>(o => new Updater() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
+        Updaters = s.Updaters == null ? new Updater[] { } : s.Updaters.ToList().ConvertAll<Updater>(o => new Updater() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
         AllUpdaters = s.AllUpdaters,
-        Deleters = s.Deleters.ToList().ConvertAll<Deleter>(o => new Deleter() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted }).ToArray(),
+        Deleters = s.Deleters == null ? new Deleter[] { } : s.Deleters.ToList().ConvertAll<Deleter>(o => new Deleter() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted }).ToArray(),
     };
 }
