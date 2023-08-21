@@ -21,7 +21,7 @@ public class DatabaseExceptionHandlerMiddleware
         }
         catch (Exception e)
         {
-            if (e.GetType().Namespace != "MongoDB.Driver") throw e;
+            if (e.GetType().Namespace != "MongoDB.Driver") throw;
 
             int statusCode = 500;
 
