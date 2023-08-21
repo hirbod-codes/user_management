@@ -18,7 +18,7 @@ public class User
 
     [BsonElement(PRIVILEGES)]
     [BsonRequired]
-    public Privilege[] Privileges { get; set; } = new Privilege[] { };
+    public Privilege[] Privileges { get; set; } = StaticData.GetDefaultUserPrivileges().ToArray();
     public const string PRIVILEGES = "privileges";
 
     [BsonElement(USER_PRIVILEGES)]
@@ -74,7 +74,7 @@ public class User
 
     [BsonElement(IS_VERIFIED)]
     [BsonRequired]
-    public bool? IsVerified { get; set; }
+    public bool? IsVerified { get; set; } = false;
     public const string IS_VERIFIED = "is_verified";
 
     [BsonElement(LOGGED_OUT_AT)]
@@ -83,12 +83,12 @@ public class User
 
     [BsonElement(UPDATED_AT)]
     [BsonRequired]
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
     public const string UPDATED_AT = "updated_at";
 
     [BsonElement(CREATED_AT)]
     [BsonRequired]
-    public DateTime? CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
     public const string CREATED_AT = "created_at";
 
     public static List<object> GetReadables(List<User> users, ObjectId actorId, IMapper IMapper, bool forClients = false)
