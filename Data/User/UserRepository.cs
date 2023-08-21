@@ -35,7 +35,7 @@ public class UserRepository : IUserRepository
         user.UserPrivileges = User.GetDefaultUserPrivileges((ObjectId)user.Id);
 
         try { await _userCollection.InsertOneAsync(user); }
-        catch (MongoDuplicateKeyException) { throw; }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
         catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
         catch (Exception) { throw new DatabaseServerException(); }
 
