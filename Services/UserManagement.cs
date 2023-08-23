@@ -83,9 +83,9 @@ public class UserManagement : IUserManagement
 
         if (activatingUser.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
-        if (!_stringHelper.DoesHashMatch(user.Password!, activatingUser.Password)) throw new InvalidPasswordException();
+        if (!_stringHelper.DoesHashMatch(user.Password, activatingUser.Password)) throw new InvalidPasswordException();
 
-        bool? r = await _userRepository.Verify((ObjectId)user.Id!);
+        bool? r = await _userRepository.Verify((ObjectId)user.Id);
         if (r == null) throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
@@ -108,23 +108,23 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task<(string jwt, object user)> Login(Login loggingInUser)
+    public async Task<(string jwt, string userId)> Login(Login loggingInUser)
     {
         if (loggingInUser.Username == null && loggingInUser.Email == null) throw new MissingCredentialException();
 
         Models.User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
         if (user == null) throw new DataNotFoundException();
-        if (!_stringHelper.DoesHashMatch(user.Password!, loggingInUser.Password)) throw new InvalidPasswordException();
+        if (!_stringHelper.DoesHashMatch(user.Password, loggingInUser.Password)) throw new InvalidPasswordException();
 
         if (user.IsVerified == false) throw new UnverifiedUserException();
 
-        bool? r = await _userRepository.Login(user);
+        bool? r = await _userRepository.Login(user.Id);
         if (r == null) throw new DataNotFoundException();
         if (r == false) throw new OperationException();
 
-        string jwt = _jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id!.ToString()!);
+        string jwt = _jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id.ToString()!);
 
-        return (jwt, user.GetReadable((ObjectId)user.Id, _mapper));
+        return (jwt, user.Id.ToString());
     }
 
     public async Task Logout(string identifier)
@@ -184,43 +184,39 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task RemoveClient(string clientId, string userId)
+    public async Task RemoveClient(string clientId, string userId, string authorId, bool forClients)
     {
         if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException("userId");
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException("authorId");
         if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
 
-        Models.User? user = await _userRepository.RetrieveById(userObjectId, userObjectId);
-        if (user == null) throw new DataNotFoundException();
-
-        bool? r = await _userRepository.RemoveClient(user, clientObjectId, userObjectId, false);
+        bool? r = await _userRepository.RemoveClient(userObjectId, clientObjectId, authorObjectId, forClients);
         if (r == null) throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
-    public async Task RemoveClients(string userId)
+    public async Task RemoveClients(string userId, string authorId, bool forClients)
     {
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException();
+        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException("userId");
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException("authorId");
 
-        Models.User? user = await _userRepository.RetrieveById(userObjectId, userObjectId);
-        if (user == null) throw new DataNotFoundException();
-
-        bool? r = await _userRepository.RemoveAllClients(user, userObjectId, false);
+        bool? r = await _userRepository.RemoveAllClients(userObjectId, authorObjectId, forClients);
         if (r == null) throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
-    public async Task<Models.User> RetrieveById(string actorId, string userId, bool forClients)
+    public async Task<Models.PartialUser> RetrieveById(string actorId, string userId, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
         if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException("userId");
 
-        Models.User? user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients);
+        Models.PartialUser? user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients);
         if (user == null) throw new DataNotFoundException();
 
         return user;
     }
 
-    public async Task<List<Models.User>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    public async Task<List<Models.PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException();
 
