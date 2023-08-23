@@ -8,7 +8,7 @@ public class RefreshToken
 {
     [BsonElement(TOKEN_PRIVILEGES)]
     [BsonRequired]
-    public TokenPrivileges? TokenPrivileges { get; set; }
+    public TokenPrivileges TokenPrivileges { get; set; } = new();
     public const string TOKEN_PRIVILEGES = "token_privileges";
 
     [BsonElement(CODE)]
@@ -23,17 +23,17 @@ public class RefreshToken
 
     [BsonElement(CODE_CHALLENGE)]
     [BsonRequired]
-    public string? CodeChallenge { get; set; }
+    public string CodeChallenge { get; set; } = null!;
     public const string CODE_CHALLENGE = "code_challenge";
 
     [BsonElement(CODE_CHALLENGE_METHOD)]
     [BsonRequired]
-    public string? CodeChallengeMethod { get; set; }
+    public string CodeChallengeMethod { get; set; } = null!;
     public const string CODE_CHALLENGE_METHOD = "code_challenge_method";
 
     [BsonElement(VALUE)]
     [BsonRequired]
-    public string? Value { get; set; } // Not hashed, MUST BE UNIQUE
+    public string Value { get; set; } = null!; // Not hashed, MUST BE UNIQUE
     public const string VALUE = "value";
 
     [BsonElement(IS_VERIFIED)]
@@ -43,6 +43,6 @@ public class RefreshToken
 
     [BsonElement(EXPIRATION_DATE)]
     [BsonRequired]
-    public DateTime? ExpirationDate { get; set; }
+    public DateTime ExpirationDate { get; set; }
     public const string EXPIRATION_DATE = "expiration_date";
 }

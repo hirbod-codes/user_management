@@ -7,7 +7,7 @@ public class UserClient
 {
     [BsonElement(CLIENT_ID)]
     [BsonRequired]
-    public ObjectId? ClientId { get; set; }
+    public ObjectId ClientId { get; set; }
     public const string CLIENT_ID = "client_id";
 
     [BsonElement(REFRESH_TOKEN)]
