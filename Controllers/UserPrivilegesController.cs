@@ -28,14 +28,14 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS })]
     [HttpPatch(UPDATE_READERS)]
-    public async Task<IActionResult> UpdateReaders(UserPrivilegesPatchDto dto)
+    public async Task<IActionResult> UpdateReaders(UserPrivilegesPatchDto dto, string userId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? authorId = await _authHelper.GetIdentifier(User);
         if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
 
-        try { await _userPrivilegesManagement.UpdateReaders(authorId, dto); }
+        try { await _userPrivilegesManagement.UpdateReaders(authorId, userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -45,14 +45,14 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_READERS })]
     [HttpPatch(UPDATE_ALL_READERS)]
-    public async Task<IActionResult> UpdateAllReaders(UserPrivilegesPatchDto dto)
+    public async Task<IActionResult> UpdateAllReaders(UserPrivilegesPatchDto dto, string userId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? authorId = await _authHelper.GetIdentifier(User);
         if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
 
-        try { await _userPrivilegesManagement.UpdateAllReaders(authorId, dto); }
+        try { await _userPrivilegesManagement.UpdateAllReaders(authorId, userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -62,14 +62,14 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_UPDATERS })]
     [HttpPatch(UPDATE_UPDATERS)]
-    public async Task<IActionResult> UpdateUpdaters(UserPrivilegesPatchDto dto)
+    public async Task<IActionResult> UpdateUpdaters(UserPrivilegesPatchDto dto, string userId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? authorId = await _authHelper.GetIdentifier(User);
         if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
 
-        try { await _userPrivilegesManagement.UpdateUpdaters(authorId, dto); }
+        try { await _userPrivilegesManagement.UpdateUpdaters(authorId, userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -79,14 +79,14 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_UPDATERS })]
     [HttpPatch(UPDATE_ALL_UPDATERS)]
-    public async Task<IActionResult> UpdateAllUpdaters(UserPrivilegesPatchDto dto)
+    public async Task<IActionResult> UpdateAllUpdaters(UserPrivilegesPatchDto dto, string userId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? authorId = await _authHelper.GetIdentifier(User);
         if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
 
-        try { await _userPrivilegesManagement.UpdateAllUpdaters(authorId, dto); }
+        try { await _userPrivilegesManagement.UpdateAllUpdaters(authorId, userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -96,14 +96,14 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_DELETERS })]
     [HttpPatch(UPDATE_DELETERS)]
-    public async Task<IActionResult> UpdateDeleters(UserPrivilegesPatchDto dto)
+    public async Task<IActionResult> UpdateDeleters(UserPrivilegesPatchDto dto, string userId)
     {
         if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
 
         string? authorId = await _authHelper.GetIdentifier(User);
         if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
 
-        try { await _userPrivilegesManagement.UpdateDeleters(authorId, dto); }
+        try { await _userPrivilegesManagement.UpdateDeleters(authorId, userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -113,11 +113,11 @@ public class UserPrivilegesController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
     [HttpGet(READER_ASSIGNABLE_FIELDS)]
-    public IActionResult ReaderAssignableFields() => Ok(Models.User.ReaderAssignableFields());
+    public IActionResult ReaderAssignableFields() => Ok(Models.User.GetReadableFields());
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
     [HttpGet(UPDATER_ASSIGNABLE_FIELDS)]
-    public IActionResult UpdaterAssignableFields() => Ok(Models.User.UpdaterAssignableFields());
+    public IActionResult UpdaterAssignableFields() => Ok(Models.User.GetUpdatableFields());
 
     public const string UPDATE_READERS = "update-readers";
     public const string UPDATE_ALL_READERS = "update-all-readers";
