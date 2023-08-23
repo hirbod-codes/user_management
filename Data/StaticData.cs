@@ -121,8 +121,6 @@ public static class StaticData
             },
         };
 
-    public static List<Privilege> GetDefaultUserPrivileges()
-    {
-        return Privileges;
-    }
+    public static List<Privilege> GetDefaultUserPrivileges() => Privileges;
+    public static List<Privilege> GetAllPrivileges() => Privileges;
 }
