@@ -1,3 +1,4 @@
+using MongoDB.Bson;
 using user_management.Dtos.User;
 
 namespace user_management.Controllers.Services;
@@ -44,7 +45,7 @@ public interface IUserManagement
     /// <exception cref="user_management.Services.Data.User.UnverifiedUserException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task<(string jwt, object user)> Login(Login loggingInUser);
+    public Task<(string jwt, string userId)> Login(Login loggingInUser);
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
@@ -72,19 +73,22 @@ public interface IUserManagement
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task RemoveClient(string clientId, string userId);
+    /// <exception cref="UnauthorizedAccessException"></exception>
+    public Task RemoveClient(string clientId, string userId, string authorId, bool forClients);
+
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task RemoveClients(string userId);
+    /// <exception cref="UnauthorizedAccessException"></exception>
+    public Task RemoveClients(string userId, string authorId, bool forClients);
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    public Task<Models.User> RetrieveById(string actorId, string userId, bool forClients);
+    public Task<Models.PartialUser> RetrieveById(string actorId, string userId, bool forClients);
 
     /// <exception cref="ArgumentException"></exception>
-    public Task<List<Models.User>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true);
+    public Task<List<Models.PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true);
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
