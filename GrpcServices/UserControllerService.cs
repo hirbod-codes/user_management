@@ -32,11 +32,11 @@ public class UserControllerService : UserController.UserControllerBase
     }
     public override async Task<GetResponse> Get(GetRequest request, ServerCallContext context)
     {
-        User user = await _userManagement.RetrieveById(request.AuthorId, request.Id, request.IsClient);
+        PartialUser user = await _userManagement.RetrieveById(request.AuthorId, request.Id, request.IsClient);
 
         if (!ObjectId.TryParse(request.AuthorId, out ObjectId authorObjectId)) throw new ArgumentException();
 
-        object? content = user.GetReadable(authorObjectId, _mapper, request.IsClient);
+        object? content = user.GetReadable();
         return new GetResponse()
         {
             User = new Google.Protobuf.WellKnownTypes.Any()
