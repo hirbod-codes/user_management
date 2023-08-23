@@ -5,7 +5,6 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using user_management.Authorization.Attributes;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -167,15 +166,13 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_client" })]
     [HttpPost(PATH_POST_REMOVE_CLIENT)]
-    public async Task<IActionResult> RemoveClient([FromQuery] string clientId)
+    public async Task<IActionResult> RemoveClient([FromQuery] string clientId, [FromQuery] string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        string? authorId = await _authHelper.GetIdentifier(User);
+        if (authorId == null) return Unauthorized();
 
-        string? userId = await _authHelper.GetIdentifier(User);
-        if (userId == null) return Unauthorized();
-
-        try { await _userManagement.RemoveClient(clientId, userId); }
-        catch (ArgumentException ex) { return ex.Message == "clientId" ? Unauthorized() : BadRequest("The client id is not valid."); }
+        try { await _userManagement.RemoveClient(clientId, userId, authorId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the client."); }
 
@@ -184,15 +181,13 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_clients" })]
     [HttpPost(PATH_REMOVE_CLIENTS)]
-    public async Task<IActionResult> RemoveClients()
+    public async Task<IActionResult> RemoveClients([FromQuery] string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        string? authorId = await _authHelper.GetIdentifier(User);
+        if (authorId == null) return Unauthorized();
 
-        string? userId = await _authHelper.GetIdentifier(User);
-        if (userId == null) return Unauthorized();
-
-        try { await _userManagement.RemoveClients(userId); }
-        catch (ArgumentException ex) { return ex.Message == "clientId" ? Unauthorized() : BadRequest("The client id is not valid."); }
+        try { await _userManagement.RemoveClients(userId, authorId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the clients."); }
 
@@ -206,7 +201,7 @@ public class UserController : ControllerBase
         string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return Unauthorized();
 
-        User? user = null;
+        PartialUser? user = null;
 
         try { user = await _userManagement.RetrieveById(actorId, userId, _authHelper.GetAuthenticationType(User) != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
@@ -214,9 +209,7 @@ public class UserController : ControllerBase
 
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
 
-        object content = user.GetReadable(actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT");
-
-        return Ok(content);
+        return Ok(user.GetReadable());
     }
 
     [HttpGet(PATH_GET_USER_CLIENTS)]
@@ -226,14 +219,14 @@ public class UserController : ControllerBase
         string? id = await _authHelper.GetIdentifier(User);
         if (id == null) return Unauthorized();
 
-        User? user = null;
+        PartialUser? user = null;
         try { user = await _userManagement.RetrieveById(id, id, _authHelper.GetAuthenticationType(User) != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
 
-        List<UserClient> userClients = user.Clients.ToList();
+        if (!user.IsClientsTouched()) return StatusCode(403);
 
-        return Ok(userClients);
+        return Ok(user.Clients);
     }
 
     [HttpGet(PATH_GET_USERS)]
@@ -244,13 +237,11 @@ public class UserController : ControllerBase
         string? actorId = await _authHelper.GetIdentifier(User);
         if (actorId == null) return Unauthorized();
 
-        List<User>? users = null;
+        List<PartialUser>? users = null;
         try { users = await _userManagement.Retrieve(actorId, _authHelper.GetAuthenticationType(User) != "JWT", logicsString, limit, iteration, sortBy, ascending); }
         catch (ArgumentException) { return BadRequest(); }
 
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
-
-        return users.Count == 0 ? NotFound() : Ok(user_management.Models.User.GetReadables(users, actorObjectId, _mapper, _authHelper.GetAuthenticationType(User) != "JWT"));
+        return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
     }
 
     [Permissions(Permissions = new string[] { "read_account" })]
