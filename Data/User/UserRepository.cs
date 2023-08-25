@@ -120,6 +120,65 @@ public class UserRepository : IUserRepository
             .ToList();
     }
 
+    private IAggregateFluent<BsonDocument> RetrievePipeline(IAggregateFluent<BsonDocument> pipe, ObjectId actorId) => pipe
+            .AppendStage<BsonDocument>(@$"{{
+                $addFields: {{
+                    reader: {{
+                        $arrayElemAt: [
+                        '$user_privileges.readers',
+                        {{
+                            $indexOfArray: [
+                            '$user_privileges.readers.author_id',
+                            ObjectId('{actorId.ToString()}'),
+                            ],
+                        }},
+                        ],
+                    }},
+                }}
+            }}")
+            .AppendStage<BsonDocument>(@$"{{
+                $addFields: {{
+                    readableFields: {{
+                        $map: {{
+                        input: '$reader.fields',
+                        in: '$$this.name',
+                        }},
+                    }},
+                }}
+            }}")
+            .AppendStage<BsonDocument>(@$"{{
+                $group: {{
+                    _id: null,
+                    docs: {{
+                        $push: {{
+                        $arrayToObject: {{
+                            $filter: {{
+                            input: {{
+                                $objectToArray: '$$ROOT',
+                            }},
+                            as: 'item',
+                            cond: {{
+                                $or: [
+                                    {{
+                                        $eq: ['$$item.k', '_id'],
+                                    }},
+                                    {{
+                                        $in: [
+                                        '$$item.k',
+                                        '$readableFields',
+                                        ],
+                                    }},
+                                ]
+                            }},
+                            }},
+                        }},
+                        }},
+                    }},
+                }}
+            }}")
+            .Unwind("docs")
+            .ReplaceRoot<BsonDocument>("$docs");
+
     public async Task<User?> RetrieveByIdForAuthentication(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByIdForAuthorization(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
