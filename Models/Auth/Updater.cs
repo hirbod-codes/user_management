@@ -3,7 +3,7 @@ namespace user_management.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-public class Updater
+public class Updater : IEquatable<Updater>
 {
     [BsonElement(AUTHOR_ID)]
     [BsonRequired]
@@ -43,4 +43,27 @@ public class Updater
     public const string CLIENT = "client";
 
     public static bool ValidateAuthor(string value) => value == USER || value == CLIENT;
+
+    public bool Equals(Reader? other)
+    {
+        if (other == null || Author != other.Author || AuthorId.ToString() != other.AuthorId.ToString() || IsPermitted != other.IsPermitted) return false;
+
+        for (int i = 0; i < Fields.Length; i++)
+            if (!Object.Equals(Fields[i], other.Fields[i])) return false;
+
+        return true;
+    }
+
+    public bool Equals(Updater? other)
+    {
+        if (other == null || AuthorId.ToString() != other.AuthorId.ToString() || Author != other.Author || IsPermitted != other.IsPermitted) return false;
+
+        for (int i = 0; i < Fields.Length; i++)
+            if (!Object.Equals(Fields[i], other.Fields[i])) return false;
+
+        return true;
+    }
+
+    public override bool Equals(object? obj) => obj != null && Equals((Updater)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

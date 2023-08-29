@@ -2,7 +2,7 @@ namespace user_management.Models;
 
 using MongoDB.Bson.Serialization.Attributes;
 
-public class Field
+public class Field : IEquatable<Field>
 {
     [BsonElement(NAME)]
     [BsonRequired]
@@ -13,4 +13,12 @@ public class Field
     [BsonRequired]
     public bool IsPermitted { get; set; }
     public const string IS_PERMITTED = "is_permitted";
+
+    public bool Equals(Field? other) =>
+        other != null &&
+        Name == other.Name &&
+        IsPermitted == other.IsPermitted;
+
+    public override bool Equals(object? obj) => obj != null && Equals((Field)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

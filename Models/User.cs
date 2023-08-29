@@ -1,6 +1,9 @@
 namespace user_management.Models;
 
+using System;
+using System.Collections;
 using System.Dynamic;
+using System.Reflection;
 using AutoMapper;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -9,7 +12,7 @@ using user_management.Dtos.User;
 using user_management.Utilities;
 
 [BsonIgnoreExtraElements]
-public class User
+public class User : IEquatable<User>
 {
     public User()
     {
@@ -189,4 +192,77 @@ public class User
             new Field() { Name = UPDATED_AT, IsPermitted = true },
             new Field() { Name = CREATED_AT, IsPermitted = true }
         };
+
+    public bool Equals(User? other)
+    {
+        if (other == null) return false;
+
+        Func<PropertyInfo, string> GetKeyFromProperty = p =>
+        {
+            CustomAttributeData ca = p.CustomAttributes.First(c => c != null && (c.AttributeType == typeof(BsonIdAttribute) || c.AttributeType == typeof(BsonElementAttribute)));
+
+            string key = "";
+            if (ca.AttributeType == typeof(BsonIdAttribute))
+                key = "_id";
+            else if (ca.AttributeType == typeof(BsonElementAttribute))
+                key = (ca.ConstructorArguments[0].Value as string)!;
+
+            return key;
+        };
+
+        Func<object, List<PropertyInfo>> GetProperties = o =>
+        {
+            return o
+            .GetType()
+            .GetProperties()
+            .Where(p => p.CustomAttributes.FirstOrDefault(c => c != null && (c.AttributeType == typeof(BsonElementAttribute) || c.AttributeType == typeof(BsonIdAttribute))) != null)
+            .ToList();
+        };
+
+        List<PropertyInfo> otherProperties = GetProperties(other);
+        for (int i = 0; i < otherProperties.Count(); i++)
+        {
+            PropertyInfo p = otherProperties[i];
+            var otherObjectValue = p.GetValue(other);
+
+            CustomAttributeData ca = p.CustomAttributes.First(c => c != null && (c.AttributeType == typeof(BsonIdAttribute) || c.AttributeType == typeof(BsonElementAttribute)));
+
+            PropertyInfo? thisObjectProperty = this.GetType().GetProperty(p.Name);
+            if (thisObjectProperty == null) return false;
+
+            var thisObjectValue = thisObjectProperty.GetValue(this);
+
+            if (thisObjectValue == null && otherObjectValue == null) return true;
+            else if (thisObjectValue == null || otherObjectValue == null) return false;
+
+            IEnumerable<object>? iterableObject = thisObjectValue as IEnumerable<object>;
+            if (iterableObject != null)
+            {
+                for (int j = 0; j < iterableObject.Count(); j++)
+                    if (iterableObject.ElementAt(j).GetType() == typeof(DateTime) && (
+                        (otherObjectValue as IEnumerable<object>) == null ||
+                        Math.Floor((decimal)((DateTime)iterableObject.ElementAt(j)).Ticks / 10000) != Math.Floor((decimal)((DateTime)(otherObjectValue as IEnumerable<object>)!.ElementAt(j)).Ticks / 10000))
+                    )
+                        return false;
+                    else if (iterableObject.ElementAt(j).GetType() != typeof(DateTime) && (
+                        (otherObjectValue as IEnumerable<object>) == null ||
+                        !iterableObject.ElementAt(j).Equals((otherObjectValue as IEnumerable<object>)!.ElementAt(j)))
+                    )
+                        return false;
+
+                return true;
+            }
+            else if (
+                (
+                    thisObjectValue.GetType() == typeof(DateTime) ?
+                    Math.Floor((decimal)((DateTime)thisObjectValue).Ticks / 10000) == Math.Floor((decimal)((DateTime)otherObjectValue).Ticks / 10000) :
+                    otherObjectValue.Equals(thisObjectValue)
+                ) == false) return false;
+        }
+
+        return true;
+    }
+
+    public override bool Equals(object? obj) => obj != null && Equals((User)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

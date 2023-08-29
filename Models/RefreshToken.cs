@@ -4,7 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 [BsonIgnoreExtraElements]
-public class RefreshToken
+public class RefreshToken : IEquatable<RefreshToken>
 {
     [BsonElement(TOKEN_PRIVILEGES)]
     [BsonRequired]
@@ -45,4 +45,16 @@ public class RefreshToken
     [BsonRequired]
     public DateTime ExpirationDate { get; set; }
     public const string EXPIRATION_DATE = "expiration_date";
+
+    public bool Equals(RefreshToken? other) =>
+        other != null &&
+        Code == other.Code &&
+        CodeExpiresAt == other.CodeExpiresAt &&
+        CodeChallenge == other.CodeChallenge &&
+        CodeChallengeMethod == other.CodeChallengeMethod &&
+        Value == other.Value &&
+        IsVerified == other.IsVerified;
+
+    public override bool Equals(object? obj) => obj != null && Equals((RefreshToken)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

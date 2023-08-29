@@ -3,7 +3,7 @@ namespace user_management.Models;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-public class Deleter
+public class Deleter : IEquatable<Deleter>
 {
     [BsonElement(AUTHOR_ID)]
     [BsonRequired]
@@ -38,4 +38,13 @@ public class Deleter
     public const string CLIENT = "client";
 
     public static bool ValidateAuthor(string value) => value == USER || value == CLIENT;
+
+    public bool Equals(Deleter? other) =>
+        other != null &&
+        AuthorId.ToString() == other.AuthorId.ToString() &&
+        IsPermitted == other.IsPermitted &&
+        Author == other.Author;
+
+    public override bool Equals(object? obj) => obj != null && Equals((Deleter)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

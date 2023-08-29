@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace user_management.Models;
 
-public class UserClient
+public class UserClient : IEquatable<UserClient>
 {
     [BsonElement(CLIENT_ID)]
     [BsonRequired]
@@ -18,4 +18,13 @@ public class UserClient
     [BsonElement(TOKEN)]
     public Token? Token { get; set; }
     public const string TOKEN = "token";
+
+    public bool Equals(UserClient? other) =>
+        other != null &&
+        ClientId.ToString() == other.ClientId.ToString() &&
+        Object.Equals(RefreshToken, other.RefreshToken) &&
+        Object.Equals(Token, other.Token);
+
+    public override bool Equals(object? obj) => obj != null && Equals((UserClient)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

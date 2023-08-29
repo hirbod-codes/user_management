@@ -4,7 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 [BsonIgnoreExtraElements]
-public class UserPrivileges
+public class UserPrivileges : IEquatable<UserPrivileges>
 {
     [BsonElement(READERS)]
     [BsonRequired]
@@ -30,4 +30,26 @@ public class UserPrivileges
     [BsonRequired]
     public Deleter[] Deleters { get; set; } = new Deleter[] { };
     public const string DELETERS = "deleters";
+
+    public bool Equals(UserPrivileges? other)
+    {
+        if (other == null) return false;
+
+        for (int i = 0; i < Readers.Length; i++)
+            if (!Object.Equals(Readers[i], other.Readers[i])) return false;
+
+        for (int i = 0; i < Updaters.Length; i++)
+            if (!Object.Equals(Updaters[i], other.Updaters[i])) return false;
+
+        for (int i = 0; i < Deleters.Length; i++)
+            if (!Object.Equals(Deleters[i], other.Deleters[i])) return false;
+
+        if (!Object.Equals(AllReaders, other.AllReaders)) return false;
+        if (!Object.Equals(AllUpdaters, other.AllUpdaters)) return false;
+
+        return true;
+    }
+
+    public override bool Equals(object? obj) => obj != null && Equals((UserPrivileges)obj);
+    public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }
