@@ -49,7 +49,7 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 
         if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) return AuthenticateResult.Fail("This JWT token is not valid.");
 
-        User? user = await _userRepository.RetrieveByIdForAuthentication(userObjectId);
+        User? user = await _userRepository.RetrieveByIdForAuthenticationHandling(userObjectId);
         if (user == null) return AuthenticateResult.Fail("This JWT token is no longer valid.");
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);
