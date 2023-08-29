@@ -1,4 +1,3 @@
-using System.Reflection.Metadata;
 namespace user_management.Data.User;
 
 using Microsoft.Extensions.Options;
@@ -9,6 +8,8 @@ using MongoDB.Bson;
 using user_management.Data.Logics.Filter;
 using user_management.Data.Logics.Update;
 using user_management.Services.Data;
+using MongoDB.Driver.Linq;
+using Newtonsoft.Json;
 
 public class UserRepository : IUserRepository
 {
@@ -56,7 +57,19 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveById(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
 
-    public async Task<PartialUser?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false) => (await _partialUserCollection.FindAsync(Builders<PartialUser>.Filter.And(Builders<PartialUser>.Filter.Eq("_id", id), GetReaderFilterDefinitionForReads(actorId, forClients)))).FirstOrDefault<PartialUser?>();
+    public async Task<PartialUser?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false)
+    {
+        return (
+            await RetrievePipeline(
+                _partialUserCollection.Aggregate()
+                .Match(Builders<PartialUser>.Filter.And(Builders<PartialUser>.Filter.Eq("_id", id), GetReaderFilterDefinitionForReads(actorId, forClients)))
+                .As<BsonDocument>(), actorId
+            )
+            .As<PartialUser>()
+            .ToListAsync()
+        )
+        .FirstOrDefault<PartialUser>();
+    }
 
     public async Task<List<PartialUser>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false)
     {
@@ -79,48 +92,423 @@ public class UserRepository : IUserRepository
 
         FilterDefinition<PartialUser> readPrivilegeFilter = GetReaderFilterDefinitionForReads(actorId, forClients, requiredFilterFields.Count == 0 ? null : requiredFilterFields, optionalFilterFields.Count == 0 ? null : optionalFilterFields);
 
-        FilterDefinitionBuilder<PartialUser> filterBuilder = Builders<PartialUser>.Filter;
-        SortDefinitionBuilder<PartialUser> sortBuilder = Builders<PartialUser>.Sort;
         SortDefinition<PartialUser> sort;
         if (ascending)
-            sort = sortBuilder.Ascending(sortBy ?? PartialUser.UPDATED_AT);
+            sort = Builders<PartialUser>.Sort.Ascending(sortBy == null ? PartialUser.UPDATED_AT : sortBy);
         else
-            sort = sortBuilder.Ascending(sortBy ?? PartialUser.UPDATED_AT);
+            sort = Builders<PartialUser>.Sort.Descending(sortBy == null ? PartialUser.UPDATED_AT : sortBy);
 
-        AggregateFacet<PartialUser, AggregateCountResult> countFacet = AggregateFacet.Create("count",
-            PipelineDefinition<PartialUser, AggregateCountResult>.Create(new[]
-            {
-                PipelineStageDefinitionBuilder.Count<PartialUser>()
-            })
-        );
-
-        AggregateFacet<PartialUser> dataFacet = AggregateFacet.Create("data",
-        PipelineDefinition<PartialUser, PartialUser>.Create(new[]
-            {
-                PipelineStageDefinitionBuilder.Skip<PartialUser>(iteration * limit),
-                PipelineStageDefinitionBuilder.Limit<PartialUser>(limit),
-            })
-        );
-
-        List<AggregateFacetResults> aggregation = await _partialUserCollection.Aggregate()
-            .Match(filterBuilder.And(filter, readPrivilegeFilter))
+        return await RetrievePipeline(
+            _partialUserCollection.Aggregate()
+            .Match(Builders<PartialUser>.Filter.And(filter, readPrivilegeFilter))
             .Sort(sort)
-            .Facet(countFacet, dataFacet)
-            .ToListAsync();
-
-        long count = aggregation.First().Facets.First(x => x.Name == "count").Output<AggregateCountResult>()?.FirstOrDefault()?.Count ?? 0;
-
-        int totalIterations = (int)Math.Ceiling((double)count / iteration);
-
-        return aggregation
-            .First()
-            .Facets
-            .First(x => x.Name == "data")
-            .Output<PartialUser>()
-            .ToList();
+            .Skip((long)(iteration * limit))
+            .Limit((long)limit)
+            .As<BsonDocument>(),
+            actorId
+        )
+        .As<PartialUser>()
+        .ToListAsync();
     }
 
-    private IAggregateFluent<BsonDocument> RetrievePipeline(IAggregateFluent<BsonDocument> pipe, ObjectId actorId) => pipe
+    public async Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveByIdForAuthorizationHandling(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveUserByLoginCredentials(string? email, string? username) => (await _userCollection.FindAsync(Builders<User>.Filter.Or(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.USERNAME, username)))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveUserForPasswordChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveUserForEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveUserForPhoneNumberChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId), Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.CODE, code)))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
+
+    public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
+
+    public async Task<bool?> Login(ObjectId userId)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> UpdateVerificationSecretForActivation(string VerificationSecret, string email)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> Verify(ObjectId id)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> ChangePassword(string email, string hashedPassword)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> ChangeUsername(string email, string username)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.USERNAME, username).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> ChangePhoneNumber(string email, string phoneNumber)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PHONE_NUMBER, phoneNumber).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> ChangeEmail(string email, string newEmail)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.EMAIL, newEmail).Set(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> Logout(ObjectId id)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow));
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(
+            Builders<User>.Filter.And(
+                GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+                Builders<User>.Filter.Eq("_id", userId)
+            ),
+            Builders<User>.Update
+                .PullFilter(x => x.Clients, x => x.ClientId == clientId)
+                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
+        );
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient)
+    {
+        UpdateResult result = await _userCollection.UpdateOneAsync(
+            Builders<User>.Filter.And(
+                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+                Builders<User>.Filter.Eq("_id", userId)
+            ),
+            Builders<User>.Update
+                .Set<UserClient[]>(User.CLIENTS, new UserClient[] { })
+                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
+        );
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null)
+    {
+        FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq<ObjectId>("_id", userId),
+            Builders<User>.Filter.Eq<ObjectId>(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId),
+            GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.CLIENTS } })
+        );
+
+        UpdateDefinition<User> updateDefinition = Builders<User>.Update
+            .Set<Token?>(u => u.Clients.FirstMatchingElement().Token, new Token() { Value = tokenValue, ExpirationDate = expirationDate, IsRevoked = false })
+            .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult result;
+        if (session != null) result = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
+        else result = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null)
+    {
+        string clientIdString = clientId.ToString();
+        FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq("_id", userId),
+            GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } }),
+            GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } })
+        );
+
+        if (tokenPrivileges.ReadsFields.Length == 0 && tokenPrivileges.UpdatesFields.Length == 0 && !tokenPrivileges.DeletesUser) return null;
+
+        EmptyPipelineDefinition<User> pipelineDefinition = new();
+        PipelineDefinition<User, User>? pipeline = null;
+
+        if (tokenPrivileges.ReadsFields.Length > 0)
+        {
+            string fields = "";
+            tokenPrivileges.ReadsFields.ToList().ConvertAll<string>(f => $"{{'name': '{f.Name}', 'is_permitted': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
+            fields = "[" + fields + "]";
+
+            Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> f = (p) => p
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.READERS}': {{
+                            $filter: {{
+                                'input': '${User.USER_PRIVILEGES}.{UserPrivileges.READERS}',
+                                'as': 'item',
+                                'cond': {{ 
+                                    '$ne': [
+                                        '$$item.{Reader.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                    ]
+                                }}
+                            }}
+                        }}
+                    }}
+                }}")
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.READERS}': {{ $concatArrays: [ '${User.USER_PRIVILEGES}.{UserPrivileges.READERS}',
+                                [
+                                    {{
+                                        'author_id': ObjectId('{clientIdString}'),
+                                        'author': '{Reader.CLIENT}',
+                                        'is_permitted': true,
+                                        'fields': {fields}
+                                    }}
+                                ]
+                            ]
+                        }}
+                    }}
+                }}");
+
+            if (pipeline == null) pipeline = f(pipelineDefinition);
+            else pipeline = f(pipeline);
+        }
+        if (tokenPrivileges.UpdatesFields.Length > 0)
+        {
+            string fields = "";
+            tokenPrivileges.UpdatesFields.ToList().ConvertAll<string>(f => $"{{'name': '{f.Name}', 'is_permitted': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
+            fields = "[" + fields + "]";
+
+            Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> f = (p) => p
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.UPDATERS}': {{
+                            $filter: {{
+                                'input': '${User.USER_PRIVILEGES}.{UserPrivileges.UPDATERS}',
+                                'as': 'item',
+                                'cond': {{ 
+                                    '$ne': [
+                                        '$$item.{Updater.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                    ]
+                                }}
+                            }}
+                        }}
+                    }}
+                }}")
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.UPDATERS}': {{ $concatArrays: [ '${User.USER_PRIVILEGES}.{UserPrivileges.UPDATERS}',
+                                [
+                                    {{
+                                        'author_id': ObjectId('{clientIdString}'),
+                                        'author': '{Updater.CLIENT}',
+                                        'is_permitted': true,
+                                        'fields': {fields}
+                                    }}
+                                ]
+                            ]
+                        }}
+                    }}
+                }}");
+
+            if (pipeline == null) pipeline = f(pipelineDefinition);
+            else pipeline = f(pipeline);
+        }
+        if (tokenPrivileges.DeletesUser)
+        {
+            Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> f = (p) => p
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.DELETERS}': {{
+                            $filter: {{
+                                'input': '${User.USER_PRIVILEGES}.{UserPrivileges.DELETERS}',
+                                'as': 'item',
+                                'cond': {{ 
+                                    '$ne': [
+                                        '$$item.{Deleter.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                    ]
+                                }}
+                            }}
+                        }}
+                    }}
+                }}")
+                .AppendStage<User, User, User>(@$"{{
+                    '$addFields': {{
+                        '{User.USER_PRIVILEGES}.{UserPrivileges.DELETERS}': {{ $concatArrays: [ '${User.USER_PRIVILEGES}.{UserPrivileges.DELETERS}',
+                                [
+                                    {{
+                                        'author_id': ObjectId('{clientIdString}'),
+                                        'author': '{Deleter.CLIENT}',
+                                        'is_permitted': true
+                                    }}
+                                ]
+                            ]
+                        }}
+                    }}
+                }}");
+
+            if (pipeline == null) pipeline = f(pipelineDefinition);
+            else pipeline = f(pipeline);
+        }
+
+        Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> u = (p) => p
+            .AppendStage<User, User, User>(@$"{{
+                    $addFields: {{
+                        {User.UPDATED_AT}: ISODate('{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}')
+                    }}
+                }}");
+
+        if (pipeline != null) pipeline = u(pipeline);
+
+        UpdateResult r;
+        UpdateDefinition<User> updateDefinition = Builders<User>.Update.Pipeline(pipeline);
+        if (session != null) r = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
+        else r = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
+
+    public async Task<bool?> AddClientById(ObjectId userId, ObjectId actorId, UserClient userClient)
+    {
+        FilterDefinition<User> filters = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq("_id", userId),
+            Builders<User>.Filter.Ne(User.CLIENTS + "." + UserClient.CLIENT_ID, userClient.ClientId),
+            GetReaderFilterDefinition(actorId, false, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetUpdaterFilterDefinition(actorId, false, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } })
+        );
+
+        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Push<UserClient>(User.CLIENTS, userClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
+
+    public async Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges)
+    {
+        FilterDefinition<User> filters = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq("_id", userId),
+            GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } }),
+            GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } })
+        );
+
+        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Set<UserPrivileges>(User.USER_PRIVILEGES, userPrivileges).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow));
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
+    }
+
+    public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
+    {
+        List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
+
+        FilterDefinition<User> filter = Builders<User>.Filter.Empty;
+        List<string> requiredFilterFieldsList = new List<string> { };
+        List<string> optionalFilterFieldsList = new List<string> { };
+        List<Field> requiredFilterFields = new List<Field> { };
+        List<Field> optionalFilterFields = new List<Field> { };
+        if (filtersString != "empty")
+        {
+            IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(filtersString);
+            filters.Add(iLogic.BuildDefinition());
+            requiredFilterFieldsList = iLogic.GetRequiredFields();
+            optionalFilterFieldsList = iLogic.GetOptionalFields();
+            requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+            optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        }
+
+        filters.Add(GetReaderFilterDefinition(actorId, forClients, requiredFilterFields, optionalFilterFields));
+
+        UpdateLogics<User> logic = new UpdateLogics<User>();
+        UpdateDefinition<User>? updates = logic.BuildILogic(updatesString).BuildDefinition().Set(User.UPDATED_AT, DateTime.UtcNow);
+        List<Field> updateFieldsList = logic.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
+        foreach (Field field in User.GetProtectedFieldsAgainstMassUpdating())
+            if (updateFieldsList.FirstOrDefault<Field?>(f => f != null && f.Name == field.Name, null) != null)
+                return false;
+
+        filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
+
+        UpdateResult result = await _userCollection.UpdateManyAsync(Builders<User>.Filter.And(filters.ToArray()), updates);
+
+        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
+
+        return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
+    }
+
+    public async Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false)
+    {
+        DeleteResult r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients)));
+
+        if (r.IsAcknowledged && r.DeletedCount == 0) return null;
+
+        return r.IsAcknowledged && r.DeletedCount == 1;
+    }
+
+    private IAggregateFluent<BsonDocument> RetrievePipeline(IAggregateFluent<BsonDocument> pipe, ObjectId actorId) =>
+        pipe
             .AppendStage<BsonDocument>(@$"{{
                 $addFields: {{
                     reader: {{
@@ -178,296 +566,6 @@ public class UserRepository : IUserRepository
             }}")
             .Unwind("docs")
             .ReplaceRoot<BsonDocument>("$docs");
-
-    public async Task<User?> RetrieveByIdForAuthentication(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveByIdForAuthorization(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveUserByLoginCredentials(string? email, string? username) => (await _userCollection.FindAsync(Builders<User>.Filter.Or(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.USERNAME, username)))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveUserForPasswordChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveUserForEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveUserForPhoneNumberChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId), Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.CODE, code)))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
-
-    public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
-
-    public async Task<bool?> Login(ObjectId userId)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> UpdateVerificationSecretForActivation(string VerificationSecret, string email)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> Verify(ObjectId id)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> ChangePassword(string email, string hashedPassword)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> ChangeUsername(string email, string username)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.USERNAME, username).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> ChangePhoneNumber(string email, string phoneNumber)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PHONE_NUMBER, phoneNumber).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> ChangeEmail(string email, string newEmail)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.EMAIL, newEmail).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> Logout(ObjectId id)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow).Set(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (result.IsAcknowledged && result.MatchedCount == 0)
-            return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(
-            Builders<User>.Filter.And(
-                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-                Builders<User>.Filter.Eq("_id", userId)
-            ),
-            Builders<User>.Update
-                .Pull<ObjectId>(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId)
-                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
-        );
-
-        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient)
-    {
-        UpdateResult result = await _userCollection.UpdateOneAsync(
-            Builders<User>.Filter.And(
-                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-                Builders<User>.Filter.Eq("_id", userId)
-            ),
-            Builders<User>.Update
-                .Set<UserClient[]>(User.CLIENTS, new UserClient[] { })
-                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
-        );
-
-        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null)
-    {
-        FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq<ObjectId>("_id", userId),
-            Builders<User>.Filter.Eq<ObjectId>(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId),
-            GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.CLIENTS } })
-        );
-
-        UpdateDefinition<User> updateDefinition = Builders<User>.Update
-            .Set<Token>(User.CLIENTS + "$." + UserClient.TOKEN, new Token() { Value = tokenValue, ExpirationDate = expirationDate, IsRevoked = false })
-            .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
-
-        UpdateResult result;
-        if (session != null)
-            result = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
-        else
-            result = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
-
-        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
-
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
-    }
-
-    public async Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null)
-    {
-        FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq<ObjectId>("_id", userId),
-            GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } })
-        );
-
-        if (tokenPrivileges.ReadsFields.Length == 0 && tokenPrivileges.UpdatesFields.Length == 0 && !tokenPrivileges.DeletesUser) return null;
-
-        UpdateDefinition<User> updateDefinition = Builders<User>.Update.Set<DateTime>(User.UPDATED_AT, DateTime.UtcNow);
-
-        if (tokenPrivileges.ReadsFields.Length > 0)
-            updateDefinition = updateDefinition.Push<User, Reader>(User.USER_PRIVILEGES + "." + UserPrivileges.READERS, new Reader() { AuthorId = clientId, Author = Reader.CLIENT, IsPermitted = true, Fields = tokenPrivileges.ReadsFields });
-        if (tokenPrivileges.UpdatesFields.Length > 0)
-            updateDefinition = updateDefinition.Push<User, Updater>(User.USER_PRIVILEGES + "." + UserPrivileges.UPDATERS, new Updater() { AuthorId = clientId, Author = Updater.CLIENT, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields });
-        if (tokenPrivileges.DeletesUser)
-            updateDefinition = updateDefinition.Push<User, Deleter>(User.USER_PRIVILEGES + "." + UserPrivileges.DELETERS, new Deleter() { AuthorId = clientId, Author = Deleter.CLIENT, IsPermitted = true });
-
-        UpdateResult r;
-        if (session != null) r = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
-        else r = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
-
-        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
-
-        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
-    }
-
-    public async Task<bool?> AddClientById(ObjectId userId, ObjectId clientId, ObjectId actorId, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod)
-    {
-        UserClient userClient = new UserClient()
-        {
-            ClientId = clientId,
-            RefreshToken = new RefreshToken()
-            {
-                TokenPrivileges = tokenPrivileges,
-                Code = code,
-                CodeExpiresAt = codeExpiresAt,
-                CodeChallenge = codeChallenge,
-                CodeChallengeMethod = codeChallengeMethod,
-                ExpirationDate = refreshTokenExpiration,
-                Value = refreshTokenValue,
-                IsVerified = false
-            },
-            Token = null
-        };
-
-        FilterDefinition<User> filters = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq("_id", userId),
-            Builders<User>.Filter.Ne(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId),
-            GetReaderFilterDefinition(actorId, false, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-            GetUpdaterFilterDefinition(actorId, false, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } })
-        );
-
-        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Push<UserClient>(User.CLIENTS, userClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow));
-
-        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
-
-        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
-    }
-
-    public async Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges)
-    {
-        FilterDefinition<User> filters = Builders<User>.Filter.And(
-            GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } }),
-            Builders<User>.Filter.Eq("_id", authorId)
-        );
-
-        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Set<UserPrivileges>(User.USER_PRIVILEGES, userPrivileges));
-
-        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
-
-        return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
-    }
-
-    public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
-    {
-        List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
-
-        IFilterLogic<User> iLogic = FilterLogics<User>.BuildILogic(filtersString);
-        filters.Add(iLogic.BuildDefinition());
-
-        List<string> requiredFilterFieldsList = iLogic.GetRequiredFields();
-        List<string> optionalFilterFieldsList = iLogic.GetOptionalFields();
-        List<Field> requiredFilterFields = requiredFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-        List<Field> optionalFilterFields = optionalFilterFieldsList.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-
-        filters.Add(GetReaderFilterDefinition(actorId, forClients, requiredFilterFields, optionalFilterFields));
-
-        UpdateLogics<User> logic = new UpdateLogics<User>();
-        UpdateDefinition<User>? updates = logic.BuildILogic(updatesString).BuildDefinition().Set(User.UPDATED_AT, DateTime.UtcNow);
-        List<Field> updateFieldsList = logic.Fields.ConvertAll<Field>((f) => new Field() { Name = f, IsPermitted = true });
-        foreach (Field field in User.GetProtectedFieldsAgainstMassUpdating())
-            if (updateFieldsList.FirstOrDefault<Field?>(f => f != null && f.Name == field.Name, null) != null)
-                return false;
-
-        filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
-
-        UpdateResult result = await _userCollection.UpdateManyAsync(Builders<User>.Filter.And(filters.ToArray()), updates);
-
-        if (result.IsAcknowledged && result.MatchedCount == 0) return null;
-
-        return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
-    }
-
-    public async Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false)
-    {
-        DeleteResult r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients)));
-
-        if (r.IsAcknowledged && r.DeletedCount == 0) return null;
-
-        return r.IsAcknowledged && r.DeletedCount == 1;
-    }
 
     private FilterDefinition<PartialUser> GetReaderFilterDefinitionForReads(ObjectId actorId, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
     {
