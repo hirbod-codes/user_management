@@ -14,8 +14,8 @@ public interface IUserRepository
     public Task<User?> RetrieveById(ObjectId id);
     public Task<PartialUser?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false);
     public Task<List<PartialUser>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
-    public Task<User?> RetrieveByIdForAuthentication(ObjectId userId);
-    public Task<User?> RetrieveByIdForAuthorization(ObjectId id);
+    public Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId);
+    public Task<User?> RetrieveByIdForAuthorizationHandling(ObjectId id);
     public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);
     public Task<User?> RetrieveUserForPasswordChange(string email);
     public Task<User?> RetrieveUserForUsernameChange(string email);
@@ -38,7 +38,7 @@ public interface IUserRepository
     public Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient);
     public Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null);
     public Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
-    public Task<bool?> AddClientById(ObjectId userId, ObjectId clientId, ObjectId actorId, TokenPrivileges tokenPrivileges, DateTime refreshTokenExpiration, string refreshTokenValue, DateTime codeExpiresAt, string code, string codeChallenge, string codeChallengeMethod);
+    public Task<bool?> AddClientById(ObjectId userId, ObjectId actorId, UserClient userClient);
     public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges);
     public Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false);
     public Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false);
