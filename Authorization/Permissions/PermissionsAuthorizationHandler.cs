@@ -23,22 +23,22 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionsRequirement requirement)
     {
-        if (context.User == null || context.User.Identity == null || !context.User.Identity.IsAuthenticated) 
+        if (context.User == null || context.User.Identity == null || !context.User.Identity.IsAuthenticated)
             return Task.CompletedTask;
 
-        if (context.HasSucceeded) 
+        if (context.HasSucceeded)
             return Task.CompletedTask;
 
-        if (context.User == null || requirement == null || string.IsNullOrWhiteSpace(requirement.Permissions)) 
+        if (context.User == null || requirement == null || string.IsNullOrWhiteSpace(requirement.Permissions))
             return Task.CompletedTask;
 
         string? id = context.User.Claims?.First(c => c.Type == ClaimTypes.NameIdentifier).Value;
-        if (id == null) 
+        if (id == null)
             return Task.CompletedTask;
 
-        if (context.User.Identity.AuthenticationType == "JWT") 
+        if (context.User.Identity.AuthenticationType == "JWT")
             return AuthorizeJWT(ObjectId.Parse(id), context, requirement);
-        else 
+        else
             return AuthorizeBearer(id, context, requirement);
     }
 
@@ -47,13 +47,13 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
         if (requirementTokens?.Any() != true) return;
 
-        User? user = await _userRepository.RetrieveByIdForAuthorization(userId);
+        User? user = await _userRepository.RetrieveByIdForAuthorizationHandling(userId);
         if (user == null) return;
         List<Privilege> privileges = user.Privileges!.ToList();
         if (privileges.Count == 0) return;
 
         foreach (string requirementToken in requirementTokens)
-            if (privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == requirementToken && p.Value == true, null) != null)
+            if (privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == requirementToken && p.Value != null && (bool)p.Value == true, null) != null)
             {
                 Utility.Succeed(context, requirement.Identifier);
                 break;
