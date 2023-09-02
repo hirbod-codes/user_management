@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using user_management.Authorization.Attributes;
+using user_management.Authentication;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
@@ -15,6 +16,7 @@ using user_management.Services;
 using user_management.Services.Data.User;
 using user_management.Services.Data;
 using user_management.Controllers.Services;
+using System.Security.Authentication;
 
 [ApiController]
 [Route("api")]
@@ -23,14 +25,12 @@ public class UserController : ControllerBase
 {
     private const int EXPIRATION_MINUTES = 6;
     private readonly IUserManagement _userManagement;
-    private readonly IMapper _mapper;
-    private readonly IAuthHelper _authHelper;
+    private readonly IAuthenticated _authenticated;
 
-    public UserController(IUserManagement userManagement, IMapper mapper, IAuthHelper authHelper)
+    public UserController(IUserManagement userManagement, IAuthenticated authenticated)
     {
         _userManagement = userManagement;
-        _mapper = mapper;
-        _authHelper = authHelper;
+        _authenticated = authenticated;
     }
 
     [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
@@ -100,24 +100,26 @@ public class UserController : ControllerBase
     [HttpPost(PATH_POST_LOGIN)]
     public async Task<IActionResult> Login(Login loggingInUser)
     {
-        try { return Ok(await _userManagement.Login(loggingInUser)); }
-        catch (MissingCredentialException) { return BadRequest("No credentials provided."); }
+        try
+        {
+            var result = await _userManagement.Login(loggingInUser);
+            return Ok(new { jwt = result.jwt, userId = result.userId });
+        }
+        catch (MissingCredentialException) { return BadRequest("Incomplete credentials provided."); }
         catch (InvalidPasswordException) { return NotFound("We couldn't find a user with the provided credentials."); }
         catch (UnverifiedUserException) { return StatusCode(403, "Your account is not activated yet."); }
         catch (DataNotFoundException) { return NotFound("We couldn't find a user with the provided credentials."); }
-        catch (OperationException) { return Problem("We couldn't change the user's password."); }
+        catch (OperationException) { return Problem("We couldn't log the user in."); }
     }
 
     [Authorize]
     [HttpPost(PATH_POST_LOGOUT)]
     public async Task<IActionResult> Logout()
     {
-        string? id = await _authHelper.GetIdentifier(User);
-        if (id == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return BadRequest();
-
-        try { await _userManagement.Logout(id); }
+        try { await _userManagement.Logout(_authenticated.GetAuthenticatedIdentifier()); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't log you out."); }
@@ -168,10 +170,10 @@ public class UserController : ControllerBase
     [HttpPost(PATH_POST_REMOVE_CLIENT)]
     public async Task<IActionResult> RemoveClient([FromQuery] string clientId, [FromQuery] string userId)
     {
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        try { await _userManagement.RemoveClient(clientId, userId, authorId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { await _userManagement.RemoveClient(clientId, userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
+        catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the client."); }
@@ -183,10 +185,10 @@ public class UserController : ControllerBase
     [HttpPost(PATH_REMOVE_CLIENTS)]
     public async Task<IActionResult> RemoveClients([FromQuery] string userId)
     {
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        try { await _userManagement.RemoveClients(userId, authorId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { await _userManagement.RemoveClients(userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
+        catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the clients."); }
@@ -198,16 +200,12 @@ public class UserController : ControllerBase
     [Permissions(Permissions = new string[] { "read_account" })]
     public async Task<IActionResult> RetrieveById(string userId)
     {
-        string? actorId = await _authHelper.GetIdentifier(User);
-        if (actorId == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
         PartialUser? user = null;
-
-        try { user = await _userManagement.RetrieveById(actorId, userId, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { user = await _userManagement.RetrieveById(_authenticated.GetAuthenticatedIdentifier(), userId, _authenticated.GetAuthenticationType() != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
-
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) return BadRequest();
 
         return Ok(user.GetReadable());
     }
@@ -216,11 +214,10 @@ public class UserController : ControllerBase
     [Permissions(Permissions = new string[] { "read_clients" })]
     public async Task<IActionResult> RetrieveClients()
     {
-        string? id = await _authHelper.GetIdentifier(User);
-        if (id == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
         PartialUser? user = null;
-        try { user = await _userManagement.RetrieveById(id, id, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { user = await _userManagement.RetrieveById(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
 
@@ -234,11 +231,10 @@ public class UserController : ControllerBase
     [Permissions(Permissions = new string[] { "read_accounts" })]
     public async Task<IActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
-        string? actorId = await _authHelper.GetIdentifier(User);
-        if (actorId == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
         List<PartialUser>? users = null;
-        try { users = await _userManagement.Retrieve(actorId, _authHelper.GetAuthenticationType(User) != "JWT", logicsString, limit, iteration, sortBy, ascending); }
+        try { users = await _userManagement.Retrieve(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT", logicsString, limit, iteration, sortBy, ascending); }
         catch (ArgumentException) { return BadRequest(); }
 
         return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
@@ -253,10 +249,9 @@ public class UserController : ControllerBase
     {
         if (String.IsNullOrWhiteSpace(userPatchDto.UpdatesString) || String.IsNullOrWhiteSpace(userPatchDto.FiltersString) || userPatchDto.FiltersString == "empty") return BadRequest();
 
-        string? actorId = await _authHelper.GetIdentifier(User);
-        if (actorId == null) return BadRequest("Invalid id");
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        try { await _userManagement.Update(actorId, userPatchDto, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { await _userManagement.Update(_authenticated.GetAuthenticatedIdentifier(), userPatchDto, _authenticated.GetAuthenticationType() != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -276,10 +271,9 @@ public class UserController : ControllerBase
     [HttpDelete(PATH_DELETE_USER)]
     public async Task<IActionResult> Delete([ObjectIdAttribute][FromQuery] string id)
     {
-        string? actorId = await _authHelper.GetIdentifier(User);
-        if (actorId == null) return Unauthorized();
+        if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        try { await _userManagement.Delete(actorId, id, _authHelper.GetAuthenticationType(User) != "JWT"); }
+        try { await _userManagement.Delete(_authenticated.GetAuthenticatedIdentifier(), id, _authenticated.GetAuthenticationType() != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
