@@ -1,4 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
 using System.Reflection;
 using Bogus;
 using Microsoft.Extensions.Options;
@@ -1106,7 +1105,7 @@ public class UserRepositoryTest
         Models.UserClient[] newCLientsObject = user.Clients;
         try
         {
-            bool? result = await _userRepository.AddToken(user.Id, actor.Id, user.Clients[0].ClientId, tokenValue, expirationDate);
+            bool? result = await _userRepository.AddToken(user.Id, actor.Id, user.Clients[0].ClientId, user.Clients[0].Token!);
 
             Assert.True(result);
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
