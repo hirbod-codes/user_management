@@ -14,12 +14,16 @@ using user_management.Utilities;
 public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthenticationOptions>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IAuthenticatedByBearer _authenticatedByBearer;
+    private readonly IAuthenticated _authenticated;
     private BearerAuthenticationOptions _options;
 
-    public BearerAuthenticationHandler(IUserRepository repo, IOptionsMonitor<BearerAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+    public BearerAuthenticationHandler(IUserRepository repo, IOptionsMonitor<BearerAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, IAuthenticatedByBearer authenticatedByBearer, IAuthenticated authenticated) : base(options, logger, encoder, clock)
     {
         _options = options.CurrentValue;
         _userRepository = repo;
+        _authenticatedByBearer = authenticatedByBearer;
+        _authenticated = authenticated;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -41,8 +45,7 @@ public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthentic
         if (user == null)
             return AuthenticateResult.Fail("The authorization token not found.");
 
-        List<UserClient> userClients = user.Clients.ToList();
-        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.Token != null && uc.Token.Value == hashedToken, null);
+        UserClient? userClient = user.Clients.ToList().FirstOrDefault<UserClient?>(uc => uc != null && uc.Token != null && uc.Token.Value == hashedToken, null);
         if (userClient == null)
             return AuthenticateResult.Fail("The authorization token not found.");
 
@@ -51,6 +54,10 @@ public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthentic
 
         if ((bool)userClient.Token.IsRevoked! || !userClient.RefreshToken!.IsVerified)
             return AuthenticateResult.Fail("The authorization token has been revoked.");
+
+        _authenticatedByBearer.SetAuthenticated(userClient);
+        _authenticated.SetAuthenticatedIdentifier(userClient.Token.Value!.ToString());
+        _authenticated.SetAuthenticationType("Bearer");
 
         return Success(userClient.Token.Value!.ToString()!);
     }
