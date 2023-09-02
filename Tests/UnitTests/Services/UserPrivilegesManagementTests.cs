@@ -6,7 +6,7 @@ using user_management.Services;
 using user_management.Services.Data;
 using Xunit;
 
-namespace user_management.Tests.UnitTests.Controllers;
+namespace user_management.Tests.UnitTests.Services;
 
 [Collection("Service")]
 public class UserPrivilegesManagementTests
