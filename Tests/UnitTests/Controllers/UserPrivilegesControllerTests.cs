@@ -1,11 +1,9 @@
-using System.Security.Claims;
 using Bogus;
 using MongoDB.Bson;
 using user_management.Dtos.User;
 using user_management.Services;
 using user_management.Services.Data;
 using Xunit;
-using Moq;
 
 namespace user_management.Tests.UnitTests.Controllers;
 
@@ -16,7 +14,7 @@ public class UserPrivilegesControllerTests
 
     public UserPrivilegesControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.UserPrivilegesController InstantiateController() => new user_management.Controllers.UserPrivilegesController(Fixture.IAuthHelper.Object, Fixture.IUserPrivilegesManagement.Object);
+    private user_management.Controllers.UserPrivilegesController InstantiateController() => new user_management.Controllers.UserPrivilegesController(Fixture.IUserPrivilegesManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 
@@ -27,8 +25,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, userId, dto));
         HttpAsserts.IsOk(await InstantiateController().UpdateReaders(dto, userId));
     }
@@ -39,7 +38,8 @@ public class UserPrivilegesControllerTests
         UserPrivilegesPatchDto dto = new();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("Not JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("Not JWT");
+
         HttpAsserts.IsUnauthorized(await InstantiateController().UpdateReaders(dto, userId));
     }
 
@@ -47,23 +47,12 @@ public class UserPrivilegesControllerTests
     public async void UpdateReaders_Unauthenticated()
     {
         UserPrivilegesPatchDto dto = new();
-        string? authorId = null;
+        string authorId = "authorId";
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateReaders(dto, userId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateReaders(dto, userId));
-
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, userId, dto)).Throws(new ArgumentException("authorId"));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateReaders(dto, userId));
     }
@@ -75,8 +64,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, userId, dto)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().UpdateReaders(dto, userId));
     }
@@ -88,8 +78,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, userId, dto)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().UpdateReaders(dto, userId));
     }
@@ -101,8 +92,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, userId, dto));
         HttpAsserts.IsOk(await InstantiateController().UpdateAllReaders(dto, userId));
     }
@@ -113,7 +105,8 @@ public class UserPrivilegesControllerTests
         UserPrivilegesPatchDto dto = new();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("Not JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("Not JWT");
+
         HttpAsserts.IsUnauthorized(await InstantiateController().UpdateAllReaders(dto, userId));
     }
 
@@ -121,23 +114,12 @@ public class UserPrivilegesControllerTests
     public async void UpdateAllReaders_Unauthenticated()
     {
         UserPrivilegesPatchDto dto = new();
-        string? authorId = null;
+        string? authorId = "authorId";
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllReaders(dto, userId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllReaders(dto, userId));
-
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, userId, dto)).Throws(new ArgumentException("authorId"));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllReaders(dto, userId));
     }
@@ -149,8 +131,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, userId, dto)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().UpdateAllReaders(dto, userId));
     }
@@ -162,8 +145,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, userId, dto)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().UpdateAllReaders(dto, userId));
     }
@@ -175,8 +159,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, userId, dto));
         HttpAsserts.IsOk(await InstantiateController().UpdateUpdaters(dto, userId));
     }
@@ -187,7 +172,8 @@ public class UserPrivilegesControllerTests
         UserPrivilegesPatchDto dto = new();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("Not JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("Not JWT");
+
         HttpAsserts.IsUnauthorized(await InstantiateController().UpdateUpdaters(dto, userId));
     }
 
@@ -195,23 +181,12 @@ public class UserPrivilegesControllerTests
     public async void UpdateUpdaters_Unauthenticated()
     {
         UserPrivilegesPatchDto dto = new();
-        string? authorId = null;
+        string? authorId = "authorId";
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateUpdaters(dto, userId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateUpdaters(dto, userId));
-
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, userId, dto)).Throws(new ArgumentException("authorId"));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateUpdaters(dto, userId));
     }
@@ -223,8 +198,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, userId, dto)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().UpdateUpdaters(dto, userId));
     }
@@ -236,8 +212,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, userId, dto)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().UpdateUpdaters(dto, userId));
     }
@@ -249,8 +226,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, userId, dto));
         HttpAsserts.IsOk(await InstantiateController().UpdateAllUpdaters(dto, userId));
     }
@@ -261,7 +239,8 @@ public class UserPrivilegesControllerTests
         UserPrivilegesPatchDto dto = new();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("Not JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("Not JWT");
+
         HttpAsserts.IsUnauthorized(await InstantiateController().UpdateAllUpdaters(dto, userId));
     }
 
@@ -269,23 +248,12 @@ public class UserPrivilegesControllerTests
     public async void UpdateAllUpdaters_Unauthenticated()
     {
         UserPrivilegesPatchDto dto = new();
-        string? authorId = null;
+        string? authorId = "authorId";
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllUpdaters(dto, userId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllUpdaters(dto, userId));
-
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, userId, dto)).Throws(new ArgumentException("authorId"));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllUpdaters(dto, userId));
     }
@@ -297,8 +265,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, userId, dto)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().UpdateAllUpdaters(dto, userId));
     }
@@ -310,8 +279,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, userId, dto)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().UpdateAllUpdaters(dto, userId));
     }
@@ -323,8 +293,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, userId, dto));
         HttpAsserts.IsOk(await InstantiateController().UpdateDeleters(dto, userId));
     }
@@ -335,7 +306,8 @@ public class UserPrivilegesControllerTests
         UserPrivilegesPatchDto dto = new();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("Not JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("Not JWT");
+
         HttpAsserts.IsUnauthorized(await InstantiateController().UpdateDeleters(dto, userId));
     }
 
@@ -343,23 +315,12 @@ public class UserPrivilegesControllerTests
     public async void UpdateDeleters_Unauthenticated()
     {
         UserPrivilegesPatchDto dto = new();
-        string? authorId = null;
+        string? authorId = "authorId";
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateDeleters(dto, userId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateDeleters(dto, userId));
-
-        authorId = "authorId";
-
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, userId, dto)).Throws(new ArgumentException("authorId"));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateDeleters(dto, userId));
     }
@@ -371,8 +332,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, userId, dto)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().UpdateDeleters(dto, userId));
     }
@@ -384,8 +346,9 @@ public class UserPrivilegesControllerTests
         string authorId = ObjectId.GenerateNewId().ToString();
         string userId = ObjectId.GenerateNewId().ToString();
 
-        Fixture.IAuthHelper.Setup<string>(um => um.GetAuthenticationType(It.IsAny<ClaimsPrincipal>())).Returns("JWT");
-        Fixture.IAuthHelper.Setup<Task<string?>>(um => um.GetIdentifier(It.IsAny<ClaimsPrincipal>())).Returns(Task.FromResult<string?>(authorId));
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
+        Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
+
         Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, userId, dto)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().UpdateDeleters(dto, userId));
     }
