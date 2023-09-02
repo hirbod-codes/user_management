@@ -9,16 +9,21 @@ using Microsoft.Extensions.Logging;
 using user_management.Models;
 using MongoDB.Bson;
 using user_management.Services.Data.User;
+using user_management.Authentication;
 
 public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsRequirement>
 {
     private readonly ILogger<PermissionsAuthorizationHandler> _logger;
     private readonly IUserRepository _userRepository;
+    private readonly IAuthenticatedByJwt _authenticatedByJwt;
+    private readonly IAuthenticatedByBearer _authenticatedByBearer;
 
-    public PermissionsAuthorizationHandler(ILogger<PermissionsAuthorizationHandler> logger, IUserRepository userRepository)
+    public PermissionsAuthorizationHandler(ILogger<PermissionsAuthorizationHandler> logger, IUserRepository userRepository, IAuthenticatedByJwt authenticatedByJwt, IAuthenticatedByBearer authenticatedByBearer)
     {
         _logger = logger;
         _userRepository = userRepository;
+        _authenticatedByJwt = authenticatedByJwt;
+        _authenticatedByBearer = authenticatedByBearer;
     }
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionsRequirement requirement)
@@ -47,9 +52,8 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
         if (requirementTokens?.Any() != true) return;
 
-        User? user = await _userRepository.RetrieveByIdForAuthorizationHandling(userId);
-        if (user == null) return;
-        List<Privilege> privileges = user.Privileges!.ToList();
+        if (!_authenticatedByJwt.IsAuthenticated()) return;
+        List<Privilege> privileges = (await _authenticatedByJwt.GetAuthenticated()).Privileges.ToList();
         if (privileges.Count == 0) return;
 
         foreach (string requirementToken in requirementTokens)
@@ -67,13 +71,19 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
         if (requirementTokens?.Any() != true) return;
 
-        User? user = await _userRepository.RetrieveByTokenValue(tokenValue);
-        if (user == null || user.Clients.Length == 0) return;
-        List<UserClient> userClients = user.Clients.ToList();
-        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null, null);
-        if (userClient == null) return;
+        if (!_authenticatedByBearer.IsAuthenticated()) return;
+        
+        UserClient userClient = await _authenticatedByBearer.GetAuthenticated();
+        if (userClient.RefreshToken == null) return;
 
-        Utility.Succeed(context, requirement.Identifier);
+        List<Privilege> privileges = userClient.RefreshToken.TokenPrivileges.Privileges.ToList();
+        foreach (string requirementToken in requirementTokens)
+            if (privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == requirementToken && p.Value != null && (bool)p.Value == true, null) != null)
+            {
+                Utility.Succeed(context, requirement.Identifier);
+                break;
+            }
+
         return;
     }
 
