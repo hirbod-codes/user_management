@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
+using user_management.Authentication;
 using user_management.Models;
 using user_management.Services.Data.User;
 
@@ -17,13 +18,17 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 {
     private JWTAuthenticationOptions _options;
     private readonly IUserRepository _userRepository;
+    private readonly IAuthenticatedByJwt _authenticatedByJwt;
+    private readonly IAuthenticated _authenticated;
 
     public string? Error { get; private set; }
 
-    public JWTAuthenticationHandler(IUserRepository userRepository, IOptionsMonitor<JWTAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+    public JWTAuthenticationHandler(IUserRepository userRepository, IOptionsMonitor<JWTAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, IAuthenticatedByJwt authenticatedByJwt, IAuthenticated authenticated) : base(options, logger, encoder, clock)
     {
         _options = options.CurrentValue;
         _userRepository = userRepository;
+        _authenticatedByJwt = authenticatedByJwt;
+        _authenticated = authenticated;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -51,6 +56,10 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 
         User? user = await _userRepository.RetrieveByIdForAuthenticationHandling(userObjectId);
         if (user == null) return AuthenticateResult.Fail("This JWT token is no longer valid.");
+
+        _authenticatedByJwt.SetAuthenticated(user);
+        _authenticated.SetAuthenticatedIdentifier(user.Id.ToString());
+        _authenticated.SetAuthenticationType("JWT");
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);
 
