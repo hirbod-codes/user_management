@@ -1,41 +1,39 @@
 namespace user_management.Tests;
 
 using AutoMapper;
-using MongoDB.Driver;
 using Moq;
+using user_management.Authentication;
 using user_management.Controllers.Services;
-using user_management.Services.Client;
-using user_management.Services.Data.User;
 using user_management.Utilities;
 using Xunit;
 
-public class ControllerFixture
+public class ControllerFixture : IFixture
 {
-    public Mock<IUserManagement> IUserManagement { get; private set; } = new();
+    public Mock<IAuthenticated> IAuthenticated { get; private set; } = new();
+    public Mock<IAuthenticatedByJwt> IAuthenticatedByJwt { get; private set; } = new();
+    public Mock<IAuthenticatedByBearer> IAuthenticatedByBearer { get; private set; } = new();
 
-    public Mock<IUserRepository> IUserRepository { get; private set; } = new();
-    public Mock<IClientRepository> IClientRepository { get; private set; } = new();
+    public Mock<IUserManagement> IUserManagement { get; private set; } = new();
+    public Mock<IUserPrivilegesManagement> IUserPrivilegesManagement { get; private set; } = new();
+    public Mock<IClientManagement> IClientManagement { get; private set; } = new();
+    public Mock<ITokenManagement> ITokenManagement { get; private set; } = new();
 
     public Mock<IMapper> IMapper { get; private set; } = new();
-    public Mock<IStringHelper> IStringHelper { get; private set; } = new();
     public Mock<IAuthHelper> IAuthHelper { get; private set; } = new();
-    public Mock<INotificationHelper> INotificationHelper { get; private set; } = new();
-    public Mock<IDateTimeProvider> IDateTimeProvider { get; private set; } = new();
-    public Mock<IMongoClient> IMongoClient { get; internal set; } = new();
 
     public void Reset()
     {
-        IUserManagement = new Mock<IUserManagement>();
+        IAuthenticated = new Mock<IAuthenticated>();
+        IAuthenticatedByJwt = new Mock<IAuthenticatedByJwt>();
+        IAuthenticatedByBearer = new Mock<IAuthenticatedByBearer>();
 
-        IUserRepository = new Mock<IUserRepository>();
-        IClientRepository = new Mock<IClientRepository>();
+        IUserManagement = new Mock<IUserManagement>();
+        IUserPrivilegesManagement = new Mock<IUserPrivilegesManagement>();
+        IClientManagement = new Mock<IClientManagement>();
+        ITokenManagement = new Mock<ITokenManagement>();
 
         IMapper = new Mock<IMapper>();
-        IStringHelper = new Mock<IStringHelper>();
         IAuthHelper = new Mock<IAuthHelper>();
-        INotificationHelper = new Mock<INotificationHelper>();
-        IDateTimeProvider = new Mock<IDateTimeProvider>();
-        IMongoClient = new Mock<IMongoClient>();
     }
 }
 
