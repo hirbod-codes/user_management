@@ -18,6 +18,7 @@ using user_management.Services;
 using user_management.Services.Data.User;
 using user_management.Services.Client;
 using user_management.Controllers.Services;
+using user_management.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,8 @@ builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
 builder.Services.AddSingleton<IUserManagement, UserManagement>();
 builder.Services.AddSingleton<IUserPrivilegesManagement, UserPrivilegesManagement>();
+builder.Services.AddSingleton<IClientManagement, ClientManagement>();
+builder.Services.AddSingleton<ITokenManagement, TokenManagement>();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
@@ -56,6 +59,10 @@ builder.Services.AddAuthentication(defaultScheme: "JWT")
     .AddScheme<JWTAuthenticationOptions, JWTAuthenticationHandler>("JWT", null)
     .AddScheme<BearerAuthenticationOptions, BearerAuthenticationHandler>("Bearer", "Bearer", null)
     ;
+
+builder.Services.AddScoped<IAuthenticated, Authenticated>();
+builder.Services.AddScoped<IAuthenticatedByJwt, AuthenticatedByJwt>();
+builder.Services.AddScoped<IAuthenticatedByBearer, AuthenticatedByBearer>();
 
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionsPolicyProvider>();
 
