@@ -5,6 +5,7 @@ using user_management.Validation.Attributes;
 
 public class TokenPrivilegesCreateDto
 {
+    [PrivilegesValidation]
     public Privilege[] Privileges { get; set; } = new Privilege[] { };
     [ReaderFields]
     public Field[] ReadsFields { get; set; } = new Field[] { };
