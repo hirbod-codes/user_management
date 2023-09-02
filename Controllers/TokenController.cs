@@ -1,107 +1,62 @@
 namespace user_management.Controllers;
 
+using System.Security.Authentication;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CSharp.RuntimeBinder;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using user_management.Authentication;
 using user_management.Authorization.Attributes;
-using user_management.Data;
-using user_management.Data.Client;
+using user_management.Controllers.Services;
 using user_management.Dtos.Token;
 using user_management.Models;
-using user_management.Services.Data.User;
-using user_management.Utilities;
+using user_management.Services;
+using user_management.Services.Client;
+using user_management.Services.Data;
+using user_management.Services.Data.Client;
 
 [ApiController]
 [Route("api")]
 [Produces("application/json")]
 public class TokenController : ControllerBase
 {
-    public const int REFRESH_TOKEN_EXPIRATION_MONTHS = 2;
-    public const int CODE_EXPIRATION_MINUTES = 3;
-    public const int TOKEN_EXPIRATION = 1;
+    private readonly ITokenManagement _tokenManagement;
     private readonly IMapper _mapper;
-    private readonly IClientRepository _clientRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly IMongoClient _mongoClient;
-    private readonly IAuthHelper _authHelper;
-    private readonly IStringHelper _stringHelper;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IAuthenticatedByJwt _authenticatedByJwt;
 
-    public TokenController(IMapper mapper, IClientRepository clientRepository, IUserRepository userRepository, IStringHelper stringHelper, IAuthHelper authHelper, IDateTimeProvider dateTimeProvider, IMongoClient iMongoClient)
+    public TokenController(ITokenManagement tokenManagement, IMapper mapper, IAuthenticatedByJwt authenticatedByJwt)
     {
+        _tokenManagement = tokenManagement;
         _mapper = mapper;
-        _clientRepository = clientRepository;
-        _userRepository = userRepository;
-        _stringHelper = stringHelper;
-        _authHelper = authHelper;
-        _dateTimeProvider = dateTimeProvider;
-        _mongoClient = iMongoClient;
+        _authenticatedByJwt = authenticatedByJwt;
     }
 
     [Permissions(Permissions = new string[] { "authorize_client" })]
     [HttpPost("auth")]
     public async Task<ActionResult> Authorize(TokenAuthDto tokenAuthDto)
     {
-        if (!StaticData.Validate(tokenAuthDto.Scope.Privileges) || _authHelper.GetAuthenticationType(User) != "JWT" || tokenAuthDto.State.Length < 40 || tokenAuthDto.ResponseType != "code" || (new List<string>() { "SHA256", "SHA512" }).FirstOrDefault<string?>(s => s != null && s == tokenAuthDto.CodeChallengeMethod) == null) return BadRequest();
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        string? id = await _authHelper.GetIdentifier(User, _userRepository);
-        if (id == null) return Unauthorized();
-        if (!ObjectId.TryParse(id, out ObjectId userId)) return Unauthorized();
+        if (tokenAuthDto.ResponseType != "code") return BadRequest("Unsupported response type requested.");
 
-        if (!ObjectId.TryParse(tokenAuthDto.ClientId, out ObjectId clientObjectId))
-            return NotFound("We don't have a client with this client id: " + tokenAuthDto.ClientId);
-
-        User? user = await _userRepository.RetrieveById(userId, userId);
-        if (user == null) return Unauthorized();
-
-        if ((await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, tokenAuthDto.RedirectUrl)) == null)
-            return NotFound("We don't have a client with this client id: " + tokenAuthDto.ClientId + " and this redirect url: " + tokenAuthDto.RedirectUrl);
-
-        TokenPrivileges scope = _mapper.Map<TokenPrivileges>(tokenAuthDto.Scope);
-
-        foreach (Privilege scopePrivilege in scope.Privileges.ToList())
+        string r = null!;
+        try
         {
-            Privilege? privilege = user.Privileges!.FirstOrDefault<Privilege?>(p => p != null && p.Name == scopePrivilege.Name, null);
-            try
-            {
-                if (privilege == null || privilege.Value == null || (bool)privilege!.Value == false)
-                    return StatusCode(403);
-            }
-            catch (RuntimeBinderException) { return StatusCode(403); }
+            r = await _tokenManagement.Authorize(
+                tokenAuthDto.ClientId,
+                tokenAuthDto.RedirectUrl,
+                tokenAuthDto.CodeChallenge,
+                tokenAuthDto.CodeChallengeMethod,
+                _mapper.Map<TokenPrivileges>(tokenAuthDto.Scope)
+            );
         }
+        catch (AuthenticationException) { return Unauthorized(); }
+        catch (BannedClientException) { return NotFound("System failed to find the client."); }
+        catch (DataNotFoundException) { return NotFound("System failed to find the client."); }
+        catch (ArgumentException) { return BadRequest("Invalid client id provided."); }
+        catch (UnauthorizedAccessException) { return StatusCode(403); }
+        catch (DuplicationException) { return Problem("Internal server error encountered."); }
+        catch (DatabaseServerException) { return Problem("Internal server error encountered."); }
 
-        string code = null!;
-        bool again = false;
-        int safety = 0;
-        do
-        {
-            try
-            {
-                code = _stringHelper.GenerateRandomString(128);
-                await _userRepository.AddClientById(
-                    user,
-                    clientObjectId,
-                    userId,
-                    false,
-                    scope,
-                    _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS),
-                    _stringHelper.GenerateRandomString(128),
-                    _dateTimeProvider.ProvideUtcNow().AddMinutes(CODE_EXPIRATION_MINUTES),
-                    code,
-                    tokenAuthDto.CodeChallenge,
-                    tokenAuthDto.CodeChallengeMethod
-                );
-                again = false;
-            }
-            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
-            safety++;
-        } while (again && safety < 200);
-
-        if (safety >= 200) return Problem();
-
-        return RedirectPermanent(tokenAuthDto.RedirectUrl + $"?code={code}&state={tokenAuthDto.State}");
+        return RedirectPermanent(tokenAuthDto.RedirectUrl + $"?code={r}&state={tokenAuthDto.State}");
     }
 
     [HttpPost("token")]
@@ -109,118 +64,50 @@ public class TokenController : ControllerBase
     {
         if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
 
-        if (!ObjectId.TryParse(tokenCreateDto.ClientId, out ObjectId clientObjectId))
-            return NotFound("We don't have a client with this client id: " + tokenCreateDto.ClientId);
-
-        Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, tokenCreateDto.RedirectUrl);
-        if (client == null)
-            return NotFound("We don't have a client with this client id: " + tokenCreateDto.ClientId + " and this redirect url: " + tokenCreateDto.RedirectUrl);
-
-        User? user = await _userRepository.RetrieveByClientIdAndCode((ObjectId)client.Id!, tokenCreateDto.Code);
-        if (user == null) return NotFound("We couldn't find your account.");
-
-        UserClient? userClient = user.Clients.ToList().FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
-        if (userClient == null) return NotFound("You haven't authorized a client with the provided client id.");
-
-        RefreshToken? refreshToken = userClient.RefreshToken;
-        if (refreshToken == null)
-            return NotFound("We couldn't find your refresh token.");
-        if (refreshToken.ExpirationDate! < _dateTimeProvider.ProvideUtcNow())
-            return BadRequest("Your refresh token has been expired.");
-        if (refreshToken.CodeExpiresAt != null && refreshToken.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())
-            return BadRequest("Your code has been expired.");
-        if (_stringHelper.HashWithoutSalt(tokenCreateDto.CodeVerifier, refreshToken.CodeChallengeMethod!) != _stringHelper.Base64Decode(refreshToken.CodeChallenge!))
-            return BadRequest("Your code verifier is invalid.");
-
-        string tokenValue = null!;
-        using (IClientSessionHandle session = await _mongoClient.StartSessionAsync())
+        (string token, string refreshToken) result = (null!, null!);
+        try { result = await _tokenManagement.Token(tokenCreateDto.ClientId, tokenCreateDto); }
+        catch (BannedClientException) { return NotFound("System failed to find the client."); }
+        catch (RefreshTokenExpirationException) { return BadRequest("The refresh token is expired."); }
+        catch (CodeExpirationException) { return BadRequest("The code is expired, please redirect user again for another authorization."); }
+        catch (InvalidCodeVerifierException) { return BadRequest("The code verifier is invalid."); }
+        catch (DataNotFoundException ex)
         {
-            TransactionOptions transactionOptions = new(writeConcern: WriteConcern.WMajority);
-
-            session.StartTransaction(transactionOptions);
-
-            bool? userResult = await _userRepository.AddTokenPrivileges(user, (ObjectId)client.Id, refreshToken.TokenPrivileges!, session);
-            if (userResult == null) return NotFound("We couldn't find your account.");
-            if (userResult == false) return Problem("We couldn't add your permissions to the requested client.");
-
-            bool again = false;
-            int safety = 0;
-            do
+            switch (ex.Message)
             {
-                try
-                {
-                    tokenValue = _stringHelper.GenerateRandomString(128);
-
-                    bool? addTokenResult = await _userRepository.AddToken(user, (ObjectId)client.Id!, _stringHelper.HashWithoutSalt(tokenValue)!, _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION), session);
-                    if (addTokenResult == null)
-                    {
-                        await session.AbortTransactionAsync();
-                        return NotFound("We couldn't find your account's information.");
-                    }
-                    if (addTokenResult == false)
-                    {
-                        await session.AbortTransactionAsync();
-                        return Problem("We couldn't generate a token for you.");
-                    }
-                    again = false;
-                }
-                catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
-                safety++;
-            } while (again && safety < 200);
-
-            if (safety >= 200)
-            {
-                await session.AbortTransactionAsync();
-                return Problem("We couldn't generate a token for you.");
+                case "client":
+                    return NotFound("We don't have a client with this client id: " + tokenCreateDto.ClientId + " and this redirect url: " + tokenCreateDto.RedirectUrl);
+                case "user":
+                    return NotFound("We couldn't find your account.");
+                case "clientId":
+                    return NotFound("You haven't authorized a client with the provided client id.");
+                case "refreshToken":
+                    return NotFound("We couldn't find your refresh token.");
+                default:
+                    return Problem();
             }
-
-            await session.CommitTransactionAsync();
         }
+        catch (DuplicationException) { return Problem("We couldn't generate a token for you."); }
+        catch (DatabaseServerException) { return Problem("Internal server error encountered"); }
+        catch (OperationException) { return Problem("Internal server error encountered"); }
 
-        return Ok(new { access_token = tokenValue, refresh_token = refreshToken.Value });
+        return Ok(new { access_token = result.token, refresh_token = result.refreshToken });
     }
 
     [HttpPost("retoken")]
     public async Task<ActionResult> ReToken(ReTokenDto reTokenDto)
     {
-        if (!ObjectId.TryParse(reTokenDto.ClientId, out ObjectId clientId)) return BadRequest();
+        string token = null!;
 
-        string? hashedSecret = _stringHelper.HashWithoutSalt(reTokenDto.ClientSecret);
-        if (hashedSecret == null) return BadRequest();
+        try { token = await _tokenManagement.ReToken(reTokenDto.ClientId, reTokenDto.ClientSecret, reTokenDto.RefreshToken); }
+        catch (OperationException) { return Problem(); }
+        catch (BannedClientException) { return NotFound("System failed to find the client."); }
+        catch (InvalidRefreshTokenException) { return BadRequest("The refresh token is invalid."); }
+        catch (ExpiredRefreshTokenException) { return BadRequest("The refresh token is expired."); }
+        catch (UnverifiedRefreshTokenException) { return BadRequest("The refresh token is unverified."); }
+        catch (DataNotFoundException) { return NotFound("There is no such refresh token."); }
+        catch (DatabaseServerException) { return Problem("Internal server error encountered."); }
+        catch (DuplicationException) { return Problem("Internal server error encountered."); }
 
-        Client? client = await _clientRepository.RetrieveByIdAndSecret(clientId, hashedSecret);
-        if (client == null) return BadRequest();
-
-        User? user = await _userRepository.RetrieveByRefreshTokenValue(reTokenDto.RefreshToken);
-        if (user == null) return NotFound();
-
-        List<UserClient> userClients = user.Clients.ToList();
-        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
-        if (userClient == null) return NotFound();
-        if (userClient.RefreshToken == null) return NotFound();
-        if (userClient.RefreshToken.ExpirationDate < _dateTimeProvider.ProvideUtcNow()) return BadRequest();
-        if (!userClient.RefreshToken.IsVerified || userClient.RefreshToken.Value != reTokenDto.RefreshToken) return BadRequest();
-
-        string tokenValue = null!;
-        bool again = false;
-        int safety = 0;
-        do
-        {
-            try
-            {
-                tokenValue = _stringHelper.GenerateRandomString(128);
-
-                bool? r = await _userRepository.AddToken(user, clientId, _stringHelper.HashWithoutSalt(tokenValue)!, _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION));
-                if (r == null) return NotFound();
-                if (r == false) return Problem();
-                again = false;
-            }
-            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
-            safety++;
-        } while (again && safety < 200);
-
-        if (safety >= 200) return Problem();
-
-        return Ok(tokenValue);
+        return Ok(token);
     }
 }
