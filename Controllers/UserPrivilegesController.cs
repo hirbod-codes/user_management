@@ -1,41 +1,35 @@
 namespace user_management.Controllers;
 
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
+using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
 using user_management.Data;
 using user_management.Dtos.User;
 using user_management.Services;
 using user_management.Services.Data;
-using user_management.Services.Data.User;
-using user_management.Utilities;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
 public class UserPrivilegesController : ControllerBase
 {
-    private readonly IAuthHelper _authHelper;
     private readonly IUserPrivilegesManagement _userPrivilegesManagement;
+    private readonly IAuthenticated _authenticated;
 
-    public UserPrivilegesController(IAuthHelper authHelper, IUserPrivilegesManagement userPrivilegesManagement)
+    public UserPrivilegesController(IUserPrivilegesManagement userPrivilegesManagement, IAuthenticated authenticated)
     {
-        _authHelper = authHelper;
         _userPrivilegesManagement = userPrivilegesManagement;
+        _authenticated = authenticated;
     }
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS })]
     [HttpPatch(UPDATE_READERS)]
     public async Task<IActionResult> UpdateReaders(UserPrivilegesPatchDto dto, string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
-
-        try { await _userPrivilegesManagement.UpdateReaders(authorId, userId, dto); }
+        try { await _userPrivilegesManagement.UpdateReaders(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -47,12 +41,9 @@ public class UserPrivilegesController : ControllerBase
     [HttpPatch(UPDATE_ALL_READERS)]
     public async Task<IActionResult> UpdateAllReaders(UserPrivilegesPatchDto dto, string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
-
-        try { await _userPrivilegesManagement.UpdateAllReaders(authorId, userId, dto); }
+        try { await _userPrivilegesManagement.UpdateAllReaders(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -64,12 +55,9 @@ public class UserPrivilegesController : ControllerBase
     [HttpPatch(UPDATE_UPDATERS)]
     public async Task<IActionResult> UpdateUpdaters(UserPrivilegesPatchDto dto, string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
-
-        try { await _userPrivilegesManagement.UpdateUpdaters(authorId, userId, dto); }
+        try { await _userPrivilegesManagement.UpdateUpdaters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -81,12 +69,9 @@ public class UserPrivilegesController : ControllerBase
     [HttpPatch(UPDATE_ALL_UPDATERS)]
     public async Task<IActionResult> UpdateAllUpdaters(UserPrivilegesPatchDto dto, string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
-
-        try { await _userPrivilegesManagement.UpdateAllUpdaters(authorId, userId, dto); }
+        try { await _userPrivilegesManagement.UpdateAllUpdaters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
@@ -98,12 +83,9 @@ public class UserPrivilegesController : ControllerBase
     [HttpPatch(UPDATE_DELETERS)]
     public async Task<IActionResult> UpdateDeleters(UserPrivilegesPatchDto dto, string userId)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        string? authorId = await _authHelper.GetIdentifier(User);
-        if (authorId == null || !ObjectId.TryParse(authorId, out ObjectId authorObjectId)) return Unauthorized();
-
-        try { await _userPrivilegesManagement.UpdateDeleters(authorId, userId, dto); }
+        try { await _userPrivilegesManagement.UpdateDeleters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
         catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
