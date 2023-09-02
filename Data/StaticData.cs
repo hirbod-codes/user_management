@@ -1,14 +1,25 @@
 namespace user_management.Data;
 
+using System;
 using user_management.Models;
 
 public static class StaticData
 {
-    public static bool Validate(IEnumerable<Privilege> privileges)
+    public static bool AreValid(IEnumerable<Privilege> privileges)
     {
         foreach (Privilege privilege in privileges)
             if (Privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == privilege.Name, null) == null)
                 return false;
+        return true;
+    }
+
+    public static bool AreValid(IEnumerable<Privilege> referencePrivileges, IEnumerable<Privilege> privilegesUnderValidation)
+    {
+        for (int i = 0; i < referencePrivileges.Count(); i++)
+        {
+            Privilege? p = privilegesUnderValidation.FirstOrDefault<Privilege?>(p => p != null && p.Name == referencePrivileges.ElementAt(i).Name, null);
+            if (p == null || p.Value == null || (bool)(p.Value) != true) return false;
+        }
         return true;
     }
 
