@@ -21,6 +21,16 @@ public class Client
     public string RedirectUrl { get; set; } = null!;
     public const string REDIRECT_URL = "redirect_url";
 
+    [BsonElement(TOKENS_EXPOSED_AT)]
+    [BsonRequired]
+    public DateTime? TokensExposedAt { get; set; } = null;
+    public const string TOKENS_EXPOSED_AT = "tokens_exposed_at";
+
+    [BsonElement(EXPOSED_COUNT)]
+    [BsonRequired]
+    public int ExposedCount { get; set; } = 0;
+    public const string EXPOSED_COUNT = "exposed_count";
+
     [BsonElement(CREATED_AT)]
     [BsonRequired]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
