@@ -1084,6 +1084,28 @@ public class UserRepositoryTest
     }
 
     [Theory]
+    [MemberData(nameof(OneUser))]
+    public async void VerifyRefreshToken(Models.User user)
+    {
+        user.Clients[0].RefreshToken!.IsVerified = false;
+        Assert.False(user.Clients[0].RefreshToken!.IsVerified);
+        await _userCollection.InsertOneAsync(user);
+
+        try
+        {
+            bool? result = await _userRepository.VerifyRefreshToken(user.Id, user.Clients[0].ClientId, null);
+
+            Assert.True(result);
+            Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
+            Assert.True(retrievedUser.Clients[0].RefreshToken!.IsVerified);
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients }, { Models.User.UPDATED_AT, user.UpdatedAt } });
+        }
+        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+
+        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
+    }
+
+    [Theory]
     [MemberData(nameof(TwoUsers))]
     public async void AddToken(Models.User user, Models.User actor)
     {
