@@ -9,7 +9,6 @@ using user_management.Data.Logics.Filter;
 using user_management.Data.Logics.Update;
 using user_management.Services.Data;
 using MongoDB.Driver.Linq;
-using Newtonsoft.Json;
 
 public class UserRepository : IUserRepository
 {
@@ -133,16 +132,20 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> Login(ObjectId userId)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
-        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
+        return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount <= 1;
     }
 
     public async Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -151,7 +154,9 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> UpdateVerificationSecretForActivation(string VerificationSecret, string email)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -160,7 +165,9 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -169,7 +176,9 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> Verify(ObjectId id)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -178,7 +187,9 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> ChangePassword(string email, string hashedPassword)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PASSWORD, hashedPassword).Set(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -187,7 +198,12 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> ChangeUsername(string email, string username)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.USERNAME, username).Set(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.USERNAME, username).Set(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -196,7 +212,12 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> ChangePhoneNumber(string email, string phoneNumber)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PHONE_NUMBER, phoneNumber).Set(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.PHONE_NUMBER, phoneNumber).Set(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -205,7 +226,12 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> ChangeEmail(string email, string newEmail)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.EMAIL, newEmail).Set(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Update.Set<string>(User.EMAIL, newEmail).Set(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -214,7 +240,10 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> Logout(ObjectId id)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow));
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -223,16 +252,20 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(
-            Builders<User>.Filter.And(
-                GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-                Builders<User>.Filter.Eq("_id", userId)
-            ),
-            Builders<User>.Update
-                .PullFilter(x => x.Clients, x => x.ClientId == clientId)
-                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
+        FilterDefinition<User> filter = Builders<User>.Filter.And(
+            GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            Builders<User>.Filter.Eq("_id", userId)
         );
+
+        UpdateDefinition<User> update = Builders<User>.Update
+            .PullFilter(x => x.Clients, x => x.ClientId == clientId)
+            .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(filter, update); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -241,22 +274,26 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient)
     {
-        UpdateResult result = await _userCollection.UpdateOneAsync(
-            Builders<User>.Filter.And(
-                GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-                Builders<User>.Filter.Eq("_id", userId)
-            ),
-            Builders<User>.Update
-                .Set<UserClient[]>(User.CLIENTS, new UserClient[] { })
-                .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)
+        FilterDefinition<User> filter = Builders<User>.Filter.And(
+            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            Builders<User>.Filter.Eq("_id", userId)
         );
+
+        UpdateDefinition<User> update = Builders<User>.Update
+            .Set<UserClient[]>(User.CLIENTS, new UserClient[] { })
+            .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult result;
+
+        try { result = await _userCollection.UpdateOneAsync(filter, update); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, string tokenValue, DateTime expirationDate, IClientSessionHandle? session = null)
+    public async Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, Token token, IClientSessionHandle? session = null)
     {
         FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
             Builders<User>.Filter.Eq<ObjectId>("_id", userId),
@@ -266,12 +303,19 @@ public class UserRepository : IUserRepository
         );
 
         UpdateDefinition<User> updateDefinition = Builders<User>.Update
-            .Set<Token?>(u => u.Clients.FirstMatchingElement().Token, new Token() { Value = tokenValue, ExpirationDate = expirationDate, IsRevoked = false })
+            .Set<Token?>(u => u.Clients.FirstMatchingElement().Token, token)
             .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
 
         UpdateResult result;
-        if (session != null) result = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
-        else result = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+
+        try
+        {
+            if (session != null) result = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
+            else result = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+        }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -420,10 +464,15 @@ public class UserRepository : IUserRepository
 
         if (pipeline != null) pipeline = u(pipeline);
 
-        UpdateResult r;
         UpdateDefinition<User> updateDefinition = Builders<User>.Update.Pipeline(pipeline);
-        if (session != null) r = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
-        else r = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+
+        UpdateResult r;
+        try
+        {
+            if (session != null) r = await _userCollection.UpdateOneAsync(session, filterDefinition, updateDefinition);
+            else r = await _userCollection.UpdateOneAsync(filterDefinition, updateDefinition);
+        }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
 
@@ -439,7 +488,9 @@ public class UserRepository : IUserRepository
             GetUpdaterFilterDefinition(actorId, false, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } })
         );
 
-        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Push<UserClient>(User.CLIENTS, userClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult r;
+        try { r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Push<UserClient>(User.CLIENTS, userClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
 
@@ -454,7 +505,9 @@ public class UserRepository : IUserRepository
             GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PRIVILEGES } })
         );
 
-        UpdateResult r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Set<UserPrivileges>(User.USER_PRIVILEGES, userPrivileges).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow));
+        UpdateResult r;
+        try { r = await _userCollection.UpdateOneAsync(filters, Builders<User>.Update.Set<UserPrivileges>(User.USER_PRIVILEGES, userPrivileges).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
 
@@ -491,7 +544,11 @@ public class UserRepository : IUserRepository
 
         filters.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList));
 
-        UpdateResult result = await _userCollection.UpdateManyAsync(Builders<User>.Filter.And(filters.ToArray()), updates);
+        UpdateResult result;
+        try { result = await _userCollection.UpdateManyAsync(Builders<User>.Filter.And(filters.ToArray()), updates); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
@@ -500,7 +557,9 @@ public class UserRepository : IUserRepository
 
     public async Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false)
     {
-        DeleteResult r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients)));
+        DeleteResult r;
+        try { r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients))); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.DeletedCount == 0) return null;
 
