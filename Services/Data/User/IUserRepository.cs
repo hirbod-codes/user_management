@@ -68,4 +68,6 @@ public interface IUserRepository
     public Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false);
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false);
+    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
+    public Task<bool?> VerifyRefreshToken(ObjectId userId, ObjectId clientId, IClientSessionHandle? session = null);
 }

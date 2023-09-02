@@ -293,6 +293,26 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
+    public async Task<bool?> VerifyRefreshToken(ObjectId userId, ObjectId clientId, IClientSessionHandle? session = null)
+    {
+        FilterDefinition<User> filter = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq("_id", userId),
+            Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.CLIENT_ID, clientId)
+        );
+
+        UpdateDefinition<User> update = Builders<User>.Update
+            .Set<bool>(x => x.Clients.FirstMatchingElement().RefreshToken!.IsVerified, true)
+            .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult r;
+        try { r = await (session != null ? _userCollection.UpdateOneAsync(session, filter, update) : _userCollection.UpdateOneAsync(filter, update)); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
+    }
+
     public async Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, Token token, IClientSessionHandle? session = null)
     {
         FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
