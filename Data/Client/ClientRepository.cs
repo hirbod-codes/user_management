@@ -3,52 +3,105 @@ namespace user_management.Data.Client;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using user_management.Models;
-using user_management.Data;
+using user_management.Services.Client;
 using MongoDB.Bson;
+using user_management.Services.Data;
 
 public class ClientRepository : IClientRepository
 {
     private readonly IMongoCollection<Client> _clientCollection;
+    private readonly MongoClient _mongoClient;
 
     public ClientRepository(IOptions<MongoContext> mongoContext)
     {
-        var mongoClient = MongoContext.GetMongoClient(mongoContext.Value);
+        _mongoClient = MongoContext.GetMongoClient(mongoContext.Value);
 
-        var mongoDatabase = mongoClient.GetDatabase(mongoContext.Value.DatabaseName);
+        var mongoDatabase = _mongoClient.GetDatabase(mongoContext.Value.DatabaseName);
 
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Value.Collections.Clients);
     }
 
-    public async Task<Client> Create(Client client)
+    public async Task<Client> Create(Client client, IClientSessionHandle? session = null)
     {
         client.Id = ObjectId.GenerateNewId();
 
-        DateTime dt = DateTime.UtcNow;
-        client.UpdatedAt = dt;
-        client.CreatedAt = dt;
-
-        await _clientCollection.InsertOneAsync(client);
+        try { await (session == null ? _clientCollection.InsertOneAsync(client) : _clientCollection.InsertOneAsync(session, client)); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         return client;
     }
 
+    public async Task<Client?> RetrieveById(ObjectId clientId) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", clientId))).FirstOrDefault<Client?>();
+
     public async Task<Client?> RetrieveBySecret(string secret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
-
-    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId id, string redirectUrl) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
-
-    public async Task<Client?> RetrieveById(ObjectId id) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", id))).FirstOrDefault<Client?>();
 
     public async Task<Client?> RetrieveByIdAndSecret(ObjectId clientId, string hashedSecret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)))).FirstOrDefault<Client?>();
 
-    public async Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId id, string hashedSecret)
+    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId clientId, string redirectUrl) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
+
+    public async Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId clientId, string hashedSecret)
     {
-        UpdateResult r = await _clientCollection.UpdateOneAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", id), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)), Builders<Client>.Update.Set(Client.REDIRECT_URL, redirectUrl));
+        var filter = Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret));
+        var update = Builders<Client>.Update.Set(Client.REDIRECT_URL, redirectUrl).Set<Client, DateTime>(Client.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult r;
+        try { r = await _clientCollection.UpdateOneAsync(filter, update); }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task<bool> DeleteBySecret(string secret)
+    public async Task<bool> DeleteBySecret(string secret, IClientSessionHandle? session = null)
     {
-        DeleteResult r = await _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret));
+        DeleteResult r;
+        try { r = await (session == null ? _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret)) : _clientCollection.DeleteOneAsync(session, Builders<Client>.Filter.Eq(Client.SECRET, secret))); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
         return r.IsAcknowledged && r.DeletedCount == 1;
+    }
+
+    public async Task<bool> DeleteById(ObjectId clientId, IClientSessionHandle? session = null)
+    {
+        DeleteResult r;
+        try { r = await (session == null ? _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq("_id", clientId)) : _clientCollection.DeleteOneAsync(session, Builders<Client>.Filter.Eq("_id", clientId))); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
+        return r.IsAcknowledged && r.DeletedCount == 1;
+    }
+
+    public async Task<bool> ClientExposed(ObjectId clientId, string newSecret, IClientSessionHandle? session = null)
+    {
+        Client? client = await RetrieveById(clientId);
+        if (client == null) return false;
+        return await ClientExposed(client, newSecret, session);
+    }
+
+    public async Task<bool> ClientExposed(Client client, string newSecret, IClientSessionHandle? session = null)
+    {
+        try
+        {
+            if (session == null) session = await _mongoClient.StartSessionAsync();
+
+            session.StartTransaction();
+
+            if (!(await DeleteBySecret(client.Secret, session))) return false;
+
+            client.Secret = newSecret;
+            client.ExposedCount++;
+            client.TokensExposedAt = DateTime.UtcNow;
+            client.UpdatedAt = DateTime.UtcNow;
+            client.CreatedAt = DateTime.UtcNow;
+            await Create(client, session);
+
+            await session.CommitTransactionAsync();
+        }
+        catch (Exception) { if (session != null) { await session.AbortTransactionAsync(); } throw new DatabaseServerException(); }
+        finally { if (session != null) session.Dispose(); }
+
+        return true;
     }
 }
