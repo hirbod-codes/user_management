@@ -3,6 +3,7 @@ namespace user_management.Tests;
 using AutoMapper;
 using MongoDB.Driver;
 using Moq;
+using user_management.Authentication;
 using user_management.Authentication.JWT;
 using user_management.Services.Client;
 using user_management.Services.Data.User;
@@ -11,6 +12,10 @@ using Xunit;
 
 public class ServiceFixture
 {
+    public Mock<IAuthenticated> IAuthenticated { get; private set; } = new();
+    public Mock<IAuthenticatedByJwt> IAuthenticatedByJwt { get; private set; } = new();
+    public Mock<IAuthenticatedByBearer> IAuthenticatedByBearer { get; private set; } = new();
+
     public Mock<IUserRepository> IUserRepository { get; private set; } = new();
     public Mock<IClientRepository> IClientRepository { get; private set; } = new();
 
@@ -23,6 +28,10 @@ public class ServiceFixture
 
     public void Reset()
     {
+        IAuthenticated = new Mock<IAuthenticated>();
+        IAuthenticatedByJwt = new Mock<IAuthenticatedByJwt>();
+        IAuthenticatedByBearer = new Mock<IAuthenticatedByBearer>();
+
         IUserRepository = new Mock<IUserRepository>();
         IClientRepository = new Mock<IClientRepository>();
 
