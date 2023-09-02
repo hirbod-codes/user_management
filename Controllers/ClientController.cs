@@ -2,13 +2,13 @@ namespace user_management.Controllers;
 
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using user_management.Authentication;
 using user_management.Authorization.Attributes;
-using user_management.Data.Client;
+using user_management.Controllers.Services;
 using user_management.Dtos.Client;
 using user_management.Models;
-using user_management.Utilities;
+using user_management.Services.Client;
+using user_management.Services.Data;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -16,51 +16,31 @@ using user_management.Utilities;
 public class ClientController : ControllerBase
 {
     private readonly IMapper _mapper;
-    private readonly IClientRepository _clientRepository;
-    private readonly IStringHelper _stringHelper;
-    private readonly IAuthHelper _authHelper;
+    private readonly IClientManagement _clientManagement;
+    private readonly IAuthenticatedByJwt _authenticatedByJwt;
 
-    public ClientController(IMapper mapper, IClientRepository clientRepository, IStringHelper stringHelper, IAuthHelper authHelper)
+    public ClientController(IMapper mapper, IClientManagement clientManagement, IAuthenticatedByJwt authenticatedByJwt)
     {
         _mapper = mapper;
-        _clientRepository = clientRepository;
-        _stringHelper = stringHelper;
-        _authHelper = authHelper;
+        _clientManagement = clientManagement;
+        _authenticatedByJwt = authenticatedByJwt;
     }
 
     [Permissions(Permissions = new string[] { "register_client" })]
     [HttpPost]
     public async Task<ActionResult> Register(ClientCreateDto clientCreateDto)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        Client client = _mapper.Map<Client>(clientCreateDto);
+        (Client client, string? notHashedSecret) result;
 
-        string secret = null!;
-        bool again = false;
-        int safety = 0;
-        do
-        {
-            try
-            {
-                secret = _stringHelper.GenerateRandomString(60);
+        try { result = await _clientManagement.Register(_mapper.Map<Client>(clientCreateDto)); }
+        catch (DuplicationException) { return Problem("System failed to register your client."); }
+        catch (DatabaseServerException) { return Problem("System failed to register your client."); }
+        catch (RegistrationFailure) { return Problem("System failed to register your client."); }
 
-                client.Secret = _stringHelper.HashWithoutSalt(secret);
-                if (secret == null) return Problem();
-
-                client = await _clientRepository.Create(client);
-                if (client == null) return Problem("System failed to register your account.");
-
-                again = false;
-            }
-            catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { again = true; }
-            safety++;
-        } while (again && safety < 200);
-
-        if (safety >= 200) return Problem();
-
-        ClientRetrieveDto clientRetrieveDto = _mapper.Map<ClientRetrieveDto>(client);
-        clientRetrieveDto.Secret = secret;
+        ClientRetrieveDto clientRetrieveDto = _mapper.Map<ClientRetrieveDto>(result.client);
+        clientRetrieveDto.Secret = result.notHashedSecret;
 
         return Ok(clientRetrieveDto);
     }
@@ -69,11 +49,13 @@ public class ClientController : ControllerBase
     [HttpGet("info/{id}")]
     public async Task<ActionResult> RetrieveClientPublicInfo(string id)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        if (!ObjectId.TryParse(id, out ObjectId idObject)) return BadRequest();
+        Client? client = null;
 
-        Client? client = await _clientRepository.RetrieveById(idObject);
+        try { client = await _clientManagement.RetrieveClientPublicInfo(id); }
+        catch (ArgumentException) { return BadRequest(); }
+
         if (client == null) return NotFound();
 
         return Ok(_mapper.Map<ClientRetrieveDto>(client));
@@ -83,12 +65,13 @@ public class ClientController : ControllerBase
     [HttpGet("{secret}")]
     public async Task<ActionResult> Retrieve(string secret)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
-        if (hashedSecret == null) return BadRequest();
+        Client? client = null;
 
-        Client? client = await _clientRepository.RetrieveBySecret(hashedSecret);
+        try { client = await _clientManagement.RetrieveBySecret(secret); }
+        catch (ArgumentException) { return BadRequest(); }
+
         if (client == null) return NotFound();
 
         return Ok(_mapper.Map<ClientRetrieveDto>(client));
@@ -98,14 +81,12 @@ public class ClientController : ControllerBase
     [HttpPatch]
     public async Task<ActionResult> Update(ClientPutDto clientPutDto)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        if (!ObjectId.TryParse(clientPutDto.Id, out ObjectId clientId)) return BadRequest();
-
-        string? hashedSecret = _stringHelper.HashWithoutSalt(clientPutDto.Secret);
-        if (hashedSecret == null) return BadRequest();
-
-        if (!(await _clientRepository.UpdateRedirectUrl(clientPutDto.RedirectUrl, clientId, hashedSecret))) return Problem();
+        try { await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl); }
+        catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
+        catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
+        catch (DatabaseServerException) { return Problem("We failed to update this client."); }
 
         return Ok();
     }
@@ -114,20 +95,11 @@ public class ClientController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult> Delete(ClientDeleteDto clientDeleteDto)
     {
-        if (_authHelper.GetAuthenticationType(User) != "JWT") return StatusCode(403);
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        if (!ObjectId.TryParse(clientDeleteDto.Id, out ObjectId clientId)) return BadRequest();
-
-        Client? client = await _clientRepository.RetrieveById(clientId);
-        if (client == null) return NotFound();
-
-        string? hashedSecret = _stringHelper.HashWithoutSalt(clientDeleteDto.Secret);
-        if (hashedSecret == null) return BadRequest();
-
-        if (hashedSecret != client.Secret) return BadRequest();
-
-        if (!(await _clientRepository.DeleteBySecret(hashedSecret!)))
-            return Problem();
+        try { await _clientManagement.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret); }
+        catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
+        catch (DataNotFoundException) { return NotFound(); }
 
         return Ok();
     }
