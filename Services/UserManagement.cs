@@ -17,17 +17,17 @@ public class UserManagement : IUserManagement
     private readonly IUserRepository _userRepository;
     private readonly IStringHelper _stringHelper;
     private readonly INotificationHelper _notificationHelper;
+    private readonly IAuthHelper _authHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IJWTAuthenticationHandler _jwtAuthenticationHandler;
 
-    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IJWTAuthenticationHandler jwtAuthenticationHandler)
+    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IAuthHelper authHelper)
     {
+        _authHelper = authHelper;
         _dateTimeProvider = dateTimeProvider;
         _notificationHelper = notificationHelper;
         _stringHelper = stringHelper;
         _userRepository = userRepository;
         _mapper = mapper;
-        _jwtAuthenticationHandler = jwtAuthenticationHandler;
     }
 
     public async Task<bool> FullNameExistenceCheck(string firstName, string middleName, string lastName) => (await _userRepository.RetrieveByFullNameForExistenceCheck(firstName, middleName, lastName)) != null;
@@ -122,7 +122,7 @@ public class UserManagement : IUserManagement
         if (r == null) throw new DataNotFoundException();
         if (r == false) throw new OperationException();
 
-        string jwt = _jwtAuthenticationHandler.GenerateAuthenticationJWT(user.Id.ToString()!);
+        string jwt = _authHelper.GenerateAuthenticationJWT(user.Id.ToString()!);
 
         return (jwt, user.Id.ToString());
     }
