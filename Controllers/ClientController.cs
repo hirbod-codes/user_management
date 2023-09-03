@@ -85,7 +85,15 @@ public class ClientController : ControllerBase
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        try { await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl); }
+        try
+        {
+            User user = await _authenticatedByJwt.GetAuthenticated();
+
+            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId.ToString() == clientPutDto.Id) == null) return StatusCode(403);
+
+            await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl);
+        }
+        catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
         catch (DatabaseServerException) { return Problem("We failed to update this client."); }
@@ -99,7 +107,15 @@ public class ClientController : ControllerBase
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        try { await _clientManagement.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret); }
+        try
+        {
+            User user = await _authenticatedByJwt.GetAuthenticated();
+
+            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId.ToString() == clientDeleteDto.Id) == null) return StatusCode(403);
+
+            await _clientManagement.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret);
+        }
+        catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DataNotFoundException) { return NotFound(); }
 
