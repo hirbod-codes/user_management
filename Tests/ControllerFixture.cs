@@ -3,11 +3,12 @@ namespace user_management.Tests;
 using AutoMapper;
 using Moq;
 using user_management.Authentication;
+using user_management.Authentication.JWT;
 using user_management.Controllers.Services;
 using user_management.Utilities;
 using Xunit;
 
-public class ControllerFixture : IFixture
+public class ControllerFixture
 {
     public Mock<IAuthenticated> IAuthenticated { get; private set; } = new();
     public Mock<IAuthenticatedByJwt> IAuthenticatedByJwt { get; private set; } = new();
@@ -18,8 +19,8 @@ public class ControllerFixture : IFixture
     public Mock<IClientManagement> IClientManagement { get; private set; } = new();
     public Mock<ITokenManagement> ITokenManagement { get; private set; } = new();
 
-    public Mock<IMapper> IMapper { get; private set; } = new();
     public Mock<IAuthHelper> IAuthHelper { get; private set; } = new();
+    public Mock<IMapper> IMapper { get; private set; } = new();
 
     public void Reset()
     {
@@ -32,8 +33,8 @@ public class ControllerFixture : IFixture
         IClientManagement = new Mock<IClientManagement>();
         ITokenManagement = new Mock<ITokenManagement>();
 
-        IMapper = new Mock<IMapper>();
         IAuthHelper = new Mock<IAuthHelper>();
+        IMapper = new Mock<IMapper>();
     }
 }
 
