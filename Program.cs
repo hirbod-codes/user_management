@@ -33,10 +33,10 @@ builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
 builder.Services.AddSingleton<INotificationHelper, NotificationHelper>();
 builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
-builder.Services.AddSingleton<IUserManagement, UserManagement>();
-builder.Services.AddSingleton<IUserPrivilegesManagement, UserPrivilegesManagement>();
-builder.Services.AddSingleton<IClientManagement, ClientManagement>();
-builder.Services.AddSingleton<ITokenManagement, TokenManagement>();
+builder.Services.AddScoped<IUserManagement, UserManagement>();
+builder.Services.AddScoped<IUserPrivilegesManagement, UserPrivilegesManagement>();
+builder.Services.AddScoped<IClientManagement, ClientManagement>();
+builder.Services.AddScoped<ITokenManagement, TokenManagement>();
 
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
@@ -49,11 +49,11 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
 builder.Services.AddSingleton<JWTAuthenticationOptions>();
-builder.Services.AddSingleton<IJWTAuthenticationHandler, JWTAuthenticationHandler>();
+builder.Services.AddScoped<JWTAuthenticationHandler>();
 
 builder.Services.Configure<BearerAuthenticationOptions>(builder.Configuration.GetSection("Bearer"));
 builder.Services.AddSingleton<BearerAuthenticationOptions>();
-builder.Services.AddSingleton<BearerAuthenticationHandler>();
+builder.Services.AddScoped<BearerAuthenticationHandler>();
 
 builder.Services.AddAuthentication(defaultScheme: "JWT")
     .AddScheme<JWTAuthenticationOptions, JWTAuthenticationHandler>("JWT", null)
@@ -66,10 +66,10 @@ builder.Services.AddScoped<IAuthenticatedByBearer, AuthenticatedByBearer>();
 
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionsPolicyProvider>();
 
-builder.Services.AddSingleton<IAuthorizationHandler, PermissionsAuthorizationHandler>();
-builder.Services.AddSingleton<IAuthorizationHandler, RolesAuthorizationHandler>();
-builder.Services.AddSingleton<IAuthorizationHandler, ScopesAuthorizationHandler>();
-;
+builder.Services.AddScoped<IAuthorizationHandler, PermissionsAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, RolesAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, ScopesAuthorizationHandler>();
+
 
 var app = builder.Build();
 
