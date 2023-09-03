@@ -1,15 +1,12 @@
 namespace user_management.Controllers;
 
 using System.Net.Mail;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
 using user_management.Authorization.Attributes;
 using user_management.Authentication;
 using user_management.Dtos.User;
 using user_management.Models;
-using user_management.Utilities;
 using System.ComponentModel.DataAnnotations;
 using user_management.Validation.Attributes;
 using user_management.Services;
@@ -23,7 +20,6 @@ using System.Security.Authentication;
 [Produces("application/json")]
 public class UserController : ControllerBase
 {
-    private const int EXPIRATION_MINUTES = 6;
     private readonly IUserManagement _userManagement;
     private readonly IAuthenticated _authenticated;
 
