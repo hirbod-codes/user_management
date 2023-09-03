@@ -340,7 +340,7 @@ public class ClientRepositoryTest
     public async void ClientExposed(Models.Client client)
     {
         bool? result;
-        string newSecret = "newSecret";
+        string newHashedSecret = "newHashedSecret";
 
         // Success
         await _clientCollection.InsertOneAsync(client);
@@ -349,16 +349,16 @@ public class ClientRepositoryTest
 
         try
         {
-            result = await _clientRepository.ClientExposed(client, newSecret);
+            result = await _clientRepository.ClientExposed(client, newHashedSecret);
 
             Assert.True(result);
             Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", oldClient.Id))).FirstOrDefault<Models.Client?>());
-            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newSecret))).FirstOrDefault<Models.Client?>();
+            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newHashedSecret))).FirstOrDefault<Models.Client?>();
             Assert.NotNull(retrievedClient);
             Assert.NotNull(retrievedClient.TokensExposedAt);
             Assert.NotEqual(oldClient.Id.ToString(), retrievedClient.Id.ToString());
             Assert.Equal(oldClient.RedirectUrl, retrievedClient.RedirectUrl);
-            Assert.Equal(newSecret, retrievedClient.Secret);
+            Assert.Equal(newHashedSecret, retrievedClient.Secret);
             Assert.Equal<int>(oldClient.ExposedCount + 1, retrievedClient.ExposedCount);
         }
         finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
@@ -366,8 +366,8 @@ public class ClientRepositoryTest
         Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
 
         // Failure
-        result = await _clientRepository.ClientExposed(client.Id, newSecret);
-        Assert.False(result);
+        result = await _clientRepository.ClientExposed(client, newHashedSecret);
+        Assert.Null(result);
         Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
     }
 
@@ -376,23 +376,24 @@ public class ClientRepositoryTest
     public async void ClientExposed_byId(Models.Client client)
     {
         bool? result;
-        string newSecret = "newSecret";
+        string newHashedSecret = "newHashedSecret";
+        string hashedSecret = client.Secret;
 
         // Success
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            result = await _clientRepository.ClientExposed(client.Id, newSecret);
+            result = await _clientRepository.ClientExposed(client.Id, hashedSecret, newHashedSecret);
 
             Assert.True(result);
             Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
-            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newSecret))).FirstOrDefault<Models.Client?>();
+            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newHashedSecret))).FirstOrDefault<Models.Client?>();
             Assert.NotNull(retrievedClient);
             Assert.NotNull(retrievedClient.TokensExposedAt);
             Assert.NotEqual(client.Id.ToString(), retrievedClient.Id.ToString());
             Assert.Equal(client.RedirectUrl, retrievedClient.RedirectUrl);
-            Assert.Equal(newSecret, retrievedClient.Secret);
+            Assert.Equal(newHashedSecret, retrievedClient.Secret);
             Assert.Equal<int>(client.ExposedCount + 1, retrievedClient.ExposedCount);
         }
         finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
@@ -400,8 +401,8 @@ public class ClientRepositoryTest
         Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
 
         // Failure
-        result = await _clientRepository.ClientExposed(client.Id, newSecret);
-        Assert.False(result);
+        result = await _clientRepository.ClientExposed(client.Id, hashedSecret, newHashedSecret);
+        Assert.Null(result);
         Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
     }
 
