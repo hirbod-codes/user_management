@@ -26,6 +26,8 @@ public class ServiceFixture
     public Mock<IMongoClient> IMongoClient { get; internal set; } = new();
     public Mock<IJWTAuthenticationHandler> IJWTAuthenticationHandler { get; internal set; } = new();
 
+    public Mock<IAuthHelper> IAuthHelper { get; private set; } = new();
+
     public void Reset()
     {
         IAuthenticated = new Mock<IAuthenticated>();
@@ -41,6 +43,8 @@ public class ServiceFixture
         IDateTimeProvider = new Mock<IDateTimeProvider>();
         IMongoClient = new Mock<IMongoClient>();
         IJWTAuthenticationHandler = new Mock<IJWTAuthenticationHandler>();
+
+        IAuthHelper = new Mock<IAuthHelper>();
     }
 }
 
