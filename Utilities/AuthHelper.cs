@@ -1,36 +1,38 @@
 namespace user_management.Utilities;
 
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using user_management.Models;
-using user_management.Services.Data.User;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using user_management.Authentication.JWT;
 
 public class AuthHelper : IAuthHelper
 {
-    private readonly IUserRepository _userRepository;
+    private readonly JWTAuthenticationOptions _options;
 
-    public AuthHelper(IUserRepository userRepository)
+    public AuthHelper(IOptionsMonitor<JWTAuthenticationOptions> options)
     {
-        _userRepository = userRepository;
+        _options = options.CurrentValue;
     }
-    public string GetAuthenticationType(ClaimsPrincipal user)
+    public string GenerateEmailVerificationJWT(string email) => GenerateJwt(new Claim[] { new Claim(ClaimTypes.Email, email) });
+
+    public string GenerateAuthenticationJWT(string userId) => GenerateJwt(new Claim[] { new Claim(ClaimTypes.NameIdentifier, userId) });
+
+    public string GenerateJwt(Claim[] claims)
     {
-        if (user.Identity!.AuthenticationType == "JWT") return "JWT";
-        if (user.Identity!.AuthenticationType == "Bearer") return "Bearer";
-        throw new UnauthorizedAccessException();
+        SecurityTokenDescriptor securityTokenDescriptor = new SecurityTokenDescriptor()
+        {
+            IssuedAt = DateTime.UtcNow,
+            Issuer = _options.Issuer,
+            Audience = _options.Audience,
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(_options.ExpireMinutes),
+            SigningCredentials = new SigningCredentials(GetSymmetricSecurityKey(), _options.SecurityAlgorithm)
+        };
+
+        JwtSecurityTokenHandler jwtSecurityTokenHandler = (new JwtSecurityTokenHandler());
+        return jwtSecurityTokenHandler.WriteToken(jwtSecurityTokenHandler.CreateToken(securityTokenDescriptor));
     }
 
-    public async Task<string?> GetIdentifier(ClaimsPrincipal user)
-    {
-        Claim? claim = user.Claims.ToList().FirstOrDefault<Claim?>(c => c != null && c.Type == ClaimTypes.NameIdentifier, null);
-        if (claim == null) return null;
-
-        if (user.Identity!.AuthenticationType == "JWT")
-            return claim.Value;
-        else
-            try
-            {
-                return (await _userRepository.RetrieveByTokenValue(claim.Value))!.Clients.ToList().FirstOrDefault<UserClient?>(c => c != null && c.Token != null && c.Token.Value == claim.Value, null)!.ClientId.ToString();
-            }
-            catch (NullReferenceException) { return null; }
-    }
+    private SecurityKey GetSymmetricSecurityKey() => new SymmetricSecurityKey(Convert.FromBase64String(_options.SecretKey));
 }
