@@ -126,4 +126,35 @@ public class ClientManagementTest
         Fixture.IClientRepository.Setup<Task<bool>>(o => o.DeleteBySecret(hashedSecret, null)).Returns(Task.FromResult<bool>(true));
         await InstantiateService().DeleteBySecret(clientId, secret);
     }
+
+    [Fact]
+    public async void UpdateExposedClient()
+    {
+        ObjectId clientId = ObjectId.GenerateNewId();
+        string secret = "secret";
+        string? hashedSecret = "hashedSecret";
+        string? newSecret = "newSecret";
+        string? newHashedSecret = "newHashedSecret";
+
+        Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: null);
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+
+        Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: hashedSecret);
+        Fixture.IStringHelper.Setup<string?>(o => o.GenerateRandomString(128)).Returns(value: newSecret);
+        Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(newSecret, "SHA512")).Returns(value: null);
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+
+        Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(newSecret, "SHA512")).Returns(value: newHashedSecret);
+        Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Throws<DuplicationException>();
+        await Assert.ThrowsAsync<DuplicationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Throws<DatabaseServerException>();
+        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(false));
+        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+
+        Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(true));
+        Assert.Equal(newSecret, await InstantiateService().UpdateExposedClient(clientId, secret));
+    }
 }
