@@ -73,14 +73,14 @@ public class ClientRepository : IClientRepository
         return r.IsAcknowledged && r.DeletedCount == 1;
     }
 
-    public async Task<bool> ClientExposed(ObjectId clientId, string newSecret, IClientSessionHandle? session = null)
+    public async Task<bool?> ClientExposed(ObjectId clientId, string hashedSecret, string newHashedSecret, IClientSessionHandle? session = null)
     {
-        Client? client = await RetrieveById(clientId);
-        if (client == null) return false;
-        return await ClientExposed(client, newSecret, session);
+        Client? client = await RetrieveByIdAndSecret(clientId, hashedSecret);
+        if (client == null) return null;
+        return await ClientExposed(client, newHashedSecret, session);
     }
 
-    public async Task<bool> ClientExposed(Client client, string newSecret, IClientSessionHandle? session = null)
+    public async Task<bool?> ClientExposed(Client client, string newHashedSecret, IClientSessionHandle? session = null)
     {
         try
         {
@@ -88,9 +88,9 @@ public class ClientRepository : IClientRepository
 
             session.StartTransaction();
 
-            if (!(await DeleteBySecret(client.Secret, session))) return false;
+            if (!(await DeleteBySecret(client.Secret, session))) return null;
 
-            client.Secret = newSecret;
+            client.Secret = newHashedSecret;
             client.ExposedCount++;
             client.TokensExposedAt = DateTime.UtcNow;
             client.UpdatedAt = DateTime.UtcNow;
