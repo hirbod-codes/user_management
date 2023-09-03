@@ -81,4 +81,32 @@ public class ClientManagement : IClientManagement
 
         if (!(await _clientRepository.DeleteBySecret(hashedSecret))) throw new DataNotFoundException();
     }
+
+    public async Task<string> UpdateExposedClient(ObjectId clientId, string secret)
+    {
+        string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
+        if (hashedSecret == null) throw new OperationException();
+
+        int safety = 0;
+        string newSecret;
+        do
+        {
+            newSecret = _stringHelper.GenerateRandomString(128);
+            string? newHashedSecret = _stringHelper.HashWithoutSalt(newSecret);
+            if (newHashedSecret == null) throw new OperationException();
+
+            bool? r = false;
+            try { r = await _clientRepository.ClientExposed(clientId, hashedSecret, newHashedSecret); }
+            catch (DuplicationException) { safety++; continue; }
+
+            if (r == null) throw new DataNotFoundException();
+            if (r == false) throw new DatabaseServerException();
+            if (r == true) break;
+            safety++;
+        } while (safety < 200);
+
+        if (safety >= 200) throw new DuplicationException();
+
+        return newSecret;
+    }
 }
