@@ -1,5 +1,6 @@
 namespace user_management.Controllers;
 
+using System.Security.Authentication;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using user_management.Authentication;
@@ -7,6 +8,7 @@ using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
 using user_management.Dtos.Client;
 using user_management.Models;
+using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
 
@@ -102,5 +104,29 @@ public class ClientController : ControllerBase
         catch (DataNotFoundException) { return NotFound(); }
 
         return Ok();
+    }
+
+    [Permissions(Permissions = new string[] { "update_client" })]
+    [HttpPatch("exposure")]
+    public async Task<IActionResult> UpdateExposedClient(ClientExposedDto dto)
+    {
+        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
+
+        string newSecret = null!;
+        try
+        {
+            User user = await _authenticatedByJwt.GetAuthenticated();
+
+            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId == dto.ClientId) == null) return StatusCode(403);
+
+            newSecret = await _clientManagement.UpdateExposedClient(dto.ClientId, dto.Secret);
+        }
+        catch (AuthenticationException) { return Unauthorized(); }
+        catch (DataNotFoundException) { return StatusCode(403); }
+        catch (OperationException) { return Problem("Internal server error encountered."); }
+        catch (DuplicationException) { return Problem("Internal server error encountered."); }
+        catch (DatabaseServerException) { return Problem("Internal server error encountered."); }
+
+        return Ok(newSecret);
     }
 }
