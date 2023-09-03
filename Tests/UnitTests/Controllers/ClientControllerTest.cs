@@ -236,4 +236,64 @@ public class ClientControllerTests
         Fixture.IClientManagement.Setup(o => o.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret));
         HttpAsserts.IsOk(await InstantiateController().Delete(clientDeleteDto));
     }
+
+    [Fact]
+    public async void UpdateExposedClient_Unauthenticated()
+    {
+        ClientExposedDto dto = new();
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
+        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateExposedClient(dto));
+
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
+        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateExposedClient(dto));
+    }
+
+    [Fact]
+    public async void UpdateExposedClient_Unauthorized()
+    {
+        string secret = "secret";
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientExposedDto dto = new() { ClientId = clientId, Secret = secret };
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
+        HttpAsserts.IsUnauthorized(await InstantiateController().UpdateExposedClient(dto));
+
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Throws<DataNotFoundException>();
+        HttpAsserts.IsUnauthorized(await InstantiateController().UpdateExposedClient(dto));
+    }
+
+    [Fact]
+    public async void UpdateExposedClient_Problem()
+    {
+        string secret = "secret";
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientExposedDto dto = new() { ClientId = clientId, Secret = secret };
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+
+        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Throws<OperationException>();
+        HttpAsserts.IsProblem(await InstantiateController().UpdateExposedClient(dto), "Internal server error encountered.");
+
+        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Throws<DuplicationException>();
+        HttpAsserts.IsProblem(await InstantiateController().UpdateExposedClient(dto), "Internal server error encountered.");
+
+        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Throws<DatabaseServerException>();
+        HttpAsserts.IsProblem(await InstantiateController().UpdateExposedClient(dto), "Internal server error encountered.");
+    }
+
+    [Fact]
+    public async void UpdateExposedClient_Ok()
+    {
+        string newSecret = "newSecret";
+        string secret = "secret";
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientExposedDto dto = new() { ClientId = clientId, Secret = secret };
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Returns(Task.FromResult(newSecret));
+
+        HttpAsserts<string>.IsOk(await InstantiateController().UpdateExposedClient(dto), newSecret);
+    }
 }
