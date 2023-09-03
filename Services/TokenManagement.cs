@@ -9,7 +9,6 @@ using user_management.Services.Data;
 using MongoDB.Driver;
 using user_management.Services.Data.Client;
 using user_management.Authentication;
-using System.Security.Authentication;
 using user_management.Data;
 
 namespace user_management.Services;
