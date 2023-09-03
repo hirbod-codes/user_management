@@ -36,6 +36,11 @@ public static class HttpAsserts<T>
     }
     public static void IsUnauthorized(IActionResult actionResult, T? expectedValue, int code = 403)
     {
+        Assert.Equal<int>(code, (int)(actionResult as ObjectResult)!.StatusCode!);
+        Assert.Equal<T?>(expectedValue, (T?)(actionResult as ObjectResult)!.Value);
+    }
+    public static void IsUnauthenticated(IActionResult actionResult, T? expectedValue, int code = 401)
+    {
         Assert.Equal<int>(code, (int)(actionResult as UnauthorizedObjectResult)!.StatusCode!);
         Assert.Equal<T?>(expectedValue, (T?)(actionResult as UnauthorizedObjectResult)!.Value);
     }
