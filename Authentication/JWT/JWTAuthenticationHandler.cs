@@ -14,7 +14,7 @@ using user_management.Authentication;
 using user_management.Models;
 using user_management.Services.Data.User;
 
-public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationOptions>, IJWTAuthenticationHandler
+public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationOptions>
 {
     private JWTAuthenticationOptions _options;
     private readonly IUserRepository _userRepository;
@@ -68,26 +68,6 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
         AuthenticationTicket ticket = new AuthenticationTicket(claimPrincipal, authenticationScheme: "JWT");
 
         return AuthenticateResult.Success(ticket);
-    }
-
-    public string GenerateEmailVerificationJWT(string email) => GenerateJwt(new Claim[] { new Claim(ClaimTypes.Email, email) });
-
-    public string GenerateAuthenticationJWT(string userId) => GenerateJwt(new Claim[] { new Claim(ClaimTypes.NameIdentifier, userId) });
-
-    public string GenerateJwt(Claim[] claims)
-    {
-        SecurityTokenDescriptor securityTokenDescriptor = new SecurityTokenDescriptor()
-        {
-            IssuedAt = DateTime.UtcNow,
-            Issuer = _options.Issuer,
-            Audience = _options.Audience,
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_options.ExpireMinutes),
-            SigningCredentials = new SigningCredentials(GetSymmetricSecurityKey(), _options.SecurityAlgorithm)
-        };
-
-        JwtSecurityTokenHandler jwtSecurityTokenHandler = (new JwtSecurityTokenHandler());
-        return jwtSecurityTokenHandler.WriteToken(jwtSecurityTokenHandler.CreateToken(securityTokenDescriptor));
     }
 
     public IEnumerable<Claim> GetTokenClaims(string token) => GetClaimsPrincipal(token, out SecurityToken validatedToken).Claims;
