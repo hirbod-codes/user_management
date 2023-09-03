@@ -1,6 +1,9 @@
+using System.Security.Authentication;
 using Bogus;
 using MongoDB.Bson;
 using user_management.Dtos.Client;
+using user_management.Models;
+using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
 using Xunit;
@@ -156,13 +159,28 @@ public class ClientControllerTests
         ClientPutDto clientPutDto = new();
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().Update(clientPutDto));
+
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
+        HttpAsserts.IsUnauthenticated(await InstantiateController().Update(clientPutDto));
+    }
+
+    [Fact]
+    public async void Update_Unauthorized()
+    {
+        ClientPutDto clientPutDto = new();
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
+        HttpAsserts.IsUnauthorized(await InstantiateController().Update(clientPutDto));
     }
 
     [Fact]
     public async void Update_BadRequest()
     {
-        ClientPutDto clientPutDto = new() { Id = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws(new ArgumentException("clientId"));
         HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(clientPutDto), "Invalid id for client provided.");
@@ -174,8 +192,10 @@ public class ClientControllerTests
     [Fact]
     public async void Update_Problem()
     {
-        ClientPutDto clientPutDto = new() { Id = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws(new ArgumentException("clientSecret"));
         HttpAsserts.IsProblem(await InstantiateController().Update(clientPutDto), "Internal server error encountered.");
@@ -187,8 +207,10 @@ public class ClientControllerTests
     [Fact]
     public async void Update_Ok()
     {
-        ClientPutDto clientPutDto = new() { Id = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl));
         HttpAsserts.IsOk(await InstantiateController().Update(clientPutDto));
     }
@@ -199,13 +221,28 @@ public class ClientControllerTests
         ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().Delete(clientDeleteDto));
+
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
+        HttpAsserts.IsUnauthenticated(await InstantiateController().Delete(clientDeleteDto));
+    }
+
+    [Fact]
+    public async void Delete_Unauthorized()
+    {
+        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
+        HttpAsserts.IsUnauthorized(await InstantiateController().Delete(clientDeleteDto));
     }
 
     [Fact]
     public async void Delete_BadRequest()
     {
-        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientDeleteDto clientDeleteDto = new() { Id = clientId.ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret)).Throws(new ArgumentException("clientId"));
         HttpAsserts<string>.IsBadRequest(await InstantiateController().Delete(clientDeleteDto), "Invalid id for client provided.");
     }
@@ -213,8 +250,10 @@ public class ClientControllerTests
     [Fact]
     public async void Delete_NotFound()
     {
-        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientDeleteDto clientDeleteDto = new() { Id = clientId.ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().Delete(clientDeleteDto));
     }
@@ -222,8 +261,10 @@ public class ClientControllerTests
     [Fact]
     public async void Delete_Problem()
     {
-        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientDeleteDto clientDeleteDto = new() { Id = clientId.ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret)).Throws(new ArgumentException("secret"));
         HttpAsserts.IsProblem(await InstantiateController().Delete(clientDeleteDto), "Internal server error encountered.");
     }
@@ -231,8 +272,10 @@ public class ClientControllerTests
     [Fact]
     public async void Delete_Ok()
     {
-        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
+        ObjectId clientId = ObjectId.GenerateNewId();
+        ClientDeleteDto clientDeleteDto = new() { Id = clientId.ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret));
         HttpAsserts.IsOk(await InstantiateController().Delete(clientDeleteDto));
     }
