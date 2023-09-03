@@ -26,9 +26,9 @@ public interface IClientRepository
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool> ClientExposed(ObjectId clientId, string newSecret, IClientSessionHandle? session = null);
+    public Task<bool?> ClientExposed(ObjectId clientId, string hashedSecret, string newHashedSecret, IClientSessionHandle? session = null);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool> ClientExposed(Client client, string newSecret, IClientSessionHandle? session = null);
+    public Task<bool?> ClientExposed(Client client, string newHashedSecret, IClientSessionHandle? session = null);
 }
