@@ -45,6 +45,6 @@ public class Deleter : IEquatable<Deleter>
         IsPermitted == other.IsPermitted &&
         Author == other.Author;
 
-    public override bool Equals(object? obj) => obj != null && Equals((Deleter)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Deleter);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

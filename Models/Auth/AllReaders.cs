@@ -27,6 +27,6 @@ public class AllReaders : IEquatable<AllReaders>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((AllReaders)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as AllReaders);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

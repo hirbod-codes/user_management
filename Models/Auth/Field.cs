@@ -19,6 +19,6 @@ public class Field : IEquatable<Field>
         Name == other.Name &&
         IsPermitted == other.IsPermitted;
 
-    public override bool Equals(object? obj) => obj != null && Equals((Field)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Field);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

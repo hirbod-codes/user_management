@@ -25,6 +25,6 @@ public class RefreshToken : IEquatable<RefreshToken>
         other != null &&
         Value == other.Value;
 
-    public override bool Equals(object? obj) => obj != null && Equals((RefreshToken)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as RefreshToken);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

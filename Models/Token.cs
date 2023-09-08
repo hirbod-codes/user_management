@@ -26,6 +26,6 @@ public class Token : IEquatable<Token>
         ExpirationDate == other.ExpirationDate &&
         IsRevoked == other.IsRevoked;
 
-    public override bool Equals(object? obj) => obj != null && Equals((Token)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Token);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

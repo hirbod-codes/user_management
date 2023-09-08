@@ -17,7 +17,7 @@ public class Privilege : IEquatable<Privilege>
 
     public bool Equals(Privilege? other) => other != null && Name == other.Name && Object.Equals(Value, other.Value);
 
-    public override bool Equals(object? obj) => obj != null && Equals((Privilege)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Privilege);
 
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

@@ -54,6 +54,6 @@ public class Reader : IEquatable<Reader>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((Reader)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Reader);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

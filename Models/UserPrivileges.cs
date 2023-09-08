@@ -50,6 +50,6 @@ public class UserPrivileges : IEquatable<UserPrivileges>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((UserPrivileges)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as UserPrivileges);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

@@ -27,6 +27,6 @@ public class AllUpdaters : IEquatable<AllUpdaters>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((AllUpdaters)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as AllUpdaters);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

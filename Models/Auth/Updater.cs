@@ -64,6 +64,6 @@ public class Updater : IEquatable<Updater>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((Updater)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as Updater);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

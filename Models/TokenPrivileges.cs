@@ -41,6 +41,6 @@ public class TokenPrivileges : IEquatable<TokenPrivileges>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((TokenPrivileges)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as TokenPrivileges);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

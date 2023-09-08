@@ -24,6 +24,7 @@ public class UserClient : IEquatable<UserClient>
         Object.Equals(RefreshToken, other.RefreshToken) &&
         Object.Equals(Token, other.Token);
 
-    public override bool Equals(object? obj) => obj != null && Equals((UserClient)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as UserClient);
+
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

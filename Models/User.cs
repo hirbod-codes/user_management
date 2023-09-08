@@ -269,6 +269,7 @@ public class User : IEquatable<User>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals((User)obj);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as User);
+
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }
