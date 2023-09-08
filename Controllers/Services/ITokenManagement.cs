@@ -48,14 +48,13 @@ public interface ITokenManagement
     /// </summary>
     /// <returns>The generated token for refreshToken and token fields.</returns>
     /// <exception cref="user_management.Services.Data.Client.BannedClientException"></exception>
-    /// <exception cref="user_management.Services.Client.RefreshTokenExpirationException"></exception>
     /// <exception cref="user_management.Services.Client.CodeExpirationException"></exception>
     /// <exception cref="user_management.Services.Client.InvalidCodeVerifierException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task<(string token, string refreshToken)> Token(string clientId, TokenCreateDto dto);
+    public Task<(string token, string refreshToken)> VerifyAndGenerateTokens(TokenCreateDto dto);
 
     /// <summary>
     /// This method must be called for the first token generation.
@@ -72,7 +71,6 @@ public interface ITokenManagement
     /// <exception cref="user_management.Services.Data.Client.BannedClientException"></exception>
     /// <exception cref="user_management.Services.Data.Client.InvalidRefreshTokenException"></exception>
     /// <exception cref="user_management.Services.Data.Client.ExpiredRefreshTokenException"></exception>
-    /// <exception cref="user_management.Services.Data.Client.UnverifiedRefreshTokenException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
