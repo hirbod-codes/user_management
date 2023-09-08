@@ -15,9 +15,9 @@ namespace user_management.Services;
 
 public class TokenManagement : ITokenManagement
 {
-    public const int REFRESH_TOKEN_EXPIRATION_MONTHS = 2;
+    public const int REFRESH_TOKEN_EXPIRATION_MONTHS_MONTHS = 2;
     public const int CODE_EXPIRATION_MINUTES = 3;
-    public const int TOKEN_EXPIRATION = 1;
+    public const int TOKEN_EXPIRATION_MONTHS = 1;
     private readonly IAuthenticatedByJwt _authenticatedByJwt;
     private readonly IClientRepository _clientRepository;
     private readonly IUserRepository _userRepository;
@@ -55,30 +55,22 @@ public class TokenManagement : ITokenManagement
 
         if (!StaticData.AreValid(scope.Privileges, user.Privileges!)) throw new UnauthorizedAccessException();
 
-        UserClient userClient = new UserClient()
+        AuthorizingClient authorizingClient = new()
         {
             ClientId = clientObjectId,
-            RefreshToken = new RefreshToken()
-            {
-                TokenPrivileges = scope,
-                Code = null,
-                CodeExpiresAt = _dateTimeProvider.ProvideUtcNow().AddMinutes(CODE_EXPIRATION_MINUTES),
-                CodeChallenge = codeChallenge,
-                CodeChallengeMethod = codeChallengeMethod,
-                ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS),
-                Value = _stringHelper.HashWithoutSalt(_stringHelper.GenerateRandomString(128))!,
-                IsVerified = false
-            },
-            Token = null
+            CodeChallenge = codeChallenge,
+            CodeChallengeMethod = codeChallengeMethod,
+            TokenPrivileges = scope
         };
 
         int safety = 0;
         do
         {
-            userClient.RefreshToken.Code = _stringHelper.GenerateRandomString(128);
+            authorizingClient.Code = _stringHelper.GenerateRandomString(128);
+            authorizingClient.CodeExpiresAt = _dateTimeProvider.ProvideUtcNow().AddMinutes(CODE_EXPIRATION_MINUTES);
 
             bool? r = null;
-            try { r = await _userRepository.AddClientById(user.Id, user.Id, userClient); }
+            try { r = await _userRepository.UpdateAuthorizingClient(user.Id, authorizingClient); }
             catch (DuplicationException) { safety++; continue; }
 
             if (r == true) break;
@@ -88,51 +80,34 @@ public class TokenManagement : ITokenManagement
 
         if (safety >= 200) throw new DuplicationException();
 
-        return userClient.RefreshToken!.Code!;
+        return authorizingClient.Code;
     }
 
-    public async Task<(string token, string refreshToken)> Token(string clientId, TokenCreateDto dto)
+    public async Task<(string token, string refreshToken)> VerifyAndGenerateTokens(TokenCreateDto dto)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException();
+        if (!ObjectId.TryParse(dto.ClientId, out ObjectId clientId)) throw new ArgumentException();
 
-        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, dto.RedirectUrl);
+        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl);
         if (client == null) throw new DataNotFoundException("client");
         if (client.ExposedCount > 2) throw new BannedClientException();
 
         User? user = await _userRepository.RetrieveByClientIdAndCode(client.Id, dto.Code);
         if (user == null) throw new DataNotFoundException("user");
 
-        UserClient? userClient = user.Clients.ToList().FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
-        if (userClient == null) throw new DataNotFoundException("clientId");
-
-        RefreshToken? refreshToken = userClient.RefreshToken;
-        if (refreshToken == null)
-            throw new DataNotFoundException("refreshToken");
-        if (refreshToken.ExpirationDate < _dateTimeProvider.ProvideUtcNow())
-            throw new RefreshTokenExpirationException();
-        if (refreshToken.CodeExpiresAt == null || refreshToken.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())
+        if (user.AuthorizingClient == null || user.AuthorizingClient.ClientId.ToString() != clientId.ToString())
+            throw new DataNotFoundException("clientId");
+        if (user.AuthorizingClient.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())
             throw new CodeExpirationException();
-        if (_stringHelper.HashWithoutSalt(dto.CodeVerifier, refreshToken.CodeChallengeMethod) != _stringHelper.Base64Decode(refreshToken.CodeChallenge))
+        if (_stringHelper.HashWithoutSalt(dto.CodeVerifier, user.AuthorizingClient.CodeChallengeMethod) != _stringHelper.Base64Decode(user.AuthorizingClient.CodeChallenge))
             throw new InvalidCodeVerifierException();
 
         string tokenValue = null!;
+        string refreshToken = null!;
         using (IClientSessionHandle session = await _mongoClient.StartSessionAsync())
         {
             session.StartTransaction(new(writeConcern: WriteConcern.WMajority));
 
-            bool? refreshTokenVerificationResult = await _userRepository.VerifyRefreshToken(user.Id, client.Id, session);
-            if (refreshTokenVerificationResult == null)
-            {
-                await session.AbortTransactionAsync();
-                throw new DataNotFoundException("user");
-            }
-            if (refreshTokenVerificationResult == false)
-            {
-                await session.AbortTransactionAsync();
-                throw new DatabaseServerException();
-            }
-
-            bool? userResult = await _userRepository.AddTokenPrivilegesToUser(user.Id, user.Id, client.Id, refreshToken.TokenPrivileges, session);
+            bool? userResult = await _userRepository.AddTokenPrivilegesToUser(user.Id, user.Id, client.Id, user.AuthorizingClient.TokenPrivileges, session);
             if (userResult == null)
             {
                 await session.AbortTransactionAsync();
@@ -144,31 +119,52 @@ public class TokenManagement : ITokenManagement
                 throw new DatabaseServerException();
             }
 
-            Models.Token token = new() { Value = null, ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION), IsRevoked = false };
+            UserClient authorizedClient = new()
+            {
+                ClientId = clientId,
+                RefreshToken = new()
+                {
+                    TokenPrivileges = user.AuthorizingClient.TokenPrivileges,
+                },
+                Token = new()
+                {
+                    IsRevoked = false
+                }
+            };
+
+            bool? authorizedClientResult;
             int safety = 0;
             do
             {
                 tokenValue = _stringHelper.GenerateRandomString(128);
-                token.Value = _stringHelper.HashWithoutSalt(tokenValue);
-                if (token.Value == null) throw new OperationException();
+                string? hashedTokenValue = _stringHelper.HashWithoutSalt(tokenValue);
+                if (hashedTokenValue == null) throw new OperationException();
 
-                bool? addTokenResult = null;
+                refreshToken = _stringHelper.GenerateRandomString(128);
+                string? hashedRefreshToken = _stringHelper.HashWithoutSalt(refreshToken);
+                if (hashedRefreshToken == null) throw new OperationException();
 
-                try { addTokenResult = await _userRepository.AddToken(user.Id, user.Id, client.Id, token, session); }
+                authorizedClient.RefreshToken.Value = hashedRefreshToken;
+                authorizedClient.RefreshToken.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS_MONTHS);
+                authorizedClient.Token.Value = hashedTokenValue;
+                authorizedClient.Token.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS);
+
+                try { authorizedClientResult = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient, session); }
                 catch (DuplicationException) { safety++; continue; }
 
-                if (addTokenResult == true) break;
+                if (authorizedClientResult == true) break;
 
-                if (addTokenResult == null)
+                if (authorizedClientResult == null)
                 {
                     await session.AbortTransactionAsync();
                     throw new DataNotFoundException("user");
                 }
-                if (addTokenResult == false)
+                if (authorizedClientResult == false)
                 {
                     await session.AbortTransactionAsync();
                     throw new DatabaseServerException();
                 }
+
                 safety++;
             } while (safety < 200);
 
@@ -181,7 +177,7 @@ public class TokenManagement : ITokenManagement
             await session.CommitTransactionAsync();
         }
 
-        return (tokenValue, refreshToken.Value);
+        return (tokenValue, refreshToken);
     }
 
     public async Task<string> ReToken(string clientId, string secret, string refreshToken)
@@ -203,22 +199,22 @@ public class TokenManagement : ITokenManagement
         List<UserClient> userClients = user.Clients.ToList();
         UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
         if (userClient == null) throw new DataNotFoundException("userClient");
-        if (userClient.RefreshToken == null) throw new InvalidRefreshTokenException();
         if (userClient.RefreshToken.ExpirationDate < _dateTimeProvider.ProvideUtcNow()) throw new ExpiredRefreshTokenException();
-        if (!userClient.RefreshToken.IsVerified) throw new UnverifiedRefreshTokenException();
         if (userClient.RefreshToken.Value != hashedRefreshToken) throw new InvalidRefreshTokenException();
 
-        Token token = new() { ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddHours(TOKEN_EXPIRATION), Value = null, IsRevoked = false };
         string tokenValue = null!;
 
         int safety = 0;
         do
         {
             tokenValue = _stringHelper.GenerateRandomString(128);
-            token.Value = _stringHelper.HashWithoutSalt(tokenValue);
+            string? hashedTokenValue = _stringHelper.HashWithoutSalt(tokenValue);
+            if (hashedTokenValue == null) throw new OperationException();
+
+            Token token = new() { ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS), Value = hashedTokenValue, IsRevoked = false };
 
             bool? r = null;
-            try { r = await _userRepository.AddToken(user.Id, user.Id, clientObjectId, token); }
+            try { r = await _userRepository.UpdateToken(user.Id, clientObjectId, token); }
             catch (DuplicationException) { safety++; continue; }
 
             if (r == true) break;
