@@ -35,64 +35,18 @@ public class UserRepositoryTest
         mongoContext.Initialize().Wait();
     }
 
-    private static Models.User TemplateUser() => new Models.User()
-    {
-        Id = ObjectId.GenerateNewId(),
-        Privileges = StaticData.GetDefaultUserPrivileges().ToArray(),
-        UserPrivileges = new()
-        {
-            Readers = new Models.Reader[] { },
-            AllReaders = new() { },
-            Updaters = new Models.Updater[] { },
-            AllUpdaters = new() { },
-            Deleters = new Models.Deleter[] { },
-        },
-        Clients = new Models.UserClient[] {
-            new() {
-                ClientId = ObjectId.GenerateNewId(),
-                RefreshToken = new() {
-                    Code = ObjectId.GenerateNewId().ToString(),
-                    Value = ObjectId.GenerateNewId().ToString(),
-                },
-                Token = new() {
-                    Value = ObjectId.GenerateNewId().ToString(),
-                }
-            },
-            new() {
-                ClientId = ObjectId.GenerateNewId(),
-                RefreshToken = new() {
-                    Code = ObjectId.GenerateNewId().ToString(),
-                    Value = ObjectId.GenerateNewId().ToString(),
-                },
-                Token = new() {
-                    Value = ObjectId.GenerateNewId().ToString(),
-                }
-            }
-        },
-        FirstName = (new Faker()).Person.FirstName,
-        MiddleName = (new Faker()).Person.FirstName,
-        LastName = (new Faker()).Person.LastName,
-        Username = (new Faker()).Person.UserName,
-        Email = (new Faker()).Person.Email,
-        PhoneNumber = (new Faker()).Person.Phone,
-        Password = (new Faker()).Internet.Password(),
-        IsVerified = (new Faker()).Random.Bool(),
-        LoggedOutAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow),
-        VerificationSecret = (new Faker()).Random.String2(length: 6),
-        VerificationSecretUpdatedAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
-        UpdatedAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
-        CreatedAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(-8))
-    };
-
     /// <exception cref="System.Exception"></exception>
     public static IEnumerable<Models.User> GenerateUsers(int count = 1)
     {
+        IEnumerable<Models.Client> clients = new Models.Client[] { };
+        for (int i = 0; i < 5; i++)
+            clients = clients.Append(Models.Client.FakeClient(clients)).ToArray();
         IEnumerable<Models.User> users = new Models.User[] { };
         for (int i = 0; i < count; i++)
         {
-            Models.User user = TemplateUser();
+            Models.User user = Models.User.FakeUser(users, clients);
             int safety = 0;
-            do { user = TemplateUser(); safety++; }
+            do { user = Models.User.FakeUser(users, clients, new() { RandomClients = false, GiveUserPrivilegesToRandomUsers = false, GiveUserPrivilegesToItSelf = true }); safety++; }
             while (safety < 500 && users.FirstOrDefault<Models.User?>(u => u != null && (
                 u.Username == user.Username ||
                 u.Email == user.Email ||
@@ -504,7 +458,10 @@ public class UserRepositoryTest
 
                         string fieldName = (customAttribute.ConstructorArguments[0].Value as string)!;
 
-                        Models.Field[] targetFieldsToRead = users.First(u => u.Id.ToString() == retrievedUser.Id.ToString()).UserPrivileges!.Readers[0].Fields;
+                        Models.Field[] targetFieldsToRead = users.First(u => u.Id.ToString() == retrievedUser.Id.ToString()).UserPrivileges!.Readers.First(r => r.IsPermitted
+                            && r.Author == Models.Reader.USER
+                            && r.AuthorId == readerUser.Id
+                        ).Fields;
                         // If this property exists in chosen fields to read (targetFieldsToRead)
                         if (targetFieldsToRead.FirstOrDefault<Models.Field?>(f => f != null && f.Name == fieldName) != null)
                         {
@@ -692,8 +649,10 @@ public class UserRepositoryTest
     [MemberData(nameof(OneUser))]
     public async void RetrieveByClientIdAndCode(Models.User user)
     {
-        string code = user.Clients[0].RefreshToken!.Code!;
-        ObjectId clientId = user.Clients[0].ClientId;
+        string code = "code";
+        ObjectId clientId = ObjectId.GenerateNewId();
+        DateTime codeExpiresAt = default;
+        user.AuthorizingClient = new() { ClientId = clientId, Code = code, CodeChallenge = "CodeChallenge", CodeChallengeMethod = "SHA512", CodeExpiresAt = codeExpiresAt };
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -704,8 +663,8 @@ public class UserRepositoryTest
 
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
-            Assert.Equal(user.Clients[0].ClientId, retrievedUser.Clients[0].ClientId);
-            Assert.Equal(user.Clients[0].RefreshToken!.Code!, retrievedUser.Clients[0].RefreshToken!.Code!);
+            Assert.Equal(user.AuthorizingClient.ClientId, retrievedUser.AuthorizingClient!.ClientId);
+            Assert.Equal(user.AuthorizingClient.Code, retrievedUser.AuthorizingClient.Code);
             AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { Models.User.LOGGED_OUT_AT, null } });
         }
         finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
@@ -718,7 +677,7 @@ public class UserRepositoryTest
     [MemberData(nameof(OneUser))]
     public async void RetrieveByRefreshTokenValue(Models.User user)
     {
-        string token = user.Clients[0].RefreshToken!.Value;
+        string token = user.Clients[0].RefreshToken!.Value!;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1083,61 +1042,6 @@ public class UserRepositoryTest
     }
 
     [Theory]
-    [MemberData(nameof(OneUser))]
-    public async void VerifyRefreshToken(Models.User user)
-    {
-        user.Clients[0].RefreshToken!.IsVerified = false;
-        Assert.False(user.Clients[0].RefreshToken!.IsVerified);
-        await _userCollection.InsertOneAsync(user);
-
-        try
-        {
-            bool? result = await _userRepository.VerifyRefreshToken(user.Id, user.Clients[0].ClientId, null);
-
-            Assert.True(result);
-            Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
-            Assert.True(retrievedUser.Clients[0].RefreshToken!.IsVerified);
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients }, { Models.User.UPDATED_AT, user.UpdatedAt } });
-        }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
-
-        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
-    }
-
-    [Theory]
-    [MemberData(nameof(TwoUsers))]
-    public async void AddToken(Models.User user, Models.User actor)
-    {
-        user.UserPrivileges.Readers = new Models.Reader[] { new() { Author = Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new Models.Field[] { new() { IsPermitted = true, Name = Models.User.CLIENTS } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new Models.Updater[] { new() { Author = Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new Models.Field[] { new() { IsPermitted = true, Name = Models.User.CLIENTS } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new Models.Deleter[] { };
-        string tokenValue = Faker.Random.String2(40);
-        DateTime expirationDate = Faker.Date.Between(DateTime.UtcNow, DateTime.UtcNow.AddDays(3));
-        user.Clients[0].Token = null;
-
-        // Success
-        Assert.True(user.Clients.Length >= 1);
-        await _userCollection.InsertOneAsync(user);
-
-        user.Clients[0].Token = new() { ExpirationDate = expirationDate, IsRevoked = false, Value = tokenValue };
-
-        Models.UserClient[] newCLientsObject = user.Clients;
-        try
-        {
-            bool? result = await _userRepository.AddToken(user.Id, actor.Id, user.Clients[0].ClientId, user.Clients[0].Token!);
-
-            Assert.True(result);
-            Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients }, { Models.User.UPDATED_AT, user.UpdatedAt } });
-        }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
-
-        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
-    }
-
-    [Theory]
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_readsFields(Models.User user, Models.User actor)
     {
@@ -1318,49 +1222,117 @@ public class UserRepositoryTest
     }
 
     [Theory]
-    [MemberData(nameof(TwoUsers))]
-    public async void AddClientById(Models.User user, Models.User actor)
+    [MemberData(nameof(OneUser))]
+    public async void UpdateAuthorizingClient(Models.User user)
     {
-        Models.UserClient userClient = new()
+        ObjectId clientId = ObjectId.GenerateNewId();
+        string code = "code";
+        Models.AuthorizingClient authorizingClient = new()
         {
-            ClientId = ObjectId.GenerateNewId(),
-            RefreshToken = new()
-            {
-                TokenPrivileges = new() { DeletesUser = true },
-                Code = Faker.Random.String2(128),
-                CodeExpiresAt = DateTime.UtcNow.AddMinutes(2),
-                CodeChallenge = Faker.Random.String2(40),
-                CodeChallengeMethod = "SHA215",
-                ExpirationDate = DateTime.UtcNow.AddMonths(3),
-                Value = Faker.Random.String2(128),
-                IsVerified = false
-            },
-            Token = null
+            ClientId = clientId,
+            Code = code,
+            CodeChallenge = "codeChallenge",
+            CodeChallengeMethod = "SHA512",
+            CodeExpiresAt = DateTime.UtcNow,
+            TokenPrivileges = new() { }
         };
-        user.UserPrivileges.Readers = new Models.Reader[] { new() { Author = Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new Models.Field[] { new() { IsPermitted = true, Name = Models.User.CLIENTS } } } };
-        user.UserPrivileges.Updaters = new Models.Updater[] { new() { Author = Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new Models.Field[] { new() { IsPermitted = true, Name = Models.User.CLIENTS } } } };
+        user.AuthorizingClient = null;
 
         // Success
         await _userCollection.InsertOneAsync(user);
 
-        user.Clients = user.Clients.Append(userClient).ToArray();
-
         try
         {
-            bool? result = await _userRepository.AddClientById(user.Id, actor.Id, userClient);
+            bool? result = await _userRepository.UpdateAuthorizingClient(user.Id, authorizingClient);
+
+            Assert.True(result);
+            Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.AUTHORIZING_CLIENT, authorizingClient }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+        }
+        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+
+        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
+    }
+
+    [Theory]
+    [MemberData(nameof(OneUser))]
+    public async void AddAuthorizedClient(Models.User user)
+    {
+        ObjectId clientId = ObjectId.GenerateNewId();
+        Models.UserClient authorizedClient = new()
+        {
+            ClientId = clientId,
+            RefreshToken = new()
+            {
+                ExpirationDate = DateTime.UtcNow,
+                Value = "value",
+                TokenPrivileges = new() { }
+            },
+            Token = new()
+            {
+                ExpirationDate = DateTime.UtcNow,
+                Value = "value",
+                IsRevoked = false
+            }
+        };
+        user.Clients = new Models.UserClient[] { };
+
+        // Success
+        await _userCollection.InsertOneAsync(user);
+
+        user.Clients = user.Clients.Append(authorizedClient).ToArray();
+        try
+        {
+            bool? result = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient);
 
             Assert.True(result);
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id));
-        }
+        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<Models.User?>());
+    }
+
+    [Theory]
+    [MemberData(nameof(OneUser))]
+    public async void UpdateToken(Models.User user)
+    {
+        ObjectId clientId = ObjectId.GenerateNewId();
+        DateTime? expirationDate = DateTime.UtcNow;
+        Models.Token token = new() { ExpirationDate = expirationDate, Value = "newValue", IsRevoked = false };
+        user.Clients = new Models.UserClient[] {
+            new() {
+            ClientId = clientId,
+            RefreshToken = new()
+            {
+                ExpirationDate = DateTime.UtcNow,
+                Value = "value",
+                TokenPrivileges = new() { }
+            },
+            Token = new()
+            {
+                ExpirationDate = DateTime.UtcNow.AddMinutes(-2),
+                Value = "value",
+                IsRevoked = false
+            }
+        }};
+
+        // Success
+        await _userCollection.InsertOneAsync(user);
+
+        user.Clients[0].Token = token;
+        try
+        {
+            bool? result = await _userRepository.UpdateToken(user.Id, clientId, token);
+
+            Assert.True(result);
+            Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+        }
+        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+
+        Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
 
     [Theory]
