@@ -123,21 +123,21 @@ public class MongoContext
         }));
     }
 
-    public static MongoClient GetMongoClient(MongoContext mongoContext) => new MongoClient(new MongoClientSettings()
+    public MongoClient GetMongoClient() => new MongoClient(new MongoClientSettings()
     {
-        Credential = MongoCredential.CreateMongoX509Credential(mongoContext.Username),
+        Credential = MongoCredential.CreateMongoX509Credential(Username),
         SslSettings = new SslSettings
         {
             ClientCertificates = new List<X509Certificate>()
                 {
-                    new X509Certificate2(mongoContext.CertificateP12, "") {}
+                    new X509Certificate2(CertificateP12, "") {}
                 },
             CheckCertificateRevocation = false,
             EnabledSslProtocols = SslProtocols.Tls12
         },
         AllowInsecureTls = true,
         UseTls = true,
-        Server = new MongoServerAddress(mongoContext.Host, mongoContext.Port),
+        Server = new MongoServerAddress(Host, Port),
         Scheme = ConnectionStringScheme.MongoDB,
         WriteConcern = WriteConcern.WMajority,
         ReadConcern = ReadConcern.Majority,
