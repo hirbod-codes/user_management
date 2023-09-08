@@ -5,6 +5,9 @@ using user_management.Data;
 
 namespace user_management.Models;
 
+/// <summary>
+/// AKA Authorized clients by the user the has an object of this class.
+/// </summary>
 public class UserClient : IEquatable<UserClient>
 {
     [BsonElement(CLIENT_ID)]
