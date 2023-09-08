@@ -449,6 +449,52 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
+    public async Task<bool?> UpdateAuthorizingClient(ObjectId userId, AuthorizingClient authorizingClient)
+    {
+        UpdateResult r;
+        try { r = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<AuthorizingClient>(User.AUTHORIZING_CLIENT, authorizingClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> AddAuthorizedClient(ObjectId userId, UserClient authorizedClient, IClientSessionHandle? session = null)
+    {
+        UpdateResult r;
+        try
+        {
+            r = await (session == null
+                ? _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<UserClient>(User.CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+                : _userCollection.UpdateOneAsync(session, Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<UserClient>(User.CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+            );
+        }
+        catch (Exception) { throw new DatabaseServerException(); }
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
+    }
+
+    public async Task<bool?> UpdateToken(ObjectId userId, ObjectId clientObjectId, Token token)
+    {
+        FilterDefinition<User> filter = Builders<User>.Filter.And(new FilterDefinition<User>[] {
+            Builders<User>.Filter.Eq("_id", userId),
+            Builders<User>.Filter.Eq(User.CLIENTS + "."+UserClient.CLIENT_ID, clientObjectId)
+        });
+
+        UpdateDefinition<User> update = Builders<User>.Update.Set<Token>(x => x.Clients.FirstMatchingElement().Token, token).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+
+        UpdateResult r;
+        try { r = await _userCollection.UpdateOneAsync(filter, update); }
+        catch (Exception) { throw new DatabaseServerException(); }
+
+        if (r.IsAcknowledged && r.MatchedCount == 0) return null;
+
+        return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
+    }
+
     public async Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges)
     {
         FilterDefinition<User> filters = Builders<User>.Filter.And(
