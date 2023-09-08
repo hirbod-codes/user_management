@@ -17,7 +17,7 @@ public class UserManagementTests
 
     public UserManagementTests(ServiceFixture serviceFixture) => Fixture = serviceFixture;
 
-    private UserManagement InstantiateService() => new UserManagement(Fixture.IDateTimeProvider.Object, Fixture.INotificationHelper.Object, Fixture.IStringHelper.Object, Fixture.IUserRepository.Object, Fixture.IMapper.Object, Fixture.IJWTAuthenticationHandler.Object);
+    private UserManagement InstantiateService() => new UserManagement(Fixture.IDateTimeProvider.Object, Fixture.INotificationHelper.Object, Fixture.IStringHelper.Object, Fixture.IUserRepository.Object, Fixture.IMapper.Object, Fixture.IAuthHelper.Object);
 
     public static Faker Faker = new("en");
 
@@ -431,7 +431,7 @@ public class UserManagementTests
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
         Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
         Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Login(user.Id)).Returns(Task.FromResult<bool?>(true));
-        Fixture.IJWTAuthenticationHandler.Setup<string>(o => o.GenerateAuthenticationJWT(user.Id.ToString()!)).Returns("jwt");
+        Fixture.IAuthHelper.Setup(o => o.GenerateAuthenticationJWT(user.Id.ToString())).Returns("jwt");
 
         var userObject = new ExpandoObject() as IDictionary<string, object>;
         userObject.Add("_id", user.Id.ToString()!);
