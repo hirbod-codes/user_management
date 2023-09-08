@@ -1,61 +1,59 @@
 namespace user_management.Data.Seeders;
 
 using System.Threading.Tasks;
-using Bogus;
-using MongoDB.Bson;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using user_management.Models;
-using user_management.Utilities;
 
-public class ClientSeeder
+public static class ClientSeeder
 {
-    private readonly IMongoCollection<Client> _clientCollection;
-    private readonly string _filePath;
-    public ClientSeeder(MongoContext mongoContext, string rootPath)
+    private static IMongoCollection<Client> _clientCollection = null!;
+    private static string _filePath = null!;
+
+    public static void Setup(MongoContext mongoContext, string rootPath)
     {
-        MongoClient mongoClient = MongoContext.GetMongoClient(mongoContext);
+        SetFilePath(rootPath);
+        SetClientsCollection(mongoContext);
+    }
+
+    public static void SetFilePath(string rootPath)
+    {
+        var directoryPath = Path.Combine(rootPath, "Data/Seeders/Logs");
+        Directory.CreateDirectory(directoryPath);
+        _filePath = Path.Combine(directoryPath, "seeded_users.json");
+    }
+
+    public static void SetClientsCollection(MongoContext mongoContext)
+    {
+        MongoClient mongoClient = mongoContext.GetMongoClient();
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
-
-        var directoryPath = Path.Combine(rootPath, "Data\\Seeders\\Logs");
-        Directory.CreateDirectory(directoryPath);
-        _filePath = Path.Combine(directoryPath, "client_seeder_logs.log");
     }
 
-    public async Task Seed()
+    public static async Task Seed(MongoContext mongoContext, string rootPath, int count = 2)
     {
-        await File.WriteAllTextAsync(_filePath, "");
-        System.Console.WriteLine("Seeding Clients...");
+        if (_filePath == null || _clientCollection == null) Setup(mongoContext, rootPath);
 
-        DateTime dt = DateTime.UtcNow;
-        for (int i = 0; i < 5; i++)
-        {
-            await CreateClientAsync(dt);
-            dt = dt.AddMinutes(10);
-        }
+        System.Console.WriteLine("\nSeeding Clients...");
 
-        System.Console.WriteLine("Seeded Clients...");
+        IEnumerable<Client> clients = GenerateClients(count);
+
+        await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(clients));
+
+        await PersistClients(clients);
+
+        System.Console.WriteLine("Seeded Clients...\n");
     }
 
-    private async Task CreateClientAsync(DateTime dt)
+    private static async Task PersistClients(IEnumerable<Client> clients) => await _clientCollection.InsertManyAsync(clients);
+
+    public static IEnumerable<Client> GenerateClients(int count = 2, IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
     {
-        ObjectId id = ObjectId.GenerateNewId();
+        if (clients == null) clients = new Client[] { };
+        if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
 
-        Faker faker = new Faker("en");
-
-        string secret;
-        do
-        {
-            secret = (new StringHelper()).GenerateRandomString(128);
-
-        } while ((await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, (new StringHelper()).HashWithoutSalt(secret)))).FirstOrDefault<Client?>() != null);
-
-        _clientCollection.InsertOne(new Client() { Id = id, Secret = (new StringHelper()).HashWithoutSalt(secret), RedirectUrl = faker.Internet.UrlWithPath(), CreatedAt = dt, UpdatedAt = dt });
-
-        await File.AppendAllTextAsync(_filePath, @$"
-Id ==> {id}
-Secret ==> {secret}
-
-");
+        for (int i = 0; i < count; i++)
+            clients = clients.Append(Client.FakeClient(clients, creationDateTime));
+        return clients;
     }
 }
