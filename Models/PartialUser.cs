@@ -27,6 +27,13 @@ public class PartialUser
     private bool _isUserPrivilegesTouched = false;
     public bool IsUserPrivilegesTouched() => _isUserPrivilegesTouched;
 
+    [BsonElement(AUTHORIZING_CLIENT)]
+    public AuthorizingClient? AuthorizingClient { get { return _authorizingClient; } set { _authorizingClient = value; _isAuthorizingClientTouched = true; } }
+    public const string AUTHORIZING_CLIENT = "authorizing_client";
+    public AuthorizingClient? _authorizingClient = null;
+    private bool _isAuthorizingClientTouched = false;
+    public bool IsAuthorizingClientTouched() => _isAuthorizingClientTouched;
+
     [BsonElement(CLIENTS)]
     public UserClient[]? Clients { get { return _clients; } set { _clients = value; _isClientsTouched = true; } }
     public const string CLIENTS = "clients";

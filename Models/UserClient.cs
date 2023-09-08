@@ -11,12 +11,11 @@ public class UserClient : IEquatable<UserClient>
     public const string CLIENT_ID = "client_id";
 
     [BsonElement(REFRESH_TOKEN)]
-    [BsonRequired]
-    public RefreshToken? RefreshToken { get; set; }
+    public RefreshToken RefreshToken { get; set; } = null!;
     public const string REFRESH_TOKEN = "refresh_token";
 
     [BsonElement(TOKEN)]
-    public Token? Token { get; set; }
+    public Token Token { get; set; } = null!;
     public const string TOKEN = "token";
 
     public bool Equals(UserClient? other) =>

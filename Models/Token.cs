@@ -7,8 +7,7 @@ using MongoDB.Bson.Serialization.Attributes;
 public class Token : IEquatable<Token>
 {
     [BsonElement(VALUE)]
-    [BsonRequired]
-    public string? Value { get; set; }
+    public string Value { get; set; } = null!; // MUST BE UNIQUE
     public const string VALUE = "value";
 
     [BsonElement(EXPIRATION_DATE)]

@@ -46,6 +46,11 @@ public class User : IEquatable<User>
     public UserClient[] Clients { get; set; } = new UserClient[] { };
     public const string CLIENTS = "clients";
 
+    [BsonElement(AUTHORIZING_CLIENT)]
+    [BsonRequired]
+    public AuthorizingClient? AuthorizingClient { get; set; }
+    public const string AUTHORIZING_CLIENT = "authorizing_client";
+
     [BsonElement(FIRST_NAME)]
     public string? FirstName { get; set; }
     public const string FIRST_NAME = "first_name";
@@ -167,7 +172,7 @@ public class User : IEquatable<User>
         return userRetrieveDto;
     }
 
-    public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
+    public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == AUTHORIZING_CLIENT || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
     public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetReadableFields() => GetUnHiddenFields().ToList();
     public static List<Field> GetUpdatableFields() => GetReadableFields().Where(f => f.Name != PASSWORD || f.Name != IS_VERIFIED || f.Name != CREATED_AT || f.Name != UPDATED_AT || f.Name != "_id").ToList();
@@ -177,6 +182,7 @@ public class User : IEquatable<User>
         {
             new Field() { Name = "_id", IsPermitted = true },
             new Field() { Name = USER_PRIVILEGES, IsPermitted = true },
+            new Field() { Name = AUTHORIZING_CLIENT, IsPermitted = true },
             new Field() { Name = CLIENTS, IsPermitted = true },
             new Field() { Name = FIRST_NAME, IsPermitted = true },
             new Field() { Name = MIDDLE_NAME, IsPermitted = true },
