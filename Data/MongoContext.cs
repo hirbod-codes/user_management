@@ -32,7 +32,7 @@ public class MongoContext
         await CreateUsersCollectionIndexes(userCollection);
     }
 
-    private static async Task CreateClientsCollectionIndexes(IMongoCollection<Models.Client> clientCollection)
+    private async Task CreateClientsCollectionIndexes(IMongoCollection<Models.Client> clientCollection)
     {
         // Secret
         IndexKeysDefinition<Models.Client> clientSecretIndex = Builders<Models.Client>.IndexKeys.Ascending(Models.Client.SECRET);
