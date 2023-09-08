@@ -31,7 +31,7 @@ public class TokenController : ControllerBase
 
     [Permissions(Permissions = new string[] { "authorize_client" })]
     [HttpPost("auth")]
-    public async Task<ActionResult> Authorize(TokenAuthDto tokenAuthDto)
+    public async Task<IActionResult> Authorize(TokenAuthDto tokenAuthDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -60,14 +60,13 @@ public class TokenController : ControllerBase
     }
 
     [HttpPost("token")]
-    public async Task<ActionResult<object>> Token(TokenCreateDto tokenCreateDto)
+    public async Task<IActionResult> VerifyAndGenerateTokens(TokenCreateDto tokenCreateDto)
     {
         if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
 
         (string token, string refreshToken) result = (null!, null!);
-        try { result = await _tokenManagement.Token(tokenCreateDto.ClientId, tokenCreateDto); }
+        try { result = await _tokenManagement.VerifyAndGenerateTokens(tokenCreateDto); }
         catch (BannedClientException) { return NotFound("System failed to find the client."); }
-        catch (RefreshTokenExpirationException) { return BadRequest("The refresh token is expired."); }
         catch (CodeExpirationException) { return BadRequest("The code is expired, please redirect user again for another authorization."); }
         catch (InvalidCodeVerifierException) { return BadRequest("The code verifier is invalid."); }
         catch (DataNotFoundException ex)
@@ -94,7 +93,7 @@ public class TokenController : ControllerBase
     }
 
     [HttpPost("retoken")]
-    public async Task<ActionResult> ReToken(ReTokenDto reTokenDto)
+    public async Task<IActionResult> ReToken(ReTokenDto reTokenDto)
     {
         string token = null!;
 
@@ -103,7 +102,6 @@ public class TokenController : ControllerBase
         catch (BannedClientException) { return NotFound("System failed to find the client."); }
         catch (InvalidRefreshTokenException) { return BadRequest("The refresh token is invalid."); }
         catch (ExpiredRefreshTokenException) { return BadRequest("The refresh token is expired."); }
-        catch (UnverifiedRefreshTokenException) { return BadRequest("The refresh token is unverified."); }
         catch (DataNotFoundException) { return NotFound("There is no such refresh token."); }
         catch (DatabaseServerException) { return Problem("Internal server error encountered."); }
         catch (DuplicationException) { return Problem("Internal server error encountered."); }

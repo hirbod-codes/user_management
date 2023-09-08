@@ -3,6 +3,7 @@ using Bogus;
 using MongoDB.Bson;
 using user_management.Dtos.Token;
 using user_management.Services;
+using user_management.Services.Client;
 using user_management.Services.Data;
 using user_management.Services.Data.Client;
 using Xunit;
@@ -198,9 +199,71 @@ public class TokenControllerTests
 
         Fixture.ITokenManagement.Setup(o => o.ReToken(dto.ClientId, dto.ClientSecret, dto.RefreshToken)).Throws<ExpiredRefreshTokenException>();
         HttpAsserts<string>.IsBadRequest(await InstantiateController().ReToken(dto), "The refresh token is expired.");
+    }
 
-        Fixture.ITokenManagement.Setup(o => o.ReToken(dto.ClientId, dto.ClientSecret, dto.RefreshToken)).Throws<UnverifiedRefreshTokenException>();
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().ReToken(dto), "The refresh token is unverified.");
+    [Fact]
+    public async void VerifyAndGenerateTokens_BadRequest()
+    {
+        TokenCreateDto dto = new() { GrantType = "Not authorization_code" };
+
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().VerifyAndGenerateTokens(dto), "only 'authorization_code' grant type is supported");
+
+        dto.GrantType = "authorization_code";
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<CodeExpirationException>();
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().VerifyAndGenerateTokens(dto), "The code is expired, please redirect user again for another authorization.");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<InvalidCodeVerifierException>();
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().VerifyAndGenerateTokens(dto), "The code verifier is invalid.");
+    }
+
+    [Fact]
+    public async void VerifyAndGenerateTokens_NotFound()
+    {
+        TokenCreateDto dto = new() { GrantType = "authorization_code", ClientId = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url() };
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<BannedClientException>();
+        HttpAsserts<string>.IsNotFound(await InstantiateController().VerifyAndGenerateTokens(dto), "System failed to find the client.");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws(new DataNotFoundException("client"));
+        HttpAsserts<string>.IsNotFound(await InstantiateController().VerifyAndGenerateTokens(dto), "We don't have a client with this client id: " + dto.ClientId + " and this redirect url: " + dto.RedirectUrl);
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws(new DataNotFoundException("user"));
+        HttpAsserts<string>.IsNotFound(await InstantiateController().VerifyAndGenerateTokens(dto), "We couldn't find your account.");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws(new DataNotFoundException("clientId"));
+        HttpAsserts<string>.IsNotFound(await InstantiateController().VerifyAndGenerateTokens(dto), "You haven't authorized a client with the provided client id.");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws(new DataNotFoundException("refreshToken"));
+        HttpAsserts<string>.IsNotFound(await InstantiateController().VerifyAndGenerateTokens(dto), "We couldn't find your refresh token.");
+    }
+
+    [Fact]
+    public async void VerifyAndGenerateTokens_Problem()
+    {
+        TokenCreateDto dto = new() { GrantType = "authorization_code", ClientId = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url() };
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<DataNotFoundException>();
+        HttpAsserts.IsProblem(await InstantiateController().VerifyAndGenerateTokens(dto));
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<DuplicationException>();
+        HttpAsserts.IsProblem(await InstantiateController().VerifyAndGenerateTokens(dto), "We couldn't generate a token for you.");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<DatabaseServerException>();
+        HttpAsserts.IsProblem(await InstantiateController().VerifyAndGenerateTokens(dto), "Internal server error encountered");
+
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Throws<OperationException>();
+        HttpAsserts.IsProblem(await InstantiateController().VerifyAndGenerateTokens(dto), "Internal server error encountered");
+    }
+
+    [Fact]
+    public async void VerifyAndGenerateTokens_Ok()
+    {
+        TokenCreateDto dto = new() { GrantType = "authorization_code", ClientId = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url() };
+
+        (string token, string refreshToken) result = ("token", "refreshToken");
+        Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Returns(Task.FromResult(result));
+        HttpAsserts<object>.IsOk(await InstantiateController().VerifyAndGenerateTokens(dto), new { access_token = result.token, refresh_token = result.refreshToken });
     }
 
     [Fact]
