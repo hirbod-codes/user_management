@@ -41,7 +41,8 @@ builder.Services.AddScoped<ITokenManagement, TokenManagement>();
 builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
 MongoContext mongoContext = new();
 builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
-builder.Services.AddSingleton<IMongoClient>(MongoContext.GetMongoClient(mongoContext));
+builder.Services.AddSingleton<MongoContext>(mongoContext);
+builder.Services.AddSingleton<IMongoClient>(mongoContext.GetMongoClient());
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IClientRepository, ClientRepository>();
 
@@ -101,11 +102,11 @@ if (app.Environment.IsDevelopment())
         throw new Exception("Failed to resolve IWebHostEnvironment.");
 
     mongoContext = app.Services.GetService<IOptions<MongoContext>>()!.Value;
-    var client = MongoContext.GetMongoClient(mongoContext);
+    var client = mongoContext.GetMongoClient();
     if (client.GetDatabase(mongoContext.DatabaseName).GetCollection<User>(mongoContext.Collections.Users).CountDocuments(Builders<User>.Filter.Empty) == 0)
     {
-        await MongoContext.Initialize(app.Services.GetService<IOptions<MongoContext>>()!);
-        await (new Seeder(app.Services.GetService<IOptions<MongoContext>>()!, app.Services.GetService<IUserRepository>()!, env.ContentRootPath)).Seed();
+        await mongoContext.Initialize();
+        await (new Seeder(app.Services.GetService<MongoContext>()!, env.ContentRootPath)).Seed();
     }
     else
         System.Console.WriteLine("The database is already seeded.");

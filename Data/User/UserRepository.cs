@@ -1,6 +1,5 @@
 namespace user_management.Data.User;
 
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using user_management.Models;
 using user_management.Services.Data.User;
@@ -15,14 +14,14 @@ public class UserRepository : IUserRepository
     private readonly IMongoCollection<User> _userCollection;
     private readonly IMongoCollection<PartialUser> _partialUserCollection;
 
-    public UserRepository(IOptions<MongoContext> mongoContext)
+    public UserRepository(MongoContext mongoContext)
     {
-        MongoClient mongoClient = MongoContext.GetMongoClient(mongoContext.Value);
+        MongoClient mongoClient = mongoContext.GetMongoClient();
 
-        IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.Value.DatabaseName);
+        IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
 
-        _userCollection = mongoDatabase.GetCollection<User>(mongoContext.Value.Collections.Users);
-        _partialUserCollection = mongoDatabase.GetCollection<PartialUser>(mongoContext.Value.Collections.Users);
+        _userCollection = mongoDatabase.GetCollection<User>(mongoContext.Collections.Users);
+        _partialUserCollection = mongoDatabase.GetCollection<PartialUser>(mongoContext.Collections.Users);
     }
 
     public async Task<User?> Create(User user)

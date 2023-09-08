@@ -1,5 +1,4 @@
 using Bogus;
-using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
@@ -23,12 +22,12 @@ public class UserCollectionTest
         MongoContext mongoContext = new();
         builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
 
-        _mongoClient = MongoContext.GetMongoClient(mongoContext);
+        _mongoClient = mongoContext.GetMongoClient();
         _userCollection = _mongoClient.GetDatabase(mongoContext.DatabaseName).GetCollection<Models.User>(mongoContext.Collections.Users);
 
-        _userRepository = new UserRepository(Options.Create<MongoContext>(mongoContext));
+        _userRepository = new UserRepository(mongoContext);
 
-        MongoContext.Initialize(Options.Create<MongoContext>(mongoContext)).Wait();
+        mongoContext.Initialize().Wait();
     }
 
     private static Models.User TemplateUser() => new Models.User()

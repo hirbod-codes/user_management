@@ -12,13 +12,13 @@ public class ClientRepository : IClientRepository
     private readonly IMongoCollection<Client> _clientCollection;
     private readonly MongoClient _mongoClient;
 
-    public ClientRepository(IOptions<MongoContext> mongoContext)
+    public ClientRepository(MongoContext mongoContext)
     {
-        _mongoClient = MongoContext.GetMongoClient(mongoContext.Value);
+        _mongoClient = mongoContext.GetMongoClient();
 
-        var mongoDatabase = _mongoClient.GetDatabase(mongoContext.Value.DatabaseName);
+        var mongoDatabase = _mongoClient.GetDatabase(mongoContext.DatabaseName);
 
-        _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Value.Collections.Clients);
+        _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
     }
 
     public async Task<Client> Create(Client client, IClientSessionHandle? session = null)
