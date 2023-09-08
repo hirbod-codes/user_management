@@ -1,4 +1,3 @@
-using System.Security.Authentication;
 using Bogus;
 using MongoDB.Bson;
 using user_management.Dtos.Client;
@@ -159,19 +158,6 @@ public class ClientControllerTests
         ClientPutDto clientPutDto = new();
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().Update(clientPutDto));
-
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
-        HttpAsserts.IsUnauthenticated(await InstantiateController().Update(clientPutDto));
-    }
-
-    [Fact]
-    public async void Update_Unauthorized()
-    {
-        ClientPutDto clientPutDto = new();
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
-        HttpAsserts.IsUnauthorized(await InstantiateController().Update(clientPutDto));
     }
 
     [Fact]
@@ -221,19 +207,6 @@ public class ClientControllerTests
         ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().Delete(clientDeleteDto));
-
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
-        HttpAsserts.IsUnauthenticated(await InstantiateController().Delete(clientDeleteDto));
-    }
-
-    [Fact]
-    public async void Delete_Unauthorized()
-    {
-        ClientDeleteDto clientDeleteDto = new() { Id = ObjectId.GenerateNewId().ToString(), Secret = Faker.Random.String2(60) };
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
-        HttpAsserts.IsUnauthorized(await InstantiateController().Delete(clientDeleteDto));
     }
 
     [Fact]
@@ -286,25 +259,6 @@ public class ClientControllerTests
         ClientExposedDto dto = new();
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateExposedClient(dto));
-
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
-        HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateExposedClient(dto));
-    }
-
-    [Fact]
-    public async void UpdateExposedClient_Unauthorized()
-    {
-        string secret = "secret";
-        ObjectId clientId = ObjectId.GenerateNewId();
-        ClientExposedDto dto = new() { ClientId = clientId, Secret = secret };
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new()));
-        HttpAsserts.IsUnauthorized(await InstantiateController().UpdateExposedClient(dto));
-
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
-        Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId, secret)).Throws<DataNotFoundException>();
-        HttpAsserts.IsUnauthorized(await InstantiateController().UpdateExposedClient(dto));
     }
 
     [Fact]

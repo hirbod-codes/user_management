@@ -85,14 +85,7 @@ public class ClientController : ControllerBase
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        try
-        {
-            User user = await _authenticatedByJwt.GetAuthenticated();
-
-            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId.ToString() == clientPutDto.Id) == null) return StatusCode(403);
-
-            await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl);
-        }
+        try { await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl); }
         catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
@@ -107,14 +100,7 @@ public class ClientController : ControllerBase
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        try
-        {
-            User user = await _authenticatedByJwt.GetAuthenticated();
-
-            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId.ToString() == clientDeleteDto.Id) == null) return StatusCode(403);
-
-            await _clientManagement.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret);
-        }
+        try { await _clientManagement.DeleteBySecret(clientDeleteDto.Id, clientDeleteDto.Secret); }
         catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DataNotFoundException) { return NotFound(); }
@@ -129,14 +115,7 @@ public class ClientController : ControllerBase
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
         string newSecret = null!;
-        try
-        {
-            User user = await _authenticatedByJwt.GetAuthenticated();
-
-            if (user.Clients.FirstOrDefault(uc => uc != null && uc.ClientId == dto.ClientId) == null) return StatusCode(403);
-
-            newSecret = await _clientManagement.UpdateExposedClient(dto.ClientId, dto.Secret);
-        }
+        try { newSecret = await _clientManagement.UpdateExposedClient(dto.ClientId, dto.Secret); }
         catch (AuthenticationException) { return Unauthorized(); }
         catch (DataNotFoundException) { return StatusCode(403); }
         catch (OperationException) { return Problem("Internal server error encountered."); }
