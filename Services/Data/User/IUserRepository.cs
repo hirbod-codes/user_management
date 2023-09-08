@@ -53,14 +53,8 @@ public interface IUserRepository
     public Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient);
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient);
-    /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
-    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddToken(ObjectId userId, ObjectId authorId, ObjectId clientId, Token token, IClientSessionHandle? session = null);
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
-    /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
-    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddClientById(ObjectId userId, ObjectId actorId, UserClient userClient);
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges);
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
@@ -68,6 +62,4 @@ public interface IUserRepository
     public Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false);
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false);
-    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> VerifyRefreshToken(ObjectId userId, ObjectId clientId, IClientSessionHandle? session = null);
 }
