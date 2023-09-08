@@ -52,7 +52,7 @@ public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthentic
         if (userClient.Token!.ExpirationDate <= DateTime.UtcNow)
             return AuthenticateResult.Fail("The authorization token has been expired.");
 
-        if ((bool)userClient.Token.IsRevoked! || !userClient.RefreshToken!.IsVerified)
+        if ((bool)userClient.Token.IsRevoked!)
             return AuthenticateResult.Fail("The authorization token has been revoked.");
 
         _authenticatedByBearer.SetAuthenticated(userClient);
