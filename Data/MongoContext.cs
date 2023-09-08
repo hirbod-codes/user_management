@@ -43,9 +43,8 @@ public class MongoContext
         await clientCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.Client>(clientRedirectUrlIndex, new CreateIndexOptions() { Unique = true }));
     }
 
-    private static async Task CreateUsersCollectionIndexes(IMongoCollection<Models.User> userCollection)
+    private async Task CreateUsersCollectionIndexes(IMongoCollection<Models.User> userCollection)
     {
-
         FilterDefinitionBuilder<Models.User> fb = Builders<Models.User>.Filter;
 
         // Email
@@ -62,9 +61,7 @@ public class MongoContext
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(userPhoneNumberIndex, new CreateIndexOptions<Models.User>()
         {
             Unique = true,
-            PartialFilterExpression = fb.And(
-                fb.Type(userPhoneNumberIndexField, BsonType.String)
-            )
+            PartialFilterExpression = fb.Type(userPhoneNumberIndexField, BsonType.String)
         }));
 
         // UpdatedAt
@@ -87,38 +84,24 @@ public class MongoContext
             )
         }));
 
-        // Clients.RefreshToken.Code
-        string refreshTokenCodeIndexField = Models.User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.CODE;
-        IndexKeysDefinition<Models.User> refreshTokenCodeIndex = Builders<Models.User>.IndexKeys.Ascending(refreshTokenCodeIndexField);
-        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(refreshTokenCodeIndex, new CreateIndexOptions<Models.User>()
+        // AuthorizingClient.Code
+        string AuthorizingClientCodeIndexField = Models.User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CODE;
+        IndexKeysDefinition<Models.User> AuthorizingClientCodeIndex = Builders<Models.User>.IndexKeys.Ascending(AuthorizingClientCodeIndexField);
+        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(AuthorizingClientCodeIndex, new CreateIndexOptions<Models.User>()
         {
             Unique = true,
-            PartialFilterExpression = fb.And(
-                fb.Type(refreshTokenCodeIndexField, BsonType.String)
-            )
+            PartialFilterExpression = fb.Type(AuthorizingClientCodeIndexField, BsonType.String)
         }));
 
         // Clients.RefreshToken.Value
         string refreshTokenValueIndexField = Models.User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE;
-        IndexKeysDefinition<Models.User> refreshTokenValueIndex = Builders<Models.User>.IndexKeys.Ascending(Models.User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE);
-        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(refreshTokenValueIndex, new CreateIndexOptions<Models.User>()
-        {
-            Unique = true,
-            PartialFilterExpression = fb.And(
-                fb.Type(refreshTokenValueIndexField, BsonType.String)
-            )
-        }));
+        IndexKeysDefinition<Models.User> refreshTokenValueIndex = Builders<Models.User>.IndexKeys.Ascending(refreshTokenValueIndexField);
+        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(refreshTokenValueIndex, new CreateIndexOptions<Models.User>() { Unique = true, Sparse = true }));
 
         // Clients.Token.Value
         string tokenValueIndexField = Models.User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE;
         IndexKeysDefinition<Models.User> tokenValueIndex = Builders<Models.User>.IndexKeys.Ascending(tokenValueIndexField);
-        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(tokenValueIndex, new CreateIndexOptions<Models.User>()
-        {
-            Unique = true,
-            PartialFilterExpression = fb.And(
-                fb.Type(tokenValueIndexField, BsonType.String)
-            )
-        }));
+        await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(tokenValueIndex, new CreateIndexOptions<Models.User>() { Unique = true, Sparse = true }));
     }
 
     public MongoClient GetMongoClient() => new MongoClient(new MongoClientSettings()
