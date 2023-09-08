@@ -1,7 +1,9 @@
 namespace user_management.Models;
 
+using Bogus;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using user_management.Utilities;
 
 [BsonIgnoreExtraElements]
 public class Client
@@ -40,4 +42,35 @@ public class Client
     [BsonRequired]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public const string UPDATED_AT = "updated_at";
+
+    public static Client FakeClient(IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
+    {
+        if (clients == null) clients = new Client[] { };
+        if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
+        ObjectId id = ObjectId.GenerateNewId();
+
+        Faker faker = new Faker("en");
+
+        string secret;
+        int safety = 0;
+        string redirectUrl;
+        string? hashedSecret;
+        do
+        {
+            secret = (new StringHelper()).GenerateRandomString(128);
+            hashedSecret = (new StringHelper()).HashWithoutSalt(secret);
+            redirectUrl = faker.Internet.Url();
+
+            if (
+                clients.FirstOrDefault<Client?>(c => c != null && c.Secret == secret) == null
+                && clients.FirstOrDefault<Client?>(c => c != null && c.RedirectUrl == redirectUrl) == null
+                && clients.FirstOrDefault<Client?>(c => c != null && c.Id == id) == null
+            )
+                break;
+
+            safety++;
+        } while (safety < 200);
+
+        return new Client() { Id = id, Secret = hashedSecret!, RedirectUrl = redirectUrl, CreatedAt = (DateTime)creationDateTime, UpdatedAt = (DateTime)creationDateTime };
+    }
 }
