@@ -19,14 +19,12 @@ public class MongoContext
     public string DatabaseName { get; set; } = null!;
     public Collections Collections { get; set; } = null!;
 
-    public static async Task Initialize(IOptions<MongoContext> mongoContextOptions)
+    public async Task Initialize()
     {
-        MongoContext mongoContext = mongoContextOptions.Value;
-
-        MongoClient client = MongoContext.GetMongoClient(mongoContext);
-        IMongoDatabase database = client.GetDatabase(mongoContext.DatabaseName);
-        IMongoCollection<Models.User> userCollection = database.GetCollection<Models.User>(mongoContext.Collections.Users);
-        IMongoCollection<Models.Client> clientCollection = database.GetCollection<Models.Client>(mongoContext.Collections.Clients);
+        MongoClient client = GetMongoClient();
+        IMongoDatabase database = client.GetDatabase(DatabaseName);
+        IMongoCollection<Models.User> userCollection = database.GetCollection<Models.User>(Collections.Users);
+        IMongoCollection<Models.Client> clientCollection = database.GetCollection<Models.Client>(Collections.Clients);
 
         await ClearDatabaseAsync(database);
 
