@@ -1,5 +1,4 @@
 using Bogus;
-using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;

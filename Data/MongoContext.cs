@@ -1,9 +1,7 @@
 namespace user_management.Data;
 
-using System;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;

@@ -3,7 +3,6 @@ namespace user_management.Tests;
 using AutoMapper;
 using Moq;
 using user_management.Authentication;
-using user_management.Authentication.JWT;
 using user_management.Controllers.Services;
 using user_management.Utilities;
 using Xunit;

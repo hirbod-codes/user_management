@@ -1,5 +1,4 @@
 using Bogus;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.User;
