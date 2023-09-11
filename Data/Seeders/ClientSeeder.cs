@@ -8,16 +8,18 @@ using user_management.Models;
 public static class ClientSeeder
 {
     private static IMongoCollection<Client> _clientCollection = null!;
-    private static string _filePath = null!;
+    private static string? _filePath;
 
-    public static void Setup(MongoContext mongoContext, string rootPath)
+    public static void Setup(MongoContext mongoContext, string? rootPath)
     {
         SetFilePath(rootPath);
         SetClientsCollection(mongoContext);
     }
 
-    public static void SetFilePath(string rootPath)
+    public static void SetFilePath(string? rootPath)
     {
+        if (rootPath == null) return;
+
         var directoryPath = Path.Combine(rootPath, "Data/Seeders/Logs");
         Directory.CreateDirectory(directoryPath);
         _filePath = Path.Combine(directoryPath, "seeded_users.json");
@@ -30,7 +32,7 @@ public static class ClientSeeder
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
     }
 
-    public static async Task Seed(MongoContext mongoContext, string rootPath, int count = 2)
+    public static async Task Seed(MongoContext mongoContext, string? rootPath, int count = 2)
     {
         if (_filePath == null || _clientCollection == null) Setup(mongoContext, rootPath);
 
@@ -38,7 +40,7 @@ public static class ClientSeeder
 
         IEnumerable<Client> clients = GenerateClients(count);
 
-        await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(clients));
+        if (_filePath != null) await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(clients));
 
         await PersistClients(clients);
 

@@ -6,19 +6,21 @@ using Newtonsoft.Json;
 
 public static class UserSeeder
 {
-    private static string _filePath = null!;
+    private static string? _filePath;
     private static IMongoCollection<User> _userCollection = null!;
     private static IMongoCollection<Client> _clientCollection = null!;
 
-    public static void Setup(MongoContext mongoContext, string rootPath)
+    public static void Setup(MongoContext mongoContext, string? rootPath)
     {
         SetFilePath(rootPath);
         SetClientsCollection(mongoContext);
         SetUsersCollection(mongoContext);
     }
 
-    public static void SetFilePath(string rootPath)
+    public static void SetFilePath(string? rootPath)
     {
+        if (rootPath == null) return;
+
         var directoryPath = Path.Combine(rootPath, "Data/Seeders/Logs");
         Directory.CreateDirectory(directoryPath);
         _filePath = Path.Combine(directoryPath, "seeded_users.json");
@@ -38,7 +40,7 @@ public static class UserSeeder
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
     }
 
-    public static async Task Seed(MongoContext mongoContext, string rootPath, FakeUserOptions? fakeUserOptions = null, int count = 2)
+    public static async Task Seed(MongoContext mongoContext, string? rootPath, FakeUserOptions? fakeUserOptions = null, int count = 2)
     {
         if (_filePath == null || _userCollection == null || _clientCollection == null) Setup(mongoContext, rootPath);
 
@@ -46,7 +48,7 @@ public static class UserSeeder
 
         IEnumerable<User> users = GenerateUsers(count, clients: (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
 
-        await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(users));
+        if (_filePath != null) await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(users));
 
         await PersistUsers(users);
 

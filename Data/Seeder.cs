@@ -4,10 +4,10 @@ using user_management.Data.Seeders;
 
 public class Seeder
 {
-    private readonly string _rootPath;
+    private readonly string? _rootPath;
     public MongoContext MongoContext { get; set; }
 
-    public Seeder(MongoContext mongoContext, string rootPath)
+    public Seeder(MongoContext mongoContext, string? rootPath = null)
     {
         MongoContext = mongoContext;
         _rootPath = rootPath;
