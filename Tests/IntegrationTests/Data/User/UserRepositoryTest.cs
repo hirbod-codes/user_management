@@ -135,6 +135,8 @@ public class UserRepositoryTest
         finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
+
+        await Assert.ThrowsAsync<ArgumentException>(async () => await _userRepository.RetrieveByFullNameForExistenceCheck(null, null, null));
     }
 
     [Theory]

@@ -5,7 +5,6 @@ using user_management.Utilities;
 using System.Net.Mail;
 using MongoDB.Bson;
 using user_management.Services.Data.User;
-using user_management.Authentication.JWT;
 using user_management.Controllers.Services;
 
 namespace user_management.Services;
@@ -30,7 +29,13 @@ public class UserManagement : IUserManagement
         _mapper = mapper;
     }
 
-    public async Task<bool> FullNameExistenceCheck(string firstName, string middleName, string lastName) => (await _userRepository.RetrieveByFullNameForExistenceCheck(firstName, middleName, lastName)) != null;
+    public async Task<bool> FullNameExistenceCheck(string? firstName, string? middleName, string? lastName)
+    {
+        if (firstName == null && middleName == null && lastName == null) throw new ArgumentException();
+
+        return (await _userRepository.RetrieveByFullNameForExistenceCheck(firstName, middleName, lastName)) != null;
+    }
+
     public async Task<bool> UsernameExistenceCheck(string username) => (await _userRepository.RetrieveByUsernameForExistenceCheck(username)) != null;
     public async Task<bool> EmailExistenceCheck(string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) != null;
     public async Task<bool> PhoneNumberExistenceCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) != null;

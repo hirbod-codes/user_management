@@ -53,6 +53,16 @@ public class UserControllerTests
     }
 
     [Fact]
+    public async void FullNameExistenceCheck_BadRequest()
+    {
+        Fixture.IUserManagement.Setup<Task<bool>>(um => um.FullNameExistenceCheck(null, null, null)).Throws<ArgumentException>();
+
+        var actionResult = await InstantiateController().FullNameExistenceCheck(null, null, null);
+
+        HttpAsserts<string>.IsBadRequest(actionResult, "At least one of the following variables must be provided: firstName, middleName and lastName.");
+    }
+
+    [Fact]
     public async void UsernameExistenceCheck_Ok()
     {
         string username = Faker.Person.UserName;

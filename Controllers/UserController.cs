@@ -30,7 +30,11 @@ public class UserController : ControllerBase
     }
 
     [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
-    public async Task<IActionResult> FullNameExistenceCheck(string firstName, string middleName, string lastName) => (await _userManagement.FullNameExistenceCheck(firstName, middleName, lastName)) ? Ok() : NotFound();
+    public async Task<IActionResult> FullNameExistenceCheck([FromQuery] string? firstName, [FromQuery] string? middleName, [FromQuery] string? lastName)
+    {
+        try { return (await _userManagement.FullNameExistenceCheck(firstName, middleName, lastName)) ? Ok() : NotFound(); }
+        catch (ArgumentException) { return BadRequest("At least one of the following variables must be provided: firstName, middleName and lastName."); }
+    }
 
     [HttpGet(PATH_GET_USERNAME_EXISTENCE_CHECK)]
     public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userManagement.UsernameExistenceCheck(username)) ? Ok() : NotFound();
@@ -278,7 +282,7 @@ public class UserController : ControllerBase
     }
 
     // putting api paths in constants for later use in tests.
-    public const string PATH_GET_FULL_NAME_EXISTENCE_CHECK = "full-name-existence-check/{firstName}/{middleName}/{lastName}";
+    public const string PATH_GET_FULL_NAME_EXISTENCE_CHECK = "full-name-existence-check";
     public const string PATH_GET_USERNAME_EXISTENCE_CHECK = "username-existence-check/{username}";
     public const string PATH_GET_EMAIL_EXISTENCE_CHECK = "email-existence-check/{email}";
     public const string PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK = "phone-number-existence-check/{phoneNumber}";

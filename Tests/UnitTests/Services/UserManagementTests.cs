@@ -33,6 +33,9 @@ public class UserManagementTests
 
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveByFullNameForExistenceCheck(firstName, middleName, lastName)).Returns(Task.FromResult<User?>(null));
         Assert.False(await InstantiateService().FullNameExistenceCheck(firstName, middleName, lastName));
+
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveByFullNameForExistenceCheck(null, null, null)).Throws<ArgumentException>();
+        await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().FullNameExistenceCheck(null, null, null));
     }
 
     [Fact]

@@ -1,11 +1,11 @@
-using MongoDB.Bson;
 using user_management.Dtos.User;
 
 namespace user_management.Controllers.Services;
 
 public interface IUserManagement
 {
-    public Task<bool> FullNameExistenceCheck(string firstName, string middleName, string lastName);
+    /// <exception cref="ArgumentException"></exception>
+    public Task<bool> FullNameExistenceCheck(string? firstName, string? middleName, string? lastName);
     public Task<bool> UsernameExistenceCheck(string username);
     public Task<bool> EmailExistenceCheck(string email);
     public Task<bool> PhoneNumberExistenceCheck(string phoneNumber);

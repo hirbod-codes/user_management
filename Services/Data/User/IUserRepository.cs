@@ -10,7 +10,8 @@ public interface IUserRepository
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<User?> Create(User user);
 
-    public Task<User?> RetrieveByFullNameForExistenceCheck(string firstName, string middleName, string lastName);
+    /// <exception cref="ArgumentException"></exception>
+    public Task<User?> RetrieveByFullNameForExistenceCheck(string? firstName, string? middleName, string? lastName);
 
     public Task<User?> RetrieveByUsernameForExistenceCheck(string username);
 

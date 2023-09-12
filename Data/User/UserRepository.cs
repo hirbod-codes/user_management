@@ -40,12 +40,18 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    public async Task<User?> RetrieveByFullNameForExistenceCheck(string firstName, string middleName, string lastName) => (await _userCollection.FindAsync(
-        Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq(User.FIRST_NAME, firstName),
-            Builders<User>.Filter.Eq(User.MIDDLE_NAME, middleName),
-            Builders<User>.Filter.Eq(User.LAST_NAME, lastName)
-        ))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByFullNameForExistenceCheck(string? firstName, string? middleName, string? lastName)
+    {
+        if (firstName == null && middleName == null && lastName == null) throw new ArgumentException();
+
+        return (await _userCollection.FindAsync(
+            Builders<User>.Filter.And(
+                Builders<User>.Filter.Eq(User.FIRST_NAME, firstName),
+                Builders<User>.Filter.Eq(User.MIDDLE_NAME, middleName),
+                Builders<User>.Filter.Eq(User.LAST_NAME, lastName)
+            ))
+        ).FirstOrDefault<User?>();
+    }
 
     public async Task<User?> RetrieveByUsernameForExistenceCheck(string username) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.USERNAME, username))).FirstOrDefault<User?>();
 
