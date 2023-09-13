@@ -14,18 +14,6 @@ using user_management.Utilities;
 [BsonIgnoreExtraElements]
 public class User : IEquatable<User>
 {
-    public User()
-    {
-        UserPrivileges = new()
-        {
-            Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = Id, IsPermitted = true, Fields = GetReadableFields().ToArray() } },
-            AllReaders = new AllReaders() { ArePermitted = false },
-            Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = Id, IsPermitted = true, Fields = GetUpdatableFields().ToArray() } },
-            AllUpdaters = new AllUpdaters() { ArePermitted = false },
-            Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = Id, IsPermitted = true } }
-        };
-    }
-
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [BsonRequired]
@@ -38,7 +26,7 @@ public class User : IEquatable<User>
 
     [BsonElement(USER_PRIVILEGES)]
     [BsonRequired]
-    public UserPrivileges UserPrivileges { get; set; }
+    public UserPrivileges UserPrivileges { get; set; } = new();
     public const string USER_PRIVILEGES = "user_privileges";
 
     [BsonElement(CLIENTS)]

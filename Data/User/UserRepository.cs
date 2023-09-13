@@ -28,6 +28,15 @@ public class UserRepository : IUserRepository
     {
         user.Id = ObjectId.GenerateNewId();
 
+        user.UserPrivileges = new()
+        {
+            Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = User.GetReadableFields().ToArray() } },
+            AllReaders = new AllReaders() { ArePermitted = false },
+            Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = user.Id, IsPermitted = true, Fields = User.GetUpdatableFields().ToArray() } },
+            AllUpdaters = new AllUpdaters() { ArePermitted = false },
+            Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = user.Id, IsPermitted = true } }
+        };
+
         DateTime dt = DateTime.UtcNow;
         user.UpdatedAt = dt;
         user.CreatedAt = dt;
