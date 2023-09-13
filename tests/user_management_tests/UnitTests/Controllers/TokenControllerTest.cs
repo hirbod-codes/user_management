@@ -6,9 +6,8 @@ using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
 using user_management.Services.Data.Client;
-using Xunit;
 
-namespace user_management.Tests.UnitTests.Controllers;
+namespace user_management_tests.UnitTests.Controllers;
 
 [Collection("Controller")]
 public class TokenControllerTests

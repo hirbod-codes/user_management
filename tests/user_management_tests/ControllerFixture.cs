@@ -1,11 +1,11 @@
-namespace user_management.Tests;
+namespace user_management_tests;
 
 using AutoMapper;
 using Moq;
 using user_management.Authentication;
 using user_management.Controllers.Services;
 using user_management.Utilities;
-using Xunit;
+
 
 public class ControllerFixture
 {

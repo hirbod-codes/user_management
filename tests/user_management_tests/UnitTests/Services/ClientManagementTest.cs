@@ -3,9 +3,8 @@ using MongoDB.Bson;
 using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
-using Xunit;
 
-namespace user_management.Tests.UnitTests.Services;
+namespace user_management_tests.UnitTests.Services;
 
 [Collection("Service")]
 public class ClientManagementTest

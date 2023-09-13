@@ -1,4 +1,4 @@
-namespace user_management.Tests;
+namespace user_management_tests;
 
 using AutoMapper;
 using MongoDB.Driver;
@@ -8,7 +8,7 @@ using user_management.Authentication.JWT;
 using user_management.Services.Client;
 using user_management.Services.Data.User;
 using user_management.Utilities;
-using Xunit;
+
 
 public class ServiceFixture
 {

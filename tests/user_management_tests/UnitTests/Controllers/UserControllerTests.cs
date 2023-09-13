@@ -7,11 +7,11 @@ using user_management.Models;
 using user_management.Services;
 using user_management.Services.Data;
 using user_management.Services.Data.User;
-using Xunit;
+
 using System.Dynamic;
 using System.Security.Authentication;
 
-namespace user_management.Tests.UnitTests.Controllers;
+namespace user_management_tests.UnitTests.Controllers;
 
 [Collection("Controller")]
 public class UserControllerTests

@@ -3,9 +3,8 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.Client;
-using Xunit;
 
-namespace user_management.Tests.IntegrationTests.Data.Client;
+namespace user_management_tests.IntegrationTests.Data.Client;
 
 public class ClientCollectionTest
 {

@@ -2,9 +2,8 @@ using Bogus;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.User;
-using Xunit;
 
-namespace user_management.Tests.IntegrationTests.Data.User;
+namespace user_management_tests.IntegrationTests.Data.User;
 
 public class UserCollectionTest
 {
