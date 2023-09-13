@@ -86,6 +86,7 @@ yml.services = {
         image: "ghcr.io/hirbod-codes/user_management_mongodb:latest",
         networks: ["user_management_mongodb", "frontend"],
         secrets: ["user-management-db-admin-username", "user-management-db-password", "user-management-db-name"],
+        ports: ["8081:27017"],
         environment: {
             configReplSet: "user_management_configReplicaSet",
             configMember0: "user_management_configServer1",

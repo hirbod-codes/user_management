@@ -1,0 +1,14 @@
+/obj
+/bin
+/node_modules
+
+tmp.yml
+
+/security
+
+/Data/Seeders/Logs/*
+
+.env*
+!.env.example
+
+package-lock.json

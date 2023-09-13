@@ -124,3 +124,8 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 }));
 
 app.Run();
+
+public partial class Program
+{
+    public void Configure() { }
+}
