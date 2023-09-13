@@ -109,11 +109,7 @@ public class UserRepositoryTest
         {
             await Assert.ThrowsAsync<DuplicationException>(async () => await _userRepository.Create(user1));
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user2.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user2.Id))).FirstOrDefault<Models.User?>());
@@ -132,7 +128,7 @@ public class UserRepositoryTest
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
 
@@ -152,7 +148,7 @@ public class UserRepositoryTest
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
     }
@@ -170,7 +166,7 @@ public class UserRepositoryTest
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
     }
@@ -188,7 +184,7 @@ public class UserRepositoryTest
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
     }
@@ -206,7 +202,7 @@ public class UserRepositoryTest
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
     }
@@ -264,12 +260,7 @@ public class UserRepositoryTest
 
             });
         }
-        finally
-        {
-            // Delete users
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", readerUser.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         // Assert user deletion
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
@@ -506,7 +497,7 @@ public class UserRepositoryTest
             Assert.True(user.IsVerified);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
 
@@ -522,7 +513,7 @@ public class UserRepositoryTest
 
             Assert.Null(retrievedUser);
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
 
@@ -537,7 +528,7 @@ public class UserRepositoryTest
 
             Assert.Null(retrievedUser);
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -557,7 +548,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveByIdForAuthorizationHandling(user.Id));
@@ -578,7 +569,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForPasswordChange(user.Email));
@@ -599,7 +590,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForUsernameChange(user.Email));
@@ -620,7 +611,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForEmailChange(user.Email));
@@ -641,7 +632,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForPhoneNumberChange(user.Email));
@@ -669,7 +660,7 @@ public class UserRepositoryTest
             Assert.Equal(user.AuthorizingClient.Code, retrievedUser.AuthorizingClient.Code);
             AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { Models.User.LOGGED_OUT_AT, null } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveByClientIdAndCode(clientId, code));
@@ -693,7 +684,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Clients[0].RefreshToken!.Value, retrievedUser.Clients[0].RefreshToken!.Value);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveByRefreshTokenValue(token));
@@ -717,7 +708,7 @@ public class UserRepositoryTest
             Assert.Equal(user.Clients[0].Token!.Value!, retrievedUser.Clients[0].Token!.Value!);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null(await _userRepository.RetrieveByTokenValue(token));
@@ -741,7 +732,7 @@ public class UserRepositoryTest
             Assert.True(result);
             AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { Models.User.LOGGED_OUT_AT, null } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -763,7 +754,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -788,7 +779,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
 
@@ -806,7 +797,7 @@ public class UserRepositoryTest
             Assert.Null(result);
             AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First(), new() { });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -828,7 +819,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -849,7 +840,7 @@ public class UserRepositoryTest
             Assert.True(result);
             AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { Models.User.IS_VERIFIED, true } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -870,7 +861,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.PASSWORD, hashedPassword }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -891,7 +882,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.USERNAME, username }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -912,7 +903,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.PHONE_NUMBER, phoneNumber }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -933,7 +924,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.EMAIL, newEmail }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -956,7 +947,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.LOGGED_OUT_AT, user.LoggedOutAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -997,7 +988,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, user.Clients.Where(uc => uc.ClientId != user.Clients[0].ClientId).ToArray() }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -1038,7 +1029,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.CLIENTS, new Models.UserClient[] { } }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
     }
@@ -1067,11 +1058,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.USER_PRIVILEGES, user.UserPrivileges }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<Models.User?>());
@@ -1101,11 +1088,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.USER_PRIVILEGES, user.UserPrivileges }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<Models.User?>());
@@ -1136,11 +1119,7 @@ public class UserRepositoryTest
             Assert.True(retrievedUser.UserPrivileges.Deleters[0].AuthorId == clientId && retrievedUser.UserPrivileges.Deleters[0].IsPermitted);
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.USER_PRIVILEGES, user.UserPrivileges }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<Models.User?>());
@@ -1171,11 +1150,7 @@ public class UserRepositoryTest
             Models.User retrievedUser = (await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { Models.User.USER_PRIVILEGES, user.UserPrivileges }, { Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally
-        {
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id));
-        }
+        finally { await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty); }
 
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<Models.User?>());
         Assert.Null((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<Models.User?>());
