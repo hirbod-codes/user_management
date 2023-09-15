@@ -7,7 +7,7 @@ using user_management.Services;
 using user_management.Services.Data;
 using user_management.Services.Data.User;
 
-namespace user_management_tests.UnitTests.Services;
+namespace user_management_unit_tests.Services;
 
 [Collection("Service")]
 public class UserManagementTests
@@ -438,8 +438,8 @@ public class UserManagementTests
         var userObject = new ExpandoObject() as IDictionary<string, object>;
         userObject.Add("_id", user.Id.ToString()!);
 
-        Assert.Equal("jwt", (await InstantiateService().Login(dto)).jwt);
-        Assert.Equal<object>(user.Id.ToString(), (await InstantiateService().Login(dto)).userId);
+        Assert.Equal("jwt", (await InstantiateService().Login(dto)).Jwt);
+        Assert.Equal(user.Id.ToString(), (await InstantiateService().Login(dto)).UserId);
     }
 
     public static IEnumerable<object?[]> Login_NotOk_Data =>

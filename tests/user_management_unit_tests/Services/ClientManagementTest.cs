@@ -1,10 +1,11 @@
 using Bogus;
 using MongoDB.Bson;
+using user_management.Models;
 using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
 
-namespace user_management_tests.UnitTests.Services;
+namespace user_management_unit_tests.Services;
 
 [Collection("Service")]
 public class ClientManagementTest
@@ -20,7 +21,7 @@ public class ClientManagementTest
     [Fact]
     public async void Register()
     {
-        Models.Client client = new() { Id = ObjectId.GenerateNewId() };
+        Client client = new() { Id = ObjectId.GenerateNewId() };
         string secret = "secret";
         string? hashedSecret = "hashedSecret";
 
@@ -30,13 +31,13 @@ public class ClientManagementTest
         await Assert.ThrowsAsync<RegistrationFailure>(async () => await InstantiateService().Register(client));
 
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
-        Fixture.IClientRepository.Setup<Task<Models.Client>>(o => o.Create(client, null)).Throws<DuplicationException>();
+        Fixture.IClientRepository.Setup<Task<Client>>(o => o.Create(client, null)).Throws<DuplicationException>();
 
         await Assert.ThrowsAsync<DuplicationException>(async () => await InstantiateService().Register(client));
 
-        Fixture.IClientRepository.Setup<Task<Models.Client>>(o => o.Create(client, null)).Returns(Task.FromResult<Models.Client>(client));
+        Fixture.IClientRepository.Setup<Task<Client>>(o => o.Create(client, null)).Returns(Task.FromResult<Client>(client));
 
-        (Models.Client client, string? notHashedSecret) result = await InstantiateService().Register(client);
+        (Client client, string? notHashedSecret) result = await InstantiateService().Register(client);
 
         Assert.Equal(hashedSecret, result.notHashedSecret);
         Assert.Equal(client.Id.ToString(), result.client.Id.ToString());
@@ -50,10 +51,10 @@ public class ClientManagementTest
         await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveClientPublicInfo(id));
 
         id = ObjectId.GenerateNewId().ToString();
-        Models.Client client = new() { Id = ObjectId.Parse(id) };
-        Fixture.IClientRepository.Setup<Task<Models.Client?>>(o => o.RetrieveById(ObjectId.Parse(id))).Returns(Task.FromResult<Models.Client?>(client));
+        Client client = new() { Id = ObjectId.Parse(id) };
+        Fixture.IClientRepository.Setup<Task<Client?>>(o => o.RetrieveById(ObjectId.Parse(id))).Returns(Task.FromResult<Client?>(client));
 
-        Models.Client? retrievedClient = await InstantiateService().RetrieveClientPublicInfo(id);
+        Client? retrievedClient = await InstantiateService().RetrieveClientPublicInfo(id);
 
         Assert.NotNull(retrievedClient);
         Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());
@@ -69,10 +70,10 @@ public class ClientManagementTest
         await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveBySecret(secret));
 
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
-        Models.Client? client = new() { Id = ObjectId.GenerateNewId() };
-        Fixture.IClientRepository.Setup<Task<Models.Client?>>(o => o.RetrieveBySecret(hashedSecret)).Returns(Task.FromResult<Models.Client?>(client));
+        Client? client = new() { Id = ObjectId.GenerateNewId() };
+        Fixture.IClientRepository.Setup<Task<Client?>>(o => o.RetrieveBySecret(hashedSecret)).Returns(Task.FromResult<Client?>(client));
 
-        Models.Client? retrievedClient = await InstantiateService().RetrieveBySecret(secret);
+        Client? retrievedClient = await InstantiateService().RetrieveBySecret(secret);
 
         Assert.NotNull(retrievedClient);
         Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());

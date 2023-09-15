@@ -10,11 +10,13 @@ using user_management.Services.Data.User;
 
 using System.Dynamic;
 using System.Security.Authentication;
+using Xunit.Sdk;
+using Xunit.Abstractions;
 
-namespace user_management_tests.UnitTests.Controllers;
+namespace user_management_unit_tests.Controllers;
 
 [Collection("Controller")]
-public class UserControllerTests
+public class UserControllerTests : ITestCaseOrderer
 {
     public ControllerFixture Fixture { get; private set; }
 
@@ -334,14 +336,11 @@ public class UserControllerTests
     {
         IActionResult actionResult;
         Login loggingInUser = new() { };
-        var expectedResult = new { jwt = "jwt", userId = "id" };
-        (string jwt, string userId) tuple;
-        tuple.jwt = expectedResult.jwt;
-        tuple.userId = expectedResult.userId;
+        LoginResult expectedResult = new() { Jwt = "jwt", UserId = "id" };
 
-        Fixture.IUserManagement.Setup<Task<(string jwt, string userId)>>(um => um.Login(loggingInUser)).Returns(Task.FromResult<(string jwt, string userId)>(tuple));
+        Fixture.IUserManagement.Setup<Task<LoginResult>>(um => um.Login(loggingInUser)).Returns(Task.FromResult<LoginResult>(expectedResult));
         actionResult = await InstantiateController().Login(loggingInUser);
-        HttpAsserts<object>.IsOk(actionResult, expectedResult);
+        HttpAsserts<LoginResult>.IsOk(actionResult, expectedResult);
     }
 
     [Fact]
@@ -1145,4 +1144,10 @@ public class UserControllerTests
         Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().Delete(userId));
     }
+
+    public IEnumerable<TTestCase> OrderTestCases<TTestCase>(IEnumerable<TTestCase> testCases) where TTestCase : ITestCase
+    {
+        throw new NotImplementedException();
+    }
+
 }

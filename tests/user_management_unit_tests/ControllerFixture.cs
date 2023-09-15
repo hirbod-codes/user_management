@@ -1,4 +1,4 @@
-namespace user_management_tests;
+namespace user_management_unit_tests;
 
 using AutoMapper;
 using Moq;

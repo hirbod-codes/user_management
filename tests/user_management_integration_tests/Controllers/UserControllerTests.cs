@@ -1,4 +1,3 @@
-using System.Xml;
 using System.Net;
 using System.Net.Http.Json;
 using Bogus;
@@ -9,7 +8,7 @@ using user_management.Data;
 using user_management.Dtos.User;
 using user_management.Models;
 
-namespace user_management_tests.IntegrationTests;
+namespace user_management_integration_tests.Controllers;
 
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
@@ -30,8 +29,8 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         _database = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
         _userCollection = _database.GetCollection<User>(_mongoContext.Collections.Users);
 
-        // _mongoContext.Initialize().Wait();
-        // (new Seeder(_mongoContext)).Seed().Wait();
+        _mongoContext.Initialize().Wait();
+        (new Seeder(_mongoContext)).Seed().Wait();
     }
 
     [Fact]
@@ -138,7 +137,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Arrange
         var client = _fixture.CreateClient(new() { AllowAutoRedirect = false });
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", "imaginary_email");
+        string url = "api/" + user_management.Controllers.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", "imaginary_email@example.com");
 
         // Act
         var response = await client.GetAsync(url);
@@ -170,7 +169,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Arrange
         var client = _fixture.CreateClient(new() { AllowAutoRedirect = false });
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", "imaginary_phone_number");
+        string url = "api/" + user_management.Controllers.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", "09999999999");
 
         // Act
         var response = await client.GetAsync(url);
@@ -193,6 +192,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         var response = await client.GetAsync(url);
 
         // Assert
+        Assert.Matches("^[a-z0-9 +-{)(}]{11,}$", user.PhoneNumber);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 

@@ -5,7 +5,7 @@ using user_management.Models;
 using user_management.Services;
 using user_management.Services.Data;
 
-namespace user_management_tests.UnitTests.Services;
+namespace user_management_unit_tests.Services;
 
 [Collection("Service")]
 public class UserPrivilegesManagementTests

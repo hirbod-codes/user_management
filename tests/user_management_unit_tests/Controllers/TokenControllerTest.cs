@@ -2,12 +2,13 @@ using System.Security.Authentication;
 using Bogus;
 using MongoDB.Bson;
 using user_management.Dtos.Token;
+using user_management.Models;
 using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
 using user_management.Services.Data.Client;
 
-namespace user_management_tests.UnitTests.Controllers;
+namespace user_management_unit_tests.Controllers;
 
 [Collection("Controller")]
 public class TokenControllerTests
@@ -28,8 +29,8 @@ public class TokenControllerTests
         HttpAsserts.IsUnauthenticated(await InstantiateController().Authorize(dto));
 
         dto.ResponseType = "code";
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
                 dto.ClientId,
@@ -45,8 +46,9 @@ public class TokenControllerTests
     public async void Authorize_Unauthorized()
     {
         TokenAuthDto dto = new() { ResponseType = "code" };
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(true);
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
                 dto.ClientId,
@@ -75,8 +77,8 @@ public class TokenControllerTests
         HttpAsserts<string>.IsBadRequest(await InstantiateController().Authorize(dto), "Unsupported response type requested.");
 
         dto.ResponseType = "code";
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
                 dto.ClientId,
@@ -102,8 +104,8 @@ public class TokenControllerTests
             State = "State"
         };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(true);
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
                 dto.ClientId,
@@ -138,8 +140,8 @@ public class TokenControllerTests
             State = "State"
         };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(true);
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
                 dto.ClientId,
@@ -174,8 +176,8 @@ public class TokenControllerTests
             State = "State"
         };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(true);
-        Models.TokenPrivileges scope = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.TokenPrivileges>(dto.Scope)).Returns(scope);
+        TokenPrivileges scope = new();
+        Fixture.IMapper.Setup(o => o.Map<TokenPrivileges>(dto.Scope)).Returns(scope);
         string code = "code";
 
         Fixture.ITokenManagement.Setup(o => o.Authorize(
@@ -260,9 +262,9 @@ public class TokenControllerTests
     {
         TokenCreateDto dto = new() { GrantType = "authorization_code", ClientId = ObjectId.GenerateNewId().ToString(), RedirectUrl = Faker.Internet.Url() };
 
-        (string token, string refreshToken) result = ("token", "refreshToken");
+        TokenRetrieveDto result = new() { Token = "token", RefreshToken = "refreshToken" };
         Fixture.ITokenManagement.Setup(o => o.VerifyAndGenerateTokens(dto)).Returns(Task.FromResult(result));
-        HttpAsserts<object>.IsOk(await InstantiateController().VerifyAndGenerateTokens(dto), new { access_token = result.token, refresh_token = result.refreshToken });
+        HttpAsserts<object>.IsOk(await InstantiateController().VerifyAndGenerateTokens(dto), result);
     }
 
     [Fact]

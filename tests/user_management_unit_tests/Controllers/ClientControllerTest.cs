@@ -1,12 +1,13 @@
 using Bogus;
 using MongoDB.Bson;
-using user_management.Dtos.Client;
 using user_management.Models;
 using user_management.Services;
-using user_management.Services.Client;
+using user_management.Dtos.Client;
 using user_management.Services.Data;
+using user_management.Services.Data.User;
+using user_management.Services.Client;
 
-namespace user_management_tests.UnitTests.Controllers;
+namespace user_management_unit_tests.Controllers;
 
 [Collection("Controller")]
 public class ClientControllerTests
@@ -22,7 +23,7 @@ public class ClientControllerTests
     [Fact]
     public async void Register_Unauthenticated()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().Register(clientCreateDto));
@@ -31,11 +32,11 @@ public class ClientControllerTests
     [Fact]
     public async void Register_Problem()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Models.Client client = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.Client>(clientCreateDto)).Returns(client);
+        Client client = new();
+        Fixture.IMapper.Setup(o => o.Map<Client>(clientCreateDto)).Returns(client);
 
         Fixture.IClientManagement.Setup(o => o.Register(client)).Throws<DuplicationException>();
         HttpAsserts.IsProblem(await InstantiateController().Register(clientCreateDto), "System failed to register your client.");
@@ -50,13 +51,13 @@ public class ClientControllerTests
     [Fact]
     public async void Register_Ok()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Models.Client client = new();
-        Fixture.IMapper.Setup(o => o.Map<Models.Client>(clientCreateDto)).Returns(client);
+        Client client = new();
+        Fixture.IMapper.Setup(o => o.Map<Client>(clientCreateDto)).Returns(client);
         string? secret = "secret";
-        Fixture.IClientManagement.Setup<Task<(Models.Client client, string? notHashedSecret)>>(o => o.Register(client)).Returns(Task.FromResult<(Models.Client client, string? notHashedSecret)>((client, secret)));
+        Fixture.IClientManagement.Setup<Task<(Client client, string? notHashedSecret)>>(o => o.Register(client)).Returns(Task.FromResult<(Client client, string? notHashedSecret)>((client, secret)));
         ClientRetrieveDto clientRetrieveDto = new();
         Fixture.IMapper.Setup(o => o.Map<ClientRetrieveDto>(client)).Returns(clientRetrieveDto);
 
@@ -74,7 +75,7 @@ public class ClientControllerTests
     [Fact]
     public async void RetrieveClientPublicInfo_BadRequest()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string id = "id";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
@@ -85,23 +86,23 @@ public class ClientControllerTests
     [Fact]
     public async void RetrieveClientPublicInfo_NotFound()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string id = "id";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IClientManagement.Setup(o => o.RetrieveClientPublicInfo(id)).Returns(Task.FromResult<Models.Client?>(null));
+        Fixture.IClientManagement.Setup(o => o.RetrieveClientPublicInfo(id)).Returns(Task.FromResult<Client?>(null));
         HttpAsserts.IsNotFound(await InstantiateController().RetrieveClientPublicInfo(id));
     }
 
     [Fact]
     public async void RetrieveClientPublicInfo_Ok()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string id = "id";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Models.Client? client = new();
-        Fixture.IClientManagement.Setup(o => o.RetrieveClientPublicInfo(id)).Returns(Task.FromResult<Models.Client?>(client));
+        Client? client = new();
+        Fixture.IClientManagement.Setup(o => o.RetrieveClientPublicInfo(id)).Returns(Task.FromResult<Client?>(client));
         ClientRetrieveDto clientRetrieveDto = new();
         Fixture.IMapper.Setup(o => o.Map<ClientRetrieveDto>(client)).Returns(clientRetrieveDto);
         HttpAsserts<ClientRetrieveDto>.IsOk(await InstantiateController().RetrieveClientPublicInfo(id), clientRetrieveDto);
@@ -118,7 +119,7 @@ public class ClientControllerTests
     [Fact]
     public async void Retrieve_BadRequest()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string secret = "secret";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
@@ -129,23 +130,23 @@ public class ClientControllerTests
     [Fact]
     public async void Retrieve_NotFound()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string secret = "secret";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IClientManagement.Setup(o => o.RetrieveBySecret(secret)).Returns(Task.FromResult<Models.Client?>(null));
+        Fixture.IClientManagement.Setup(o => o.RetrieveBySecret(secret)).Returns(Task.FromResult<Client?>(null));
         HttpAsserts.IsNotFound(await InstantiateController().Retrieve(secret));
     }
 
     [Fact]
     public async void Retrieve_Ok()
     {
-        Dtos.Client.ClientCreateDto clientCreateDto = new();
+        ClientCreateDto clientCreateDto = new();
 
         string secret = "secret";
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Models.Client? client = new();
-        Fixture.IClientManagement.Setup(o => o.RetrieveBySecret(secret)).Returns(Task.FromResult<Models.Client?>(client));
+        Client? client = new();
+        Fixture.IClientManagement.Setup(o => o.RetrieveBySecret(secret)).Returns(Task.FromResult<Client?>(client));
         ClientRetrieveDto clientRetrieveDto = new();
         Fixture.IMapper.Setup(o => o.Map<ClientRetrieveDto>(client)).Returns(clientRetrieveDto);
         HttpAsserts<ClientRetrieveDto>.IsOk(await InstantiateController().Retrieve(secret), clientRetrieveDto);

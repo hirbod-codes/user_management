@@ -1,15 +1,18 @@
 using Bogus;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.Client;
 
-namespace user_management_tests.IntegrationTests.Data.Client;
+namespace user_management_integration_tests.Data.Client;
 
 public class ClientCollectionTest
 {
     private readonly MongoClient _mongoClient;
-    private readonly IMongoCollection<Models.Client> _clientCollection;
+    private readonly IMongoCollection<user_management.Models.Client> _clientCollection;
     private readonly IMongoDatabase _mongoDatabase;
     private readonly ClientRepository _clientRepository;
     public static Faker Faker = new("en");
@@ -24,14 +27,14 @@ public class ClientCollectionTest
 
         _mongoClient = mongoContext.GetMongoClient();
         _mongoDatabase = _mongoClient.GetDatabase(mongoContext.DatabaseName);
-        _clientCollection = _mongoDatabase.GetCollection<Models.Client>(mongoContext.Collections.Clients);
+        _clientCollection = _mongoDatabase.GetCollection<user_management.Models.Client>(mongoContext.Collections.Clients);
 
         _clientRepository = new ClientRepository(mongoContext);
 
         mongoContext.Initialize().Wait();
     }
 
-    private static Models.Client TemplateClient() => new Models.Client()
+    private static user_management.Models.Client TemplateClient() => new user_management.Models.Client()
     {
         Id = ObjectId.GenerateNewId(),
         RedirectUrl = Faker.Internet.Url(),
@@ -41,15 +44,15 @@ public class ClientCollectionTest
     };
 
     /// <exception cref="System.Exception"></exception>
-    public static IEnumerable<Models.Client> GenerateClients(int count = 1)
+    public static IEnumerable<user_management.Models.Client> GenerateClients(int count = 1)
     {
-        IEnumerable<Models.Client> clients = new Models.Client[] { };
+        IEnumerable<user_management.Models.Client> clients = new user_management.Models.Client[] { };
         for (int i = 0; i < count; i++)
         {
-            Models.Client client = TemplateClient();
+            user_management.Models.Client client = TemplateClient();
             int safety = 0;
             do { client = TemplateClient(); safety++; }
-            while (safety < 500 && clients.FirstOrDefault<Models.Client?>(u => u != null && (u.Secret == client.Secret || u.RedirectUrl == client.RedirectUrl)) != null);
+            while (safety < 500 && clients.FirstOrDefault<user_management.Models.Client?>(u => u != null && (u.Secret == client.Secret || u.RedirectUrl == client.RedirectUrl)) != null);
             if (safety >= 500) throw new Exception("While loop safety triggered at GenerateClients private method of ClientRepositoryTests.");
 
             clients = clients.Append(client);
@@ -82,7 +85,7 @@ public class ClientCollectionTest
 
     [Theory]
     [MemberData(nameof(TwoClients))]
-    public async void RedirectUrlIndex(Models.Client client1, Models.Client client2)
+    public async void RedirectUrlIndex(user_management.Models.Client client1, user_management.Models.Client client2)
     {
         client2.RedirectUrl = client1.RedirectUrl;
         await TestIndex(client1, client2);
@@ -90,13 +93,13 @@ public class ClientCollectionTest
 
     [Theory]
     [MemberData(nameof(TwoClients))]
-    public async void SecretIndex(Models.Client client1, Models.Client client2)
+    public async void SecretIndex(user_management.Models.Client client1, user_management.Models.Client client2)
     {
         client2.Secret = client1.Secret;
         await TestIndex(client1, client2);
     }
 
-    private async Task TestIndex(Models.Client client1, Models.Client client2)
+    private async Task TestIndex(user_management.Models.Client client1, user_management.Models.Client client2)
     {
         IClientSessionHandle? session = null;
         try

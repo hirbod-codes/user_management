@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Moq;
 using user_management.Utilities;
 
-namespace user_management_tests.IntegrationTests;
+namespace user_management_integration_tests;
 
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {

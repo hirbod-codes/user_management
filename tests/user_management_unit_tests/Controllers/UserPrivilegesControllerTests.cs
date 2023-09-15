@@ -4,7 +4,7 @@ using user_management.Dtos.User;
 using user_management.Services;
 using user_management.Services.Data;
 
-namespace user_management_tests.UnitTests.Controllers;
+namespace user_management_unit_tests.Controllers;
 
 [Collection("Controller")]
 public class UserPrivilegesControllerTests

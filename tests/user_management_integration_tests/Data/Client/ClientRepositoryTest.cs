@@ -1,5 +1,8 @@
 using System.Reflection;
 using Bogus;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
@@ -7,14 +10,15 @@ using user_management.Data;
 using user_management.Data.Client;
 using user_management.Services.Data;
 
-namespace user_management_tests.IntegrationTests.Data.Client;
+namespace user_management_integration_tests.Data.Client;
 
-public class ClientRepositoryTest
+public class ClientRepositoryTest : IAsyncLifetime
 {
     private readonly MongoClient _mongoClient;
-    private readonly IMongoCollection<Models.Client> _clientCollection;
+    private readonly IMongoCollection<user_management.Models.Client> _clientCollection;
     private readonly IMongoDatabase _mongoDatabase;
     private readonly ClientRepository _clientRepository;
+    private MongoContext _mongoContext = new();
     public static Faker Faker = new("en");
 
     public ClientRepositoryTest()
@@ -22,19 +26,20 @@ public class ClientRepositoryTest
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
 
         builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
-        MongoContext mongoContext = new();
-        builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
+        builder.Configuration.GetSection("MongoDB").Bind(_mongoContext);
 
-        _mongoClient = mongoContext.GetMongoClient();
-        _mongoDatabase = _mongoClient.GetDatabase(mongoContext.DatabaseName);
-        _clientCollection = _mongoDatabase.GetCollection<Models.Client>(mongoContext.Collections.Clients);
+        _mongoClient = _mongoContext.GetMongoClient();
+        _mongoDatabase = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
+        _clientCollection = _mongoDatabase.GetCollection<user_management.Models.Client>(_mongoContext.Collections.Clients);
 
-        _clientRepository = new ClientRepository(mongoContext);
-
-        mongoContext.Initialize().Wait();
+        _clientRepository = new ClientRepository(_mongoContext);
     }
 
-    private static Models.Client TemplateClient() => new Models.Client()
+    public Task InitializeAsync() => _mongoContext.Initialize();
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    private static user_management.Models.Client TemplateClient() => new user_management.Models.Client()
     {
         Id = ObjectId.GenerateNewId(),
         RedirectUrl = Faker.Internet.Url(),
@@ -44,15 +49,15 @@ public class ClientRepositoryTest
     };
 
     /// <exception cref="System.Exception"></exception>
-    public static IEnumerable<Models.Client> GenerateClients(int count = 1)
+    public static IEnumerable<user_management.Models.Client> GenerateClients(int count = 1)
     {
-        IEnumerable<Models.Client> clients = new Models.Client[] { };
+        IEnumerable<user_management.Models.Client> clients = new user_management.Models.Client[] { };
         for (int i = 0; i < count; i++)
         {
-            Models.Client client = TemplateClient();
+            user_management.Models.Client client = TemplateClient();
             int safety = 0;
             do { client = TemplateClient(); safety++; }
-            while (safety < 500 && clients.FirstOrDefault<Models.Client?>(u => u != null && (u.Secret == client.Secret || u.RedirectUrl == client.RedirectUrl)) != null);
+            while (safety < 500 && clients.FirstOrDefault<user_management.Models.Client?>(u => u != null && (u.Secret == client.Secret || u.RedirectUrl == client.RedirectUrl)) != null);
             if (safety >= 500) throw new Exception("While loop safety triggered at GenerateClients private method of ClientRepositoryTests.");
 
             clients = clients.Append(client);
@@ -85,20 +90,20 @@ public class ClientRepositoryTest
 
     [Theory]
     [MemberData(nameof(TwoClients))]
-    public async void Create(Models.Client client1, Models.Client client2)
+    public async void Create(user_management.Models.Client client1, user_management.Models.Client client2)
     {
         try
         {
-            Models.Client? createdClient = await _clientRepository.Create(client1);
+            user_management.Models.Client? createdClient = await _clientRepository.Create(client1);
 
             Assert.NotNull(createdClient);
-            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", createdClient.Id))).FirstOrDefault<Models.Client?>();
+            user_management.Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", createdClient.Id))).FirstOrDefault<user_management.Models.Client?>();
             Assert.NotNull(retrievedClient);
-            AssertFieldsExpectedValues(client1, retrievedClient, new() { { "_id", retrievedClient.Id }, { Models.Client.UPDATED_AT, retrievedClient.UpdatedAt }, { Models.Client.CREATED_AT, retrievedClient.CreatedAt } });
+            AssertFieldsExpectedValues(client1, retrievedClient, new() { { "_id", retrievedClient.Id }, { user_management.Models.Client.UPDATED_AT, retrievedClient.UpdatedAt }, { user_management.Models.Client.CREATED_AT, retrievedClient.CreatedAt } });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client1.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client1.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client1.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client1.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         await _clientCollection.InsertOneAsync(client2);
@@ -110,19 +115,19 @@ public class ClientRepositoryTest
         }
         finally
         {
-            await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client2.Id));
-            await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client1.Id));
+            await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client2.Id));
+            await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client1.Id));
         }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client1.Id))).FirstOrDefault<Models.Client?>());
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client2.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client1.Id))).FirstOrDefault<user_management.Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client2.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void RetrieveById(Models.Client client)
+    public async void RetrieveById(user_management.Models.Client client)
     {
-        Models.Client? retrievedClient = null;
+        user_management.Models.Client? retrievedClient = null;
 
         // Success
         await _clientCollection.InsertOneAsync(client);
@@ -135,120 +140,120 @@ public class ClientRepositoryTest
             Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());
             AssertFieldsExpectedValues(client, retrievedClient, new() { });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         retrievedClient = await _clientRepository.RetrieveById(client.Id);
 
         Assert.Null(retrievedClient);
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void RetrieveBySecret(Models.Client client)
+    public async void RetrieveBySecret(user_management.Models.Client client)
     {
         // Success
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveBySecret(client.Secret);
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveBySecret(client.Secret);
 
             Assert.NotNull(retrievedClient);
             Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());
             AssertFieldsExpectedValues(client, retrievedClient, new() { });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveBySecret("client.Secret");
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveBySecret("client.Secret");
 
             Assert.Null(retrievedClient);
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void RetrieveByIdAndSecret(Models.Client client)
+    public async void RetrieveByIdAndSecret(user_management.Models.Client client)
     {
         // Success
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndSecret(client.Id, client.Secret);
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndSecret(client.Id, client.Secret);
 
             Assert.NotNull(retrievedClient);
             Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());
             AssertFieldsExpectedValues(client, retrievedClient, new() { });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndSecret(client.Id, "client.Secret");
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndSecret(client.Id, "client.Secret");
 
             Assert.Null(retrievedClient);
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void RetrieveByIdAndRedirectUrl(Models.Client client)
+    public async void RetrieveByIdAndRedirectUrl(user_management.Models.Client client)
     {
         // Success
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndRedirectUrl(client.Id, client.RedirectUrl);
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndRedirectUrl(client.Id, client.RedirectUrl);
 
             Assert.NotNull(retrievedClient);
             Assert.Equal(client.Id.ToString(), retrievedClient.Id.ToString());
             AssertFieldsExpectedValues(client, retrievedClient, new() { });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         await _clientCollection.InsertOneAsync(client);
 
         try
         {
-            Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndRedirectUrl(client.Id, "client.RedirectUrl");
+            user_management.Models.Client? retrievedClient = await _clientRepository.RetrieveByIdAndRedirectUrl(client.Id, "client.RedirectUrl");
 
             Assert.Null(retrievedClient);
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(TwoClients))]
-    public async void UpdateRedirectUrl(Models.Client client, Models.Client client2)
+    public async void UpdateRedirectUrl(user_management.Models.Client client, user_management.Models.Client client2)
     {
         string newRedirectUrl = Faker.Internet.Url();
 
@@ -260,12 +265,12 @@ public class ClientRepositoryTest
             bool? result = await _clientRepository.UpdateRedirectUrl(newRedirectUrl, client.Id, client.Secret);
 
             Assert.True(result);
-            Models.Client retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).First();
-            AssertFieldsExpectedValues(client, retrievedClient, new() { { Models.Client.REDIRECT_URL, newRedirectUrl }, { Models.Client.UPDATED_AT, retrievedClient.UpdatedAt } });
+            user_management.Models.Client retrievedClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).First();
+            AssertFieldsExpectedValues(client, retrievedClient, new() { { user_management.Models.Client.REDIRECT_URL, newRedirectUrl }, { user_management.Models.Client.UPDATED_AT, retrievedClient.UpdatedAt } });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         await _clientCollection.InsertOneAsync(client);
@@ -275,15 +280,15 @@ public class ClientRepositoryTest
         {
             await Assert.ThrowsAsync<DuplicationException>(async () => await _clientRepository.UpdateRedirectUrl(client2.RedirectUrl, client.Id, client.Secret));
         }
-        finally { await _clientCollection.DeleteManyAsync(Builders<Models.Client>.Filter.Empty); }
+        finally { await _clientCollection.DeleteManyAsync(Builders<user_management.Models.Client>.Filter.Empty); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client2.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client2.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void DeleteBySecret(Models.Client client)
+    public async void DeleteBySecret(user_management.Models.Client client)
     {
         bool? result;
 
@@ -295,21 +300,21 @@ public class ClientRepositoryTest
             result = await _clientRepository.DeleteBySecret(client.Secret);
 
             Assert.True(result);
-            Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+            Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         result = await _clientRepository.DeleteBySecret(client.Secret);
         Assert.False(result);
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void DeleteById(Models.Client client)
+    public async void DeleteById(user_management.Models.Client client)
     {
         bool? result;
 
@@ -321,21 +326,21 @@ public class ClientRepositoryTest
             result = await _clientRepository.DeleteById(client.Id);
 
             Assert.True(result);
-            Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+            Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         result = await _clientRepository.DeleteById(client.Id);
         Assert.False(result);
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void ClientExposed(Models.Client client)
+    public async void ClientExposed(user_management.Models.Client client)
     {
         bool? result;
         string newHashedSecret = "newHashedSecret";
@@ -343,15 +348,15 @@ public class ClientRepositoryTest
         // Success
         await _clientCollection.InsertOneAsync(client);
 
-        Models.Client oldClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).First();
+        user_management.Models.Client oldClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).First();
 
         try
         {
             result = await _clientRepository.ClientExposed(client, newHashedSecret);
 
             Assert.True(result);
-            Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", oldClient.Id))).FirstOrDefault<Models.Client?>());
-            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newHashedSecret))).FirstOrDefault<Models.Client?>();
+            Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", oldClient.Id))).FirstOrDefault<user_management.Models.Client?>());
+            user_management.Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq(user_management.Models.Client.SECRET, newHashedSecret))).FirstOrDefault<user_management.Models.Client?>();
             Assert.NotNull(retrievedClient);
             Assert.NotNull(retrievedClient.TokensExposedAt);
             Assert.NotEqual(oldClient.Id.ToString(), retrievedClient.Id.ToString());
@@ -359,19 +364,19 @@ public class ClientRepositoryTest
             Assert.Equal(newHashedSecret, retrievedClient.Secret);
             Assert.Equal<int>(oldClient.ExposedCount + 1, retrievedClient.ExposedCount);
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         result = await _clientRepository.ClientExposed(client, newHashedSecret);
         Assert.Null(result);
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     [Theory]
     [MemberData(nameof(OneClient))]
-    public async void ClientExposed_byId(Models.Client client)
+    public async void ClientExposed_byId(user_management.Models.Client client)
     {
         bool? result;
         string newHashedSecret = "newHashedSecret";
@@ -385,8 +390,8 @@ public class ClientRepositoryTest
             result = await _clientRepository.ClientExposed(client.Id, hashedSecret, newHashedSecret);
 
             Assert.True(result);
-            Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
-            Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq(Models.Client.SECRET, newHashedSecret))).FirstOrDefault<Models.Client?>();
+            Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
+            user_management.Models.Client? retrievedClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq(user_management.Models.Client.SECRET, newHashedSecret))).FirstOrDefault<user_management.Models.Client?>();
             Assert.NotNull(retrievedClient);
             Assert.NotNull(retrievedClient.TokensExposedAt);
             Assert.NotEqual(client.Id.ToString(), retrievedClient.Id.ToString());
@@ -394,14 +399,14 @@ public class ClientRepositoryTest
             Assert.Equal(newHashedSecret, retrievedClient.Secret);
             Assert.Equal<int>(client.ExposedCount + 1, retrievedClient.ExposedCount);
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
         // Failure
         result = await _clientRepository.ClientExposed(client.Id, hashedSecret, newHashedSecret);
         Assert.Null(result);
-        Assert.Null((await _clientCollection.FindAsync(Builders<Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<Models.Client?>());
+        Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
     }
 
     private static void AssertFieldsExpectedValues(object oldObject, object newObject, Dictionary<string, object?>? changedFields = null)

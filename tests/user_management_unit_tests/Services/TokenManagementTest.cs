@@ -11,7 +11,7 @@ using user_management.Services.Client;
 using user_management.Services.Data;
 using user_management.Services.Data.Client;
 
-namespace user_management_tests.UnitTests.Services;
+namespace user_management_unit_tests.Services;
 
 [Collection("Service")]
 public class TokenManagementTest

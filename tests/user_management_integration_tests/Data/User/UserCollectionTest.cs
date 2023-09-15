@@ -1,14 +1,17 @@
 using Bogus;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.User;
 
-namespace user_management_tests.IntegrationTests.Data.User;
+namespace user_management_integration_tests.Data.User;
 
 public class UserCollectionTest
 {
     private readonly MongoClient _mongoClient;
-    private readonly IMongoCollection<Models.User> _userCollection;
+    private readonly IMongoCollection<user_management.Models.User> _userCollection;
     private readonly UserRepository _userRepository;
     public static Faker Faker = new("en");
 
@@ -21,20 +24,20 @@ public class UserCollectionTest
         builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
 
         _mongoClient = mongoContext.GetMongoClient();
-        _userCollection = _mongoClient.GetDatabase(mongoContext.DatabaseName).GetCollection<Models.User>(mongoContext.Collections.Users);
+        _userCollection = _mongoClient.GetDatabase(mongoContext.DatabaseName).GetCollection<user_management.Models.User>(mongoContext.Collections.Users);
 
         _userRepository = new UserRepository(mongoContext);
 
         mongoContext.Initialize().Wait();
     }
 
-    private static Models.User TemplateUser(IEnumerable<Models.User>? users = null)
+    private static user_management.Models.User TemplateUser(IEnumerable<user_management.Models.User>? users = null)
     {
-        IEnumerable<Models.Client>? clients = new Models.Client[] { };
+        IEnumerable<user_management.Models.Client>? clients = new user_management.Models.Client[] { };
         for (int i = 0; i < 5; i++)
-            clients = clients.Append(Models.Client.FakeClient(clients)).ToArray();
+            clients = clients.Append(user_management.Models.Client.FakeClient(clients)).ToArray();
 
-        Models.User user = Models.User.FakeUser(clients: clients);
+        user_management.Models.User user = user_management.Models.User.FakeUser(clients: clients);
 
         return user;
     }
@@ -42,7 +45,7 @@ public class UserCollectionTest
     [Fact]
     public async void UserNameIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
         user2.Username = user1.Username;
         user3.Username = user1.Username;
         await TestUniqueIndex(user1, user2, user3);
@@ -51,7 +54,7 @@ public class UserCollectionTest
     [Fact]
     public async void EmailIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
         user2.Email = user1.Email;
         user3.Email = user1.Email;
         await TestUniqueIndex(user1, user2, user3);
@@ -60,7 +63,7 @@ public class UserCollectionTest
     [Fact]
     public async void PhoneNumberIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
         if (user1.PhoneNumber == null) user1.PhoneNumber = Faker.Phone.PhoneNumber();
 
         user2.PhoneNumber = user1.PhoneNumber;
@@ -75,7 +78,7 @@ public class UserCollectionTest
     [Fact]
     public async void FullNameIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
 
         if (user1.FirstName == null || user1.MiddleName == null || user1.LastName == null)
         {
@@ -107,7 +110,7 @@ public class UserCollectionTest
     [Fact]
     public async void RefreshTokenCodeIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
         user1.AuthorizingClient = new() { Code = Faker.Random.String2(168) };
         user2.AuthorizingClient = new() { Code = Faker.Random.String2(168) };
         user3.AuthorizingClient = new() { Code = Faker.Random.String2(168) };
@@ -124,13 +127,13 @@ public class UserCollectionTest
     [Fact]
     public async void RefreshTokenValueIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
 
         if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
         {
-            user1.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
-            user2.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
-            user3.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
+            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
         }
 
         user2.Clients[0].RefreshToken!.Value = user1.Clients[0].RefreshToken!.Value;
@@ -141,13 +144,13 @@ public class UserCollectionTest
     [Fact]
     public async void TokenValueIndex()
     {
-        Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
+        user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
 
         if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
         {
-            user1.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
-            user2.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
-            user3.Clients = new Models.UserClient[] { Models.UserClient.FakeUserClient(Models.Client.FakeClient()) };
+            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
         }
 
         user2.Clients[0].Token!.Value = user1.Clients[0].Token!.Value;
@@ -155,27 +158,27 @@ public class UserCollectionTest
         await TestUniqueIndex(user1, user2, user3);
     }
 
-    private async Task TestUniqueIndex(Models.User user1, Models.User user2, Models.User? user3 = null)
+    private async Task TestUniqueIndex(user_management.Models.User user1, user_management.Models.User user2, user_management.Models.User? user3 = null)
     {
-        List<Models.User> users = new List<Models.User>() { user1, user2 };
+        List<user_management.Models.User> users = new List<user_management.Models.User>() { user1, user2 };
         if (user3 != null) users.Add(user3);
 
         await Assert.ThrowsAsync<MongoDB.Driver.MongoBulkWriteException<user_management.Models.User>>(async () => await _userCollection.InsertManyAsync(users));
 
-        await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty);
+        await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty);
     }
 
-    private async Task TestNullability(Models.User user1, Models.User user2, Models.User? user3 = null)
+    private async Task TestNullability(user_management.Models.User user1, user_management.Models.User user2, user_management.Models.User? user3 = null)
     {
-        List<Models.User> users = new List<Models.User>() { user1, user2 };
+        List<user_management.Models.User> users = new List<user_management.Models.User>() { user1, user2 };
         if (user3 != null) users.Add(user3);
 
         await _userCollection.InsertManyAsync(users);
 
-        Assert.NotNull((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<Models.User?>());
-        Assert.NotNull((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user2.Id))).FirstOrDefault<Models.User?>());
-        if (user3 != null) Assert.NotNull((await _userCollection.FindAsync(Builders<Models.User>.Filter.Eq("_id", user3.Id))).FirstOrDefault<Models.User?>());
+        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user2.Id))).FirstOrDefault<user_management.Models.User?>());
+        if (user3 != null) Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user3.Id))).FirstOrDefault<user_management.Models.User?>());
 
-        await _userCollection.DeleteManyAsync(Builders<Models.User>.Filter.Empty);
+        await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty);
     }
 }

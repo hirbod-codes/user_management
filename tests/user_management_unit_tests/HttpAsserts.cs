@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
+namespace user_management_unit_tests;
 
 public static class HttpAsserts
 {
@@ -44,4 +45,5 @@ public static class HttpAsserts<T>
         Assert.Equal<int>(code, (int)(actionResult as UnauthorizedObjectResult)!.StatusCode!);
         Assert.Equal<T?>(expectedValue, (T?)(actionResult as UnauthorizedObjectResult)!.Value);
     }
+    public static T? GetValue(IActionResult actionResult) => (T?)(actionResult as ObjectResult)!.Value;
 }
