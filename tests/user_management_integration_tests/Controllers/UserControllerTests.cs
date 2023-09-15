@@ -10,6 +10,10 @@ using user_management.Models;
 
 namespace user_management_integration_tests.Controllers;
 
+[CollectionDefinition("UserControllerTests", DisableParallelization = true)]
+public class UserControllerTestsCollectionDefinition { }
+
+[Collection("UserControllerTests")]
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly IMongoClient _mongoClient = null!;

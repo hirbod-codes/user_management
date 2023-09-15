@@ -12,6 +12,10 @@ using user_management.Services.Data;
 
 namespace user_management_integration_tests.Data.Client;
 
+[CollectionDefinition("ClientRepositoryTest", DisableParallelization = true)]
+public class ClientRepositoryTestCollectionDefinition { }
+
+[Collection("ClientRepositoryTest")]
 public class ClientRepositoryTest : IAsyncLifetime
 {
     private readonly MongoClient _mongoClient;

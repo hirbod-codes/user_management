@@ -8,6 +8,10 @@ using user_management.Data.User;
 
 namespace user_management_integration_tests.Data.User;
 
+[CollectionDefinition("UserCollectionTest", DisableParallelization = true)]
+public class UserCollectionTestCollectionDefinition { }
+
+[Collection("UserCollectionTest")]
 public class UserCollectionTest
 {
     private readonly MongoClient _mongoClient;
