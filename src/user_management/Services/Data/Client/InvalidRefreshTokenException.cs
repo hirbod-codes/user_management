@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 namespace user_management.Services.Data.Client;
 
 [Serializable]
-internal class InvalidRefreshTokenException : Exception
+public class InvalidRefreshTokenException : Exception
 {
     public InvalidRefreshTokenException()
     {

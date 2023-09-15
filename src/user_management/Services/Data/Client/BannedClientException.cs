@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 namespace user_management.Services.Data.Client;
 
 [Serializable]
-internal class BannedClientException : Exception
+public class BannedClientException : Exception
 {
     public BannedClientException()
     {

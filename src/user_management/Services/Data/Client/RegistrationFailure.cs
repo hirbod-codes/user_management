@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 namespace user_management.Services.Client;
 
 [Serializable]
-internal class RegistrationFailure : Exception
+public class RegistrationFailure : Exception
 {
     public RegistrationFailure()
     {
