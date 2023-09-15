@@ -54,7 +54,7 @@ public interface ITokenManagement
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task<(string token, string refreshToken)> VerifyAndGenerateTokens(TokenCreateDto dto);
+    public Task<TokenRetrieveDto> VerifyAndGenerateTokens(TokenCreateDto dto);
 
     /// <summary>
     /// This method must be called for the first token generation.

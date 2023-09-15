@@ -83,7 +83,7 @@ public class TokenManagement : ITokenManagement
         return authorizingClient.Code;
     }
 
-    public async Task<(string token, string refreshToken)> VerifyAndGenerateTokens(TokenCreateDto dto)
+    public async Task<TokenRetrieveDto> VerifyAndGenerateTokens(TokenCreateDto dto)
     {
         if (!ObjectId.TryParse(dto.ClientId, out ObjectId clientId)) throw new ArgumentException();
 
@@ -177,7 +177,7 @@ public class TokenManagement : ITokenManagement
             await session.CommitTransactionAsync();
         }
 
-        return (tokenValue, refreshToken);
+        return new() { RefreshToken = refreshToken, Token = tokenValue };
     }
 
     public async Task<string> ReToken(string clientId, string secret, string refreshToken)

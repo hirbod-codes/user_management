@@ -64,8 +64,7 @@ public class TokenController : ControllerBase
     {
         if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
 
-        (string token, string refreshToken) result = (null!, null!);
-        try { result = await _tokenManagement.VerifyAndGenerateTokens(tokenCreateDto); }
+        try { return Ok(await _tokenManagement.VerifyAndGenerateTokens(tokenCreateDto)); }
         catch (BannedClientException) { return NotFound("System failed to find the client."); }
         catch (CodeExpirationException) { return BadRequest("The code is expired, please redirect user again for another authorization."); }
         catch (InvalidCodeVerifierException) { return BadRequest("The code verifier is invalid."); }
@@ -88,8 +87,6 @@ public class TokenController : ControllerBase
         catch (DuplicationException) { return Problem("We couldn't generate a token for you."); }
         catch (DatabaseServerException) { return Problem("Internal server error encountered"); }
         catch (OperationException) { return Problem("Internal server error encountered"); }
-
-        return Ok(new { access_token = result.token, refresh_token = result.refreshToken });
     }
 
     [HttpPost("retoken")]
