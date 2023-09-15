@@ -102,8 +102,7 @@ public class UserController : ControllerBase
     {
         try
         {
-            var result = await _userManagement.Login(loggingInUser);
-            return Ok(new { jwt = result.jwt, userId = result.userId });
+            return Ok(await _userManagement.Login(loggingInUser));
         }
         catch (MissingCredentialException) { return BadRequest("Incomplete credentials provided."); }
         catch (InvalidPasswordException) { return NotFound("We couldn't find a user with the provided credentials."); }

@@ -113,7 +113,7 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task<(string jwt, string userId)> Login(Login loggingInUser)
+    public async Task<LoginResult> Login(Login loggingInUser)
     {
         if (loggingInUser.Username == null && loggingInUser.Email == null) throw new MissingCredentialException();
 
@@ -129,7 +129,7 @@ public class UserManagement : IUserManagement
 
         string jwt = _authHelper.GenerateAuthenticationJWT(user.Id.ToString()!);
 
-        return (jwt, user.Id.ToString());
+        return new() { Jwt = jwt, UserId = user.Id.ToString() };
     }
 
     public async Task Logout(string identifier)

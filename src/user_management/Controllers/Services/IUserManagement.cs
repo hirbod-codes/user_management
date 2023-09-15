@@ -45,7 +45,7 @@ public interface IUserManagement
     /// <exception cref="user_management.Services.Data.User.UnverifiedUserException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
-    public Task<(string jwt, string userId)> Login(Login loggingInUser);
+    public Task<LoginResult> Login(Login loggingInUser);
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
