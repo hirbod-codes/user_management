@@ -9,6 +9,7 @@ public static class UserSeeder
     private static string? _filePath;
     private static IMongoCollection<User> _userCollection = null!;
     private static IMongoCollection<Client> _clientCollection = null!;
+    public const string USERS_PASSWORDS = "Pass%w0rd!99";
 
     public static void Setup(MongoContext mongoContext, string? rootPath)
     {

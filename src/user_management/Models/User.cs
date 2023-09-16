@@ -8,6 +8,7 @@ using Bogus;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using user_management.Data;
+using user_management.Data.Seeders;
 using user_management.Dtos.User;
 using user_management.Utilities;
 
@@ -257,7 +258,7 @@ public class User : IEquatable<User>
         return true;
     }
 
-    public static User FakeUser(IEnumerable<User>? users = null, IEnumerable<Client>? clients = null, FakeUserOptions? fakeUserOptions = null)
+    public static User FakeUser(IEnumerable<User>? users = null, IEnumerable<Client>? clients = null, FakeUserOptions? fakeUserOptions = null, bool UseSeederPassword = true)
     {
         if (users == null) users = new User[] { };
         if (clients == null) clients = new Client[] { };
@@ -275,7 +276,7 @@ public class User : IEquatable<User>
             LastName = faker.Random.Bool(0.6f) ? faker.Name.LastName() : null,
             Email = faker.Internet.ExampleEmail(),
             Username = faker.Internet.UserName(),
-            Password = faker.Internet.Password(),
+            Password = UseSeederPassword ? UserSeeder.USERS_PASSWORDS : faker.Internet.Password(),
             PhoneNumber = faker.Random.Bool(0.4f) ? faker.Phone.PhoneNumber() : null,
             IsVerified = faker.Random.Bool(0.8f),
             LoggedOutAt = faker.Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(+14)),
