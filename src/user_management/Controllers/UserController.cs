@@ -181,7 +181,7 @@ public class UserController : ControllerBase
     }
 
     [Permissions(Permissions = new string[] { "delete_clients" })]
-    [HttpPost(PATH_REMOVE_CLIENTS)]
+    [HttpPost(PATH_POST_REMOVE_CLIENTS)]
     public async Task<IActionResult> RemoveClients([FromQuery] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -295,7 +295,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_CHANGE_EMAIL = "change-email";
     public const string PATH_POST_CHANGE_PHONE_NUMBER = "change-phone-number";
     public const string PATH_POST_REMOVE_CLIENT = "remove-client";
-    public const string PATH_REMOVE_CLIENTS = "remove-clients";
+    public const string PATH_POST_REMOVE_CLIENTS = "remove-clients";
     public const string PATH_GET_USER = "user/{id}";
     public const string PATH_GET_USER_CLIENTS = "user/clients";
     public const string PATH_GET_USERS = "users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
