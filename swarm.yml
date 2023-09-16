@@ -1,0 +1,7 @@
+version: "3.8"
+secrets:
+  jwt-secret-key:
+    external: true
+networks:
+  frontend:
+    driver: overlay
