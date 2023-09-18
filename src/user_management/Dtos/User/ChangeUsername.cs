@@ -8,6 +8,5 @@ public class ChangeUsername
     public string Email { get; set; } = null!;
     public string Username { get; set; } = null!;
     [MinLength(6)]
-    [MaxLength(6)]
     public string VerificationSecret { get; set; } = null!;
 }

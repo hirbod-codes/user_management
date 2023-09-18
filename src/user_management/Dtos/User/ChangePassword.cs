@@ -13,6 +13,5 @@ public class ChangePassword : IPasswordConfirmable
     [Password]
     public string PasswordConfirmation { get; set; } = null!;
     [MinLength(6)]
-    [MaxLength(6)]
     public string VerificationSecret { get; set; } = null!;
 }

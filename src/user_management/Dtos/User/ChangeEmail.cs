@@ -9,6 +9,5 @@ public class ChangeEmail
     [EmailAddress]
     public string NewEmail { get; set; } = null!;
     [MinLength(6)]
-    [MaxLength(6)]
     public string VerificationSecret { get; set; } = null!;
 }

@@ -10,6 +10,5 @@ public class ChangePhoneNumber
     [RegEx(Models.User.PHONE_NUMBER_REGEX)]
     public string PhoneNumber { get; set; } = null!;
     [MinLength(6)]
-    [MaxLength(6)]
     public string VerificationSecret { get; set; } = null!;
 }
