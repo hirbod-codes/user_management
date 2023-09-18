@@ -197,7 +197,7 @@ public class UserController : ControllerBase
 
     [HttpGet(PATH_GET_USER)]
     [Permissions(Permissions = new string[] { "read_account" })]
-    public async Task<IActionResult> RetrieveById(string userId)
+    public async Task<IActionResult> RetrieveById([ObjectId] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
@@ -205,6 +205,7 @@ public class UserController : ControllerBase
         try { user = await _userManagement.RetrieveById(_authenticated.GetAuthenticatedIdentifier(), userId, _authenticated.GetAuthenticationType() != "JWT"); }
         catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
+        catch (AuthenticationException) { return Unauthorized(); }
 
         return Ok(user.GetReadable());
     }
