@@ -277,12 +277,14 @@ public class User : IEquatable<User>
             LastName = faker.Random.Bool(0.6f) ? faker.Name.LastName() : null,
             Email = faker.Internet.ExampleEmail(),
             Username = faker.Internet.UserName(),
-            Password = UseSeederPassword ? UserSeeder.USERS_PASSWORDS : faker.Internet.Password(),
+            Password = UseSeederPassword ? new StringHelper().Hash(UserSeeder.USERS_PASSWORDS) : new StringHelper().Hash(faker.Internet.Password()),
             PhoneNumber = faker.Random.Bool(0.4f) ? faker.Phone.PhoneNumber() : null,
-            IsVerified = faker.Random.Bool(0.8f),
-            LoggedOutAt = faker.Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(+14)),
-            CreatedAt = faker.Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow.AddDays(+14))
+            IsVerified = faker.Random.Bool(0.7f),
+            VerificationSecret = faker.Random.Bool(0.7f) ? faker.Random.String2(100) : null,
+            CreatedAt = faker.Date.Between(DateTime.UtcNow.AddDays(-15), DateTime.UtcNow.AddDays(-1))
         };
+        user.LoggedOutAt = user.CreatedAt.AddHours(faker.Random.Int(1, 10));
+        user.VerificationSecretUpdatedAt = faker.Random.Bool(0.7f) ? user.CreatedAt.AddHours(faker.Random.Int(1, 10)) : null;
 
         do
         {
