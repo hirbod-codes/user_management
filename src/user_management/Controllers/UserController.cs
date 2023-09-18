@@ -14,6 +14,7 @@ using user_management.Services.Data.User;
 using user_management.Services.Data;
 using user_management.Controllers.Services;
 using System.Security.Authentication;
+using AutoMapper;
 
 [ApiController]
 [Route("api")]
@@ -22,11 +23,13 @@ public class UserController : ControllerBase
 {
     private readonly IUserManagement _userManagement;
     private readonly IAuthenticated _authenticated;
+    private readonly IMapper _mapper;
 
-    public UserController(IUserManagement userManagement, IAuthenticated authenticated)
+    public UserController(IUserManagement userManagement, IAuthenticated authenticated, IMapper mapper)
     {
         _userManagement = userManagement;
         _authenticated = authenticated;
+        _mapper = mapper;
     }
 
     [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
@@ -223,7 +226,7 @@ public class UserController : ControllerBase
 
         if (!user.IsClientsTouched()) return StatusCode(403);
 
-        return Ok(user.Clients);
+        return Ok(user.Clients?.ToList().ConvertAll(c=>_mapper.Map<UserClientRetrieveDto>(c)));
     }
 
     [HttpGet(PATH_GET_USERS)]
@@ -269,7 +272,7 @@ public class UserController : ControllerBase
 
     [Permissions(Permissions = new string[] { "delete_account" })]
     [HttpDelete(PATH_DELETE_USER)]
-    public async Task<IActionResult> Delete([ObjectIdAttribute][FromQuery] string id)
+    public async Task<IActionResult> Delete([ObjectId][FromQuery] string id)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
