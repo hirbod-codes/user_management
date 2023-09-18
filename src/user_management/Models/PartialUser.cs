@@ -161,7 +161,7 @@ public class PartialUser
 
             if (key == "_id")
             {
-                retrievableUser.Add(key, value);
+                retrievableUser.Add(key, value!.ToString());
                 return;
             }
 
