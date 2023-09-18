@@ -130,6 +130,7 @@ if [[ $environment == "Development" ]]; then
         --user_management_https_port $user_management_https_port \
         --user_management_mongo_express_port $user_management_mongo_express_port
         "
+    bash -c "$projectRootDirectory/docker-build-development.sh --projectRootDirectory $projectRootDirectory"
 elif [[ $environment == "Production" ]]; then
     bash -c "$projectRootDirectory/beforeContainersStart.sh \
         --generateCerts $generateCerts \
@@ -146,6 +147,7 @@ elif [[ $environment == "Production" ]]; then
         --user_management_https_port $user_management_https_port \
         --user_management_mongo_express_port $user_management_mongo_express_port
         "
+    bash -c "$projectRootDirectory/docker-build-production.sh --projectRootDirectory $projectRootDirectory"
 else
     echo Invalid environment!
     exit
