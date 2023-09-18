@@ -7,7 +7,7 @@ public class ChangePhoneNumber
 {
     [EmailAddress]
     public string Email { get; set; } = null!;
-    [RegEx("^[0-9]{11}$", "The {name} format is invalid.")]
+    [RegEx(Models.User.PHONE_NUMBER_REGEX)]
     public string PhoneNumber { get; set; } = null!;
     [MinLength(6)]
     [MaxLength(6)]

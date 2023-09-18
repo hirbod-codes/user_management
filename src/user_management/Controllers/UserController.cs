@@ -43,7 +43,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> EmailExistenceCheck([EmailAddress] string email) => (await _userManagement.EmailExistenceCheck(email)) ? Ok() : NotFound();
 
     [HttpGet(PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK)]
-    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx("^[a-z0-9 +-{)(}]{11,}$")] string phoneNumber) => (await _userManagement.PhoneNumberExistenceCheck(phoneNumber)) ? Ok() : NotFound();
+    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx(Models.User.PHONE_NUMBER_REGEX)] string phoneNumber) => (await _userManagement.PhoneNumberExistenceCheck(phoneNumber)) ? Ok() : NotFound();
 
     [HttpPost(PATH_POST_REGISTER)]
     public async Task<IActionResult> Register(UserCreateDto userDto)

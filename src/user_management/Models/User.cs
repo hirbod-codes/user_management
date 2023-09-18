@@ -60,6 +60,7 @@ public class User : IEquatable<User>
     [BsonElement(PHONE_NUMBER)]
     public string? PhoneNumber { get; set; }
     public const string PHONE_NUMBER = "phone_number";
+    public const string PHONE_NUMBER_REGEX = "^[0-9 x.+)(-]{11,}$";
 
     [BsonElement(USERNAME)]
     [BsonRequired]
