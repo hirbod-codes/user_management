@@ -31,6 +31,7 @@ public static class StaticData
     public const string DELETE_ACCOUNTS = "delete_accounts";
     public const string REGISTER_CLIENT = "register_client";
     public const string READ_CLIENT = "read_client";
+    public const string READ_CLIENTS = "read_clients";
     public const string UPDATE_CLIENT = "update_client";
     public const string DELETE_CLIENT = "delete_client";
     public const string DELETE_CLIENTS = "delete_clients";
@@ -82,6 +83,11 @@ public static class StaticData
             new Privilege()
             {
                 Name = READ_CLIENT,
+                Value = true
+            },
+            new Privilege()
+            {
+                Name = READ_CLIENTS,
                 Value = true
             },
             new Privilege()
