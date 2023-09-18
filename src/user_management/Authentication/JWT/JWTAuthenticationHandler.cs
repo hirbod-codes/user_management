@@ -58,8 +58,9 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
         if (user == null) return AuthenticateResult.Fail("This JWT token is no longer valid.");
 
         _authenticatedByJwt.SetAuthenticated(user);
-        _authenticated.SetAuthenticatedIdentifier(user.Id.ToString());
         _authenticated.SetAuthenticationType("JWT");
+        _authenticated.SetAuthenticatedIdentifier(user.Id.ToString());
+        _authenticated.SetIdentifierToken(token);
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, Scheme.Name);
 

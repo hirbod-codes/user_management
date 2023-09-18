@@ -56,8 +56,9 @@ public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthentic
             return AuthenticateResult.Fail("The authorization token has been revoked.");
 
         _authenticatedByBearer.SetAuthenticated(userClient);
-        _authenticated.SetAuthenticatedIdentifier(userClient.Token.Value!.ToString());
         _authenticated.SetAuthenticationType("Bearer");
+        _authenticated.SetAuthenticatedIdentifier(userClient.ClientId.ToString());
+        _authenticated.SetIdentifierToken(userClient.Token.Value!.ToString());
 
         return Success(userClient.Token.Value!.ToString()!);
     }
