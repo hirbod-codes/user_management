@@ -16,4 +16,4 @@ public class Authenticated : IAuthenticated
     public string GetAuthenticationType() => _authenticationType == null ? throw new AuthenticationException() : _authenticationType;
 
     public void SetAuthenticationType(string authenticationType) => _authenticationType = authenticationType;
-}
+
