@@ -18,7 +18,7 @@ public class Seeder
         System.Console.WriteLine("\nSeeding...");
 
         await ClientSeeder.Seed(MongoContext, _rootPath, count: 10);
-        await UserSeeder.Seed(MongoContext, _rootPath, count: 100);
+        await UserSeeder.Seed(MongoContext, _rootPath, count: 50);
 
         System.Console.WriteLine("Seeded...\n");
     }
