@@ -297,7 +297,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_CHANGE_PHONE_NUMBER = "change-phone-number";
     public const string PATH_POST_REMOVE_CLIENT = "remove-client";
     public const string PATH_POST_REMOVE_CLIENTS = "remove-clients";
-    public const string PATH_GET_USER = "user/{id}";
+    public const string PATH_GET_USER = "user/{userId}";
     public const string PATH_GET_USER_AUTHORIZED_CLIENTS = "user/authorized-clients";
     public const string PATH_GET_USERS = "users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
     public const string PATH_PATCH_USERS = "users";
