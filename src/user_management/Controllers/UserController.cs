@@ -210,7 +210,7 @@ public class UserController : ControllerBase
         return Ok(user.GetReadable());
     }
 
-    [HttpGet(PATH_GET_USER_CLIENTS)]
+    [HttpGet(PATH_GET_USER_AUTHORIZED_CLIENTS)]
     [Permissions(Permissions = new string[] { "read_clients" })]
     public async Task<IActionResult> RetrieveClients()
     {
@@ -298,7 +298,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_REMOVE_CLIENT = "remove-client";
     public const string PATH_POST_REMOVE_CLIENTS = "remove-clients";
     public const string PATH_GET_USER = "user/{id}";
-    public const string PATH_GET_USER_CLIENTS = "user/clients";
+    public const string PATH_GET_USER_AUTHORIZED_CLIENTS = "user/authorized-clients";
     public const string PATH_GET_USERS = "users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
     public const string PATH_PATCH_USERS = "users";
     public const string PATH_GET_USER_MASS_UPDATABLE_PROPERTIES = "user/mass-updatable-properties";
