@@ -611,7 +611,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(retrievedUser.Count, targetFieldsToRead.FirstOrDefault(f => f.Name == "_id") == null ? targetFieldsToRead.Length + 1 : targetFieldsToRead.Length);
         Assert.True(retrievedUser.TryGetValue("_id", out object? userId));
         Assert.NotNull(userId);
-        Assert.Equal(userId as string, user.Id.ToString());
+        Assert.Equal(user.Id.ToString(), retrievedUser["_id"]!.ToString());
         targetFieldsToRead.ToList().ForEach(f => Assert.True(retrievedUser.ContainsKey(f.Name)));
     }
 
@@ -649,9 +649,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
                 if (ac == null) return false;
                 if (!ac.TryGetValue(UserClient.CLIENT_ID, out object? clientId)) return false;
                 if (clientId == null) return false;
-                if (clientId.ToString() != uc.ClientId.ToString()) return false;
+                if (ac[UserClient.CLIENT_ID]!.ToString() != uc.ClientId.ToString()) return false;
                 return true;
-            }));
+            }, null));
         });
     }
 
@@ -723,5 +723,124 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.True(retrievedUsers[1].TryGetValue("_id", out object? user2Id));
         Assert.NotNull(user2Id);
         Assert.NotNull((new User[] { user1, user2 }).FirstOrDefault(u => u.Id.ToString() == retrievedUsers[1]["_id"]!.ToString()));
+    }
+
+    [Fact]
+    public async Task Update_Ok()
+    {
+        // Given
+        HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
+
+        FilterDefinitionBuilder<User> fbu = Builders<User>.Filter;
+        FilterDefinitionBuilder<Client> fbc = Builders<Client>.Filter;
+
+        User actor = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        actor.IsVerified = true;
+        actor.Privileges = new Privilege[] {
+            new() { Name = StaticData.READ_ACCOUNT, Value = true },
+            new() { Name = StaticData.READ_ACCOUNTS, Value = true },
+            new() { Name = StaticData.UPDATE_ACCOUNT, Value = true },
+            new() { Name = StaticData.UPDATE_ACCOUNTS, Value = true }
+        };
+        await _userCollection.InsertOneAsync(actor);
+
+        LoginResult loginResult = await Login(client, user: actor);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+
+        User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        user1.UserPrivileges.Readers = user1.UserPrivileges.Readers
+            .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
+            .Append(new()
+            {
+                Author = Reader.USER,
+                AuthorId = actor.Id,
+                IsPermitted = true,
+                Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.FIRST_NAME, IsPermitted = true } }
+            })
+            .ToArray();
+        user1.UserPrivileges.Updaters = user1.UserPrivileges.Updaters
+            .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
+            .Append(new()
+            {
+                Author = Updater.USER,
+                AuthorId = actor.Id,
+                IsPermitted = true,
+                Fields = new Field[] { new() { Name = User.FIRST_NAME, IsPermitted = true } }
+            })
+            .ToArray();
+        await _userCollection.InsertOneAsync(user1);
+
+        User user2 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        user2.UserPrivileges.Readers = user2.UserPrivileges.Readers
+            .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
+            .Append(new()
+            {
+                Author = Reader.USER,
+                AuthorId = actor.Id,
+                IsPermitted = true,
+                Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.LAST_NAME, IsPermitted = true } }
+            })
+            .ToArray();
+        user2.UserPrivileges.Updaters = user2.UserPrivileges.Updaters
+            .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
+            .Append(new()
+            {
+                Author = Updater.USER,
+                AuthorId = actor.Id,
+                IsPermitted = true,
+                Fields = new Field[] { new() { Name = User.LAST_NAME, IsPermitted = true } }
+            })
+            .ToArray();
+        await _userCollection.InsertOneAsync(user2);
+
+        string lastName = "fake_last_name";
+        UserPatchDto dto = new() { FiltersString = $"Username::Eq::{user1.Username}::string||Username::Eq::{user2.Username}::string", UpdatesString = $"LastName::Set::{lastName}::string" };
+
+        string url = "api/" + user_management.Controllers.UserController.PATH_PATCH_USERS;
+
+        // When
+        HttpResponseMessage response = await client.PatchAsync(url, JsonContent.Create(dto));
+
+        // Then
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_Ok()
+    {
+        // Given
+        HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
+
+        FilterDefinitionBuilder<User> fbu = Builders<User>.Filter;
+        FilterDefinitionBuilder<Client> fbc = Builders<Client>.Filter;
+
+        User actor = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        actor.IsVerified = true;
+        actor.Privileges = new Privilege[] { new() { Name = StaticData.READ_ACCOUNT, Value = true }, new() { Name = StaticData.DELETE_ACCOUNT, Value = true } };
+        await _userCollection.InsertOneAsync(actor);
+
+        LoginResult loginResult = await Login(client, user: actor);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+
+        User user = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        user.UserPrivileges.Deleters = user.UserPrivileges.Deleters
+            .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
+            .Append(new()
+            {
+                Author = Deleter.USER,
+                AuthorId = actor.Id,
+                IsPermitted = true
+            })
+            .ToArray();
+        await _userCollection.InsertOneAsync(user);
+
+        string url = "api/" + user_management.Controllers.UserController.PATH_DELETE_USER + "?id=" + user.Id.ToString();
+
+        // When
+        HttpResponseMessage response = await client.DeleteAsync(url);
+
+        // Then
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null((await _userCollection.FindAsync(fbu.Eq("_id", user.Id))).FirstOrDefault());
     }
 }
