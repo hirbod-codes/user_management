@@ -43,7 +43,7 @@ public class Client
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public const string UPDATED_AT = "updated_at";
 
-    public static Client FakeClient(IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
+    public static Client FakeClient(out string secret, IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
     {
         if (clients == null) clients = new Client[] { };
         if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
@@ -51,7 +51,6 @@ public class Client
 
         Faker faker = new Faker("en");
 
-        string secret;
         int safety = 0;
         string redirectUrl;
         string? hashedSecret;
@@ -62,7 +61,7 @@ public class Client
             redirectUrl = faker.Internet.Url();
 
             if (
-                clients.FirstOrDefault<Client?>(c => c != null && c.Secret == secret) == null
+                clients.FirstOrDefault<Client?>(c => c != null && c.Secret == hashedSecret) == null
                 && clients.FirstOrDefault<Client?>(c => c != null && c.RedirectUrl == redirectUrl) == null
                 && clients.FirstOrDefault<Client?>(c => c != null && c.Id == id) == null
             )

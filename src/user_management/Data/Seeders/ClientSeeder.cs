@@ -55,7 +55,7 @@ public static class ClientSeeder
         if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
 
         for (int i = 0; i < count; i++)
-            clients = clients.Append(Client.FakeClient(clients, creationDateTime));
+            clients = clients.Append(Client.FakeClient(out string secret, clients, creationDateTime));
         return clients;
     }
 }
