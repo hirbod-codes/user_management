@@ -1,6 +1,5 @@
 namespace user_management.Data.Client;
 
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using user_management.Models;
 using user_management.Services.Client;
@@ -99,6 +98,8 @@ public class ClientRepository : IClientRepository
 
             await session.CommitTransactionAsync();
         }
+        catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
         catch (Exception) { if (session != null) { await session.AbortTransactionAsync(); } throw new DatabaseServerException(); }
         finally { if (session != null) session.Dispose(); }
 
