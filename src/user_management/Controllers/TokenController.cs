@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
+using user_management.Data;
 using user_management.Dtos.Token;
 using user_management.Models;
 using user_management.Services;
@@ -29,8 +30,8 @@ public class TokenController : ControllerBase
         _authenticatedByJwt = authenticatedByJwt;
     }
 
-    [Permissions(Permissions = new string[] { "authorize_client" })]
-    [HttpPost("auth")]
+    [Permissions(Permissions = new string[] { StaticData.AUTHORIZE_CLIENT })]
+    [HttpPost(PATH_POST_AUTHORIZE)]
     public async Task<IActionResult> Authorize(TokenAuthDto tokenAuthDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
@@ -59,7 +60,7 @@ public class TokenController : ControllerBase
         return RedirectPermanent(tokenAuthDto.RedirectUrl + $"?code={r}&state={tokenAuthDto.State}");
     }
 
-    [HttpPost("token")]
+    [HttpPost(PATH_POST_TOKEN_VERIFICATION)]
     public async Task<IActionResult> VerifyAndGenerateTokens(TokenCreateDto tokenCreateDto)
     {
         if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
@@ -89,12 +90,10 @@ public class TokenController : ControllerBase
         catch (OperationException) { return Problem("Internal server error encountered"); }
     }
 
-    [HttpPost("retoken")]
+    [HttpPost(PATH_POST_RETOKEN)]
     public async Task<IActionResult> ReToken(ReTokenDto reTokenDto)
     {
-        string token = null!;
-
-        try { token = await _tokenManagement.ReToken(reTokenDto.ClientId, reTokenDto.ClientSecret, reTokenDto.RefreshToken); }
+        try { return Ok(await _tokenManagement.ReToken(reTokenDto.ClientId, reTokenDto.ClientSecret, reTokenDto.RefreshToken)); }
         catch (OperationException) { return Problem(); }
         catch (BannedClientException) { return NotFound("System failed to find the client."); }
         catch (InvalidRefreshTokenException) { return BadRequest("The refresh token is invalid."); }
@@ -102,7 +101,9 @@ public class TokenController : ControllerBase
         catch (DataNotFoundException) { return NotFound("There is no such refresh token."); }
         catch (DatabaseServerException) { return Problem("Internal server error encountered."); }
         catch (DuplicationException) { return Problem("Internal server error encountered."); }
-
-        return Ok(token);
     }
+
+    public const string PATH_POST_AUTHORIZE = "auth";
+    public const string PATH_POST_TOKEN_VERIFICATION = "token";
+    public const string PATH_POST_RETOKEN = "retoken";
 }

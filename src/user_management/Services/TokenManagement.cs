@@ -159,13 +159,12 @@ public class TokenManagement : ITokenManagement
                     await session.AbortTransactionAsync();
                     throw new DataNotFoundException("user");
                 }
+
                 if (authorizedClientResult == false)
                 {
                     await session.AbortTransactionAsync();
                     throw new DatabaseServerException();
                 }
-
-                safety++;
             } while (safety < 200);
 
             if (safety >= 200)
@@ -220,7 +219,6 @@ public class TokenManagement : ITokenManagement
             if (r == true) break;
             if (r == null) throw new DataNotFoundException("client");
             if (r == false) throw new DatabaseServerException();
-            safety++;
         } while (safety < 200);
 
         if (safety >= 200) throw new DuplicationException();
