@@ -6,6 +6,7 @@ using System.Net.Mail;
 using MongoDB.Bson;
 using user_management.Services.Data.User;
 using user_management.Controllers.Services;
+using user_management.Models;
 
 namespace user_management.Services;
 
@@ -40,13 +41,13 @@ public class UserManagement : IUserManagement
     public async Task<bool> EmailExistenceCheck(string email) => (await _userRepository.RetrieveByEmailForExistenceCheck(email)) != null;
     public async Task<bool> PhoneNumberExistenceCheck(string phoneNumber) => (await _userRepository.RetrieveByPhoneNumberForExistenceCheck(phoneNumber)) != null;
 
-    public async Task<Models.User> Register(UserCreateDto userDto)
+    public async Task<User> Register(UserCreateDto userDto)
     {
         string verificationMessage = _stringHelper.GenerateRandomString(6);
 
         await Notify(userDto.Email, verificationMessage);
 
-        Models.User? unverifiedUser = _mapper.Map<Models.User>(userDto);
+        User? unverifiedUser = _mapper.Map<User>(userDto);
         unverifiedUser.Password = _stringHelper.Hash(userDto.Password);
         unverifiedUser.VerificationSecret = verificationMessage;
         unverifiedUser.VerificationSecretUpdatedAt = _dateTimeProvider.ProvideUtcNow();
@@ -77,7 +78,7 @@ public class UserManagement : IUserManagement
 
     public async Task Activate(Activation activatingUser)
     {
-        Models.User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
+        User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
         if (user == null) throw new DataNotFoundException();
 
         if ((bool)user.IsVerified!) return;
@@ -99,7 +100,7 @@ public class UserManagement : IUserManagement
     {
         if (dto.Password != dto.PasswordConfirmation) throw new PasswordConfirmationMismatchException();
 
-        Models.User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
+        User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
         if (user == null) throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
@@ -117,7 +118,7 @@ public class UserManagement : IUserManagement
     {
         if (loggingInUser.Username == null && loggingInUser.Email == null) throw new MissingCredentialException();
 
-        Models.User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
+        User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
         if (user == null) throw new DataNotFoundException();
         if (!_stringHelper.DoesHashMatch(user.Password, loggingInUser.Password)) throw new InvalidPasswordException();
 
@@ -143,7 +144,7 @@ public class UserManagement : IUserManagement
 
     public async Task ChangeUsername(ChangeUsername dto)
     {
-        Models.User? user = await _userRepository.RetrieveUserForUsernameChange(dto.Email);
+        User? user = await _userRepository.RetrieveUserForUsernameChange(dto.Email);
         if (user == null) throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
@@ -159,7 +160,7 @@ public class UserManagement : IUserManagement
 
     public async Task ChangeEmail(ChangeEmail dto)
     {
-        Models.User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
+        User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
         if (user == null) throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
@@ -175,7 +176,7 @@ public class UserManagement : IUserManagement
 
     public async Task ChangePhoneNumber(ChangePhoneNumber dto)
     {
-        Models.User? user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email);
+        User? user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email);
         if (user == null) throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
@@ -210,18 +211,30 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task<Models.PartialUser> RetrieveById(string actorId, string userId, bool forClients)
+    public async Task<PartialUser> RetrieveById(string actorId, string userId, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
         if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException("userId");
 
-        Models.PartialUser? user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients);
+        PartialUser? user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients);
         if (user == null) throw new DataNotFoundException();
 
         return user;
     }
 
-    public async Task<List<Models.PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    public async Task<IEnumerable<UserClientRetrieveDto>> RetrieveClientsById(string actorId, string userId, bool forClients)
+    {
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
+        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
+
+        PartialUser user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
+
+        if (!user.IsClientsTouched()) throw new UnauthorizedAccessException();
+
+        return user.Clients == null ? Array.Empty<UserClientRetrieveDto>() : user.Clients.ToList().ConvertAll<UserClientRetrieveDto>(c => _mapper.Map<UserClientRetrieveDto>(c));
+    }
+
+    public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException();
 

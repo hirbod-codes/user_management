@@ -14,7 +14,7 @@ using user_management.Services.Data.User;
 using user_management.Services.Data;
 using user_management.Controllers.Services;
 using System.Security.Authentication;
-using AutoMapper;
+using user_management.Data;
 
 [ApiController]
 [Route("api")]
@@ -23,13 +23,10 @@ public class UserController : ControllerBase
 {
     private readonly IUserManagement _userManagement;
     private readonly IAuthenticated _authenticated;
-    private readonly IMapper _mapper;
-
-    public UserController(IUserManagement userManagement, IAuthenticated authenticated, IMapper mapper)
+    public UserController(IUserManagement userManagement, IAuthenticated authenticated)
     {
         _userManagement = userManagement;
         _authenticated = authenticated;
-        _mapper = mapper;
     }
 
     [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
@@ -129,7 +126,7 @@ public class UserController : ControllerBase
         return Ok();
     }
 
-    [Permissions(Permissions = new string[] { "update_account" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_USERNAME)]
     public async Task<IActionResult> ChangeUsername(ChangeUsername dto)
     {
@@ -142,7 +139,7 @@ public class UserController : ControllerBase
         return Ok("The username changed successfully.");
     }
 
-    [Permissions(Permissions = new string[] { "update_account" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_EMAIL)]
     public async Task<IActionResult> ChangeEmail(ChangeEmail dto)
     {
@@ -155,7 +152,7 @@ public class UserController : ControllerBase
         return Ok("The email changed successfully.");
     }
 
-    [Permissions(Permissions = new string[] { "update_account" })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_PHONE_NUMBER)]
     public async Task<IActionResult> ChangePhoneNumber(ChangePhoneNumber dto)
     {
@@ -168,7 +165,7 @@ public class UserController : ControllerBase
         return Ok("The phone number changed successfully.");
     }
 
-    [Permissions(Permissions = new string[] { "delete_client" })]
+    [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENT })]
     [HttpPost(PATH_POST_REMOVE_CLIENT)]
     public async Task<IActionResult> RemoveClient([FromQuery] string clientId, [FromQuery] string userId)
     {
@@ -183,7 +180,7 @@ public class UserController : ControllerBase
         return Ok("The client removed successfully.");
     }
 
-    [Permissions(Permissions = new string[] { "delete_clients" })]
+    [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENTS })]
     [HttpPost(PATH_POST_REMOVE_CLIENTS)]
     public async Task<IActionResult> RemoveClients([FromQuery] string userId)
     {
@@ -199,7 +196,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet(PATH_GET_USER)]
-    [Permissions(Permissions = new string[] { "read_account" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
     public async Task<IActionResult> RetrieveById([ObjectId] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -214,24 +211,21 @@ public class UserController : ControllerBase
     }
 
     [HttpGet(PATH_GET_USER_AUTHORIZED_CLIENTS)]
-    [Permissions(Permissions = new string[] { "read_clients" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_CLIENTS })]
     public async Task<IActionResult> RetrieveClients()
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        PartialUser? user = null;
-        try { user = await _userManagement.RetrieveById(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
-        catch (ArgumentException) { return BadRequest(); }
+        try { return Ok(await _userManagement.RetrieveClientsById(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT")); }
+        catch (ArgumentException) { return Unauthorized(); }
+        catch (AuthenticationException) { return Unauthorized(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
-
-        if (!user.IsClientsTouched()) return StatusCode(403);
-
-        return Ok(user.Clients?.ToList().ConvertAll(c=>_mapper.Map<UserClientRetrieveDto>(c)));
+        catch (UnauthorizedAccessException) { return StatusCode(403); }
     }
 
     [HttpGet(PATH_GET_USERS)]
-    [Permissions(Permissions = new string[] { "read_account" })]
-    [Permissions(Permissions = new string[] { "read_accounts" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNTS })]
     public async Task<IActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -243,10 +237,10 @@ public class UserController : ControllerBase
         return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
     }
 
-    [Permissions(Permissions = new string[] { "read_account" })]
-    [Permissions(Permissions = new string[] { "read_accounts" })]
-    [Permissions(Permissions = new string[] { "update_account" })]
-    [Permissions(Permissions = new string[] { "update_accounts" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNTS })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
+    [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNTS })]
     [HttpPatch(PATH_PATCH_USERS)]
     public async Task<IActionResult> Update(UserPatchDto userPatchDto)
     {
@@ -263,14 +257,14 @@ public class UserController : ControllerBase
     }
 
     [HttpGet(PATH_GET_USER_MASS_UPDATABLE_PROPERTIES)]
-    [Permissions(Permissions = new string[] { "read_account" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
     public IActionResult RetrieveMassUpdatableProperties() => Ok(Models.User.GetMassUpdatableFields());
 
     [HttpGet(PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES)]
-    [Permissions(Permissions = new string[] { "read_account" })]
+    [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
     public IActionResult RetrieveMassUpdateProtectedProperties() => Ok(Models.User.GetProtectedFieldsAgainstMassUpdating());
 
-    [Permissions(Permissions = new string[] { "delete_account" })]
+    [Permissions(Permissions = new string[] { StaticData.DELETE_ACCOUNT })]
     [HttpDelete(PATH_DELETE_USER)]
     public async Task<IActionResult> Delete([ObjectId][FromQuery] string id)
     {
@@ -284,7 +278,6 @@ public class UserController : ControllerBase
         return Ok();
     }
 
-    // putting api paths in constants for later use in tests.
     public const string PATH_GET_FULL_NAME_EXISTENCE_CHECK = "full-name-existence-check";
     public const string PATH_GET_USERNAME_EXISTENCE_CHECK = "username-existence-check/{username}";
     public const string PATH_GET_EMAIL_EXISTENCE_CHECK = "email-existence-check/{email}";

@@ -100,4 +100,8 @@ public interface IUserManagement
     /// <exception cref="user_management.Services.OperationException"></exception>
     public Task Delete(string actorId, string id, bool forClients);
 
+    /// <exception cref="System.ArgumentException"></exception>
+    /// <exception cref="System.UnauthorizedAccessException"></exception>
+    /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
+    public Task<IEnumerable<UserClientRetrieveDto>> RetrieveClientsById(string authorId, string userId, bool forClients);
 }
