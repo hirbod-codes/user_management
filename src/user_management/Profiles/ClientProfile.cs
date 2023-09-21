@@ -24,6 +24,7 @@ class ClientProfile : Profile
     private void MapClientRetrieveDto()
     {
         CreateMap<Client, ClientRetrieveDto>();
+        CreateMap<Client, ClientPublicInfoRetrieveDto>();
     }
 
     private void MapClientPutDto()

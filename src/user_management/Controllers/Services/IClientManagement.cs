@@ -23,11 +23,12 @@ public interface IClientManagement
 
     /// <exception cref="System.ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    public Task DeleteBySecret(string clientId, string secret);
+    public Task DeleteBySecret(string secret);
 
+    /// <exception cref="System.ArgumentException"></exception>
     /// <exception cref="user_management.Services.OperationException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<string> UpdateExposedClient(ObjectId clientId, string secret);
+    public Task<string> UpdateExposedClient(string clientId, string secret);
 }

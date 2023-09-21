@@ -25,10 +25,10 @@ public class ClientManagement : IClientManagement
         do
         {
             secret = _stringHelper.GenerateRandomString(60);
-            secret = _stringHelper.HashWithoutSalt(secret);
-            if (secret == null) throw new RegistrationFailure();
+            string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
+            if (hashedSecret == null) throw new RegistrationFailure();
 
-            client.Secret = secret;
+            client.Secret = hashedSecret;
 
             try
             {
@@ -62,41 +62,36 @@ public class ClientManagement : IClientManagement
 
     public async Task UpdateRedirectUrl(string clientId, string clientSecret, string redirectUrl)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
+        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
 
-        string? hashedSecret = _stringHelper.HashWithoutSalt(clientSecret);
-        if (hashedSecret == null) throw new ArgumentException("clientSecret");
+        string hashedSecret = _stringHelper.HashWithoutSalt(clientSecret) ?? throw new ArgumentException(null, nameof(clientSecret));
 
         bool r = await _clientRepository.UpdateRedirectUrl(redirectUrl, clientObjectId, hashedSecret);
 
         if (r == false) throw new DataNotFoundException();
     }
 
-    public async Task DeleteBySecret(string clientId, string secret)
+    public async Task DeleteBySecret(string secret)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
-
-        string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
-        if (hashedSecret == null) throw new ArgumentException("secret");
-
-        if (!(await _clientRepository.DeleteBySecret(hashedSecret))) throw new DataNotFoundException();
+        string hashedSecret = _stringHelper.HashWithoutSalt(secret) ?? throw new ArgumentException(null, paramName: nameof(secret));
+        if (!await _clientRepository.DeleteBySecret(hashedSecret)) throw new DataNotFoundException();
     }
 
-    public async Task<string> UpdateExposedClient(ObjectId clientId, string secret)
+    public async Task<string> UpdateExposedClient(string clientId, string secret)
     {
-        string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
-        if (hashedSecret == null) throw new OperationException();
+        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
+
+        string hashedSecret = _stringHelper.HashWithoutSalt(secret) ?? throw new OperationException();
 
         int safety = 0;
         string newSecret;
         do
         {
             newSecret = _stringHelper.GenerateRandomString(128);
-            string? newHashedSecret = _stringHelper.HashWithoutSalt(newSecret);
-            if (newHashedSecret == null) throw new OperationException();
+            string newHashedSecret = _stringHelper.HashWithoutSalt(newSecret) ?? throw new OperationException();
 
             bool? r = false;
-            try { r = await _clientRepository.ClientExposed(clientId, hashedSecret, newHashedSecret); }
+            try { r = await _clientRepository.ClientExposed(clientObjectId, hashedSecret, newHashedSecret); }
             catch (DuplicationException) { safety++; continue; }
 
             if (r == null) throw new DataNotFoundException();

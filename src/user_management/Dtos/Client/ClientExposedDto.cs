@@ -6,6 +6,6 @@ namespace user_management.Dtos.Client;
 public class ClientExposedDto
 {
     [ObjectId]
-    public ObjectId ClientId { get; set; }
+    public string ClientId { get; set; } = null!;
     public string Secret { get; set; } = null!;
 }

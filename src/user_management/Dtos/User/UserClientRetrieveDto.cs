@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
+using user_management.Models;
 using user_management.Validation.Attributes;
 
-namespace user_management.Models;
+namespace user_management.Dtos.User;
 
 public class UserClientRetrieveDto
 {
@@ -11,5 +12,5 @@ public class UserClientRetrieveDto
     [JsonPropertyName(UserClient.REFRESH_TOKEN)]
     public RefreshToken? RefreshToken { get; set; }
     [JsonPropertyName(UserClient.TOKEN)]
-    public Token? Token { get; set; }
+    public Models.Token? Token { get; set; }
 }
