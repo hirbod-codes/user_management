@@ -39,7 +39,7 @@ public class ClientManagementTest
 
         (Client client, string? notHashedSecret) result = await InstantiateService().Register(client);
 
-        Assert.Equal(hashedSecret, result.notHashedSecret);
+        Assert.Equal(secret, result.notHashedSecret);
         Assert.Equal(client.Id.ToString(), result.client.Id.ToString());
     }
 
@@ -87,12 +87,12 @@ public class ClientManagementTest
         string redirectUrl = "null";
 
         ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
-        Assert.Equal("clientId", ex.Message);
+        Assert.Equal("clientId", ex.ParamName);
 
         id = ObjectId.GenerateNewId().ToString();
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: null);
         ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
-        Assert.Equal("clientSecret", ex.Message);
+        Assert.Equal("clientSecret", ex.ParamName);
 
         string? hashedSecret = "hashedSecret";
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: hashedSecret);
@@ -106,25 +106,19 @@ public class ClientManagementTest
     [Fact]
     public async void DeleteBySecret()
     {
-        string clientId = "clientId";
         string secret = "secret";
 
-        ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().DeleteBySecret(clientId, secret));
-        Assert.Equal("clientId", ex.Message);
-
-        clientId = ObjectId.GenerateNewId().ToString();
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: null);
-        ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().DeleteBySecret(clientId, secret));
-        Assert.Equal("secret", ex.Message);
+        ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().DeleteBySecret(secret));
+        Assert.Equal("secret", ex.ParamName);
 
-        clientId = ObjectId.GenerateNewId().ToString();
         string? hashedSecret = "hashedSecret";
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: hashedSecret);
         Fixture.IClientRepository.Setup<Task<bool>>(o => o.DeleteBySecret(hashedSecret, null)).Returns(Task.FromResult<bool>(false));
-        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().DeleteBySecret(clientId, secret));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().DeleteBySecret(secret));
 
         Fixture.IClientRepository.Setup<Task<bool>>(o => o.DeleteBySecret(hashedSecret, null)).Returns(Task.FromResult<bool>(true));
-        await InstantiateService().DeleteBySecret(clientId, secret);
+        await InstantiateService().DeleteBySecret(secret);
     }
 
     [Fact]
@@ -137,24 +131,24 @@ public class ClientManagementTest
         string? newHashedSecret = "newHashedSecret";
 
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: null);
-        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
 
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: hashedSecret);
         Fixture.IStringHelper.Setup<string?>(o => o.GenerateRandomString(128)).Returns(value: newSecret);
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(newSecret, "SHA512")).Returns(value: null);
-        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
 
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(newSecret, "SHA512")).Returns(value: newHashedSecret);
         Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Throws<DuplicationException>();
-        await Assert.ThrowsAsync<DuplicationException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<DuplicationException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
         Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Throws<DatabaseServerException>();
-        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
         Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(null));
-        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
         Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(false));
-        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId, secret));
+        await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
 
         Fixture.IClientRepository.Setup(o => o.ClientExposed(clientId, hashedSecret, newHashedSecret, null)).Returns(Task.FromResult<bool?>(true));
-        Assert.Equal(newSecret, await InstantiateService().UpdateExposedClient(clientId, secret));
+        Assert.Equal(newSecret, await InstantiateService().UpdateExposedClient(clientId.ToString(), secret));
     }
 }

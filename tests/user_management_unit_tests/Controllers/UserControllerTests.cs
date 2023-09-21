@@ -16,13 +16,13 @@ using Xunit.Abstractions;
 namespace user_management_unit_tests.Controllers;
 
 [Collection("Controller")]
-public class UserControllerTests : ITestCaseOrderer
+public class UserControllerTests
 {
     public ControllerFixture Fixture { get; private set; }
 
     public UserControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.UserController InstantiateController() => new user_management.Controllers.UserController(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
+    private user_management.Controllers.UserController InstantiateController() => new(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 
@@ -796,7 +796,7 @@ public class UserControllerTests : ITestCaseOrderer
 
         ObjectId id = ObjectId.GenerateNewId();
         var responseObject = new ExpandoObject() as IDictionary<string, object?>;
-        responseObject.Add("_id", id);
+        responseObject.Add("_id", id.ToString());
         Fixture.IUserManagement.Setup<Task<PartialUser>>(um => um.RetrieveById(actorId, userId, forClients)).Returns(Task.FromResult(new PartialUser() { Id = id }));
         HttpAsserts<object>.IsOk(await InstantiateController().RetrieveById(userId), responseObject);
     }
@@ -847,13 +847,14 @@ public class UserControllerTests : ITestCaseOrderer
         PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), Clients = clients };
         string userId = "userId";
         bool forClients = false;
+        IEnumerable<UserClientRetrieveDto> authorizedClients = Array.Empty<UserClientRetrieveDto>();
 
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
-        Fixture.IUserManagement.Setup<Task<PartialUser>>(um => um.RetrieveById(userId, userId, forClients)).Returns(Task.FromResult<PartialUser>(user));
-        HttpAsserts<UserClient[]>.IsOk(await InstantiateController().RetrieveClients(), clients);
+        Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Returns(Task.FromResult(authorizedClients));
+        HttpAsserts<IEnumerable<UserClientRetrieveDto>>.IsOk(await InstantiateController().RetrieveClients(), authorizedClients);
     }
 
     [Fact]
@@ -861,20 +862,19 @@ public class UserControllerTests : ITestCaseOrderer
     {
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().RetrieveClients());
-    }
 
-    [Fact]
-    public async void RetrieveClients_BadRequest()
-    {
+        Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         string userId = "userId";
         bool forClients = false;
 
-        Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.RetrieveById(userId, userId, forClients)).Throws<ArgumentException>();
-        HttpAsserts.IsBadRequest(await InstantiateController().RetrieveClients());
+        Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Throws<ArgumentException>();
+        HttpAsserts.IsUnauthenticated(await InstantiateController().RetrieveClients());
+
+        Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Throws<AuthenticationException>();
+        HttpAsserts.IsUnauthenticated(await InstantiateController().RetrieveClients());
     }
 
     [Fact]
@@ -887,7 +887,7 @@ public class UserControllerTests : ITestCaseOrderer
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.RetrieveById(userId, userId, forClients)).Throws<DataNotFoundException>();
+        Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Throws<DataNotFoundException>();
         HttpAsserts<string>.IsNotFound(await InstantiateController().RetrieveClients(), "We couldn't find your account.");
     }
 
@@ -903,7 +903,7 @@ public class UserControllerTests : ITestCaseOrderer
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
-        Fixture.IUserManagement.Setup<Task<PartialUser>>(um => um.RetrieveById(userId, userId, forClients)).Returns(Task.FromResult<PartialUser>(user));
+        Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Throws<UnauthorizedAccessException>();
         HttpAsserts.IsUnauthorized(await InstantiateController().RetrieveClients());
     }
 
@@ -920,7 +920,7 @@ public class UserControllerTests : ITestCaseOrderer
         ObjectId id = ObjectId.GenerateNewId();
         List<PartialUser> users = new List<PartialUser>() { new PartialUser() { Id = id } };
         var retrievedUser = new ExpandoObject() as IDictionary<string, object?>;
-        retrievedUser.Add("_id", id);
+        retrievedUser.Add("_id", id.ToString());
 
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
@@ -1144,10 +1144,4 @@ public class UserControllerTests : ITestCaseOrderer
         Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().Delete(userId));
     }
-
-    public IEnumerable<TTestCase> OrderTestCases<TTestCase>(IEnumerable<TTestCase> testCases) where TTestCase : ITestCase
-    {
-        throw new NotImplementedException();
-    }
-
 }
