@@ -48,7 +48,7 @@ public class UserRepositoryTest : IAsyncLifetime
     {
         IEnumerable<user_management.Models.Client> clients = new user_management.Models.Client[] { };
         for (int i = 0; i < 5; i++)
-            clients = clients.Append(user_management.Models.Client.FakeClient(clients)).ToArray();
+            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients)).ToArray();
         IEnumerable<user_management.Models.User> users = new user_management.Models.User[] { };
         for (int i = 0; i < count; i++)
         {

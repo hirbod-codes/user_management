@@ -39,7 +39,7 @@ public class UserCollectionTest
     {
         IEnumerable<user_management.Models.Client>? clients = new user_management.Models.Client[] { };
         for (int i = 0; i < 5; i++)
-            clients = clients.Append(user_management.Models.Client.FakeClient(clients)).ToArray();
+            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients)).ToArray();
 
         user_management.Models.User user = user_management.Models.User.FakeUser(clients: clients);
 
@@ -135,9 +135,9 @@ public class UserCollectionTest
 
         if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
         {
-            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
-            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
-            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret1)) };
+            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret2)) };
+            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret3)) };
         }
 
         user2.Clients[0].RefreshToken!.Value = user1.Clients[0].RefreshToken!.Value;
@@ -152,9 +152,9 @@ public class UserCollectionTest
 
         if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
         {
-            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
-            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
-            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient()) };
+            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret1)) };
+            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret2)) };
+            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret3)) };
         }
 
         user2.Clients[0].Token!.Value = user1.Clients[0].Token!.Value;
