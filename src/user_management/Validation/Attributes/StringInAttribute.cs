@@ -9,5 +9,5 @@ public class StringInAttribute : ValidationAttribute
 
     public StringInAttribute(string[] strings) => Strings = strings;
 
-    public override bool IsValid(object? value) => value != null && ((string)value) == null && Strings.Contains((string)value!);
+    public override bool IsValid(object? value) => value != null && ((string)value) != null && Strings.Contains((string)value);
 }
