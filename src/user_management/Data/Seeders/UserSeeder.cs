@@ -11,7 +11,7 @@ public static class UserSeeder
     private static IMongoCollection<Client> _clientCollection = null!;
     public const string USERS_PASSWORDS = "Pass%w0rd!99";
 
-    public static void Setup(MongoContext mongoContext, string? rootPath)
+    public static void Setup(ShardedMongoContext mongoContext, string? rootPath)
     {
         SetFilePath(rootPath);
         SetClientsCollection(mongoContext);
@@ -27,21 +27,21 @@ public static class UserSeeder
         _filePath = Path.Combine(directoryPath, "seeded_users.json");
     }
 
-    public static void SetUsersCollection(MongoContext mongoContext)
+    public static void SetUsersCollection(ShardedMongoContext mongoContext)
     {
         MongoClient mongoClient = mongoContext.GetMongoClient();
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _userCollection = mongoDatabase.GetCollection<User>(mongoContext.Collections.Users);
     }
 
-    public static void SetClientsCollection(MongoContext mongoContext)
+    public static void SetClientsCollection(ShardedMongoContext mongoContext)
     {
         MongoClient mongoClient = mongoContext.GetMongoClient();
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
     }
 
-    public static async Task Seed(MongoContext mongoContext, string? rootPath, FakeUserOptions? fakeUserOptions = null, int count = 2)
+    public static async Task Seed(ShardedMongoContext mongoContext, string? rootPath, FakeUserOptions? fakeUserOptions = null, int count = 2)
     {
         if (_filePath == null || _userCollection == null || _clientCollection == null) Setup(mongoContext, rootPath);
 

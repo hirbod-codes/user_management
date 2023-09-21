@@ -10,7 +10,7 @@ public static class ClientSeeder
     private static IMongoCollection<Client> _clientCollection = null!;
     private static string? _filePath;
 
-    public static void Setup(MongoContext mongoContext, string? rootPath)
+    public static void Setup(ShardedMongoContext mongoContext, string? rootPath)
     {
         SetFilePath(rootPath);
         SetClientsCollection(mongoContext);
@@ -25,14 +25,14 @@ public static class ClientSeeder
         _filePath = Path.Combine(directoryPath, "seeded_users.json");
     }
 
-    public static void SetClientsCollection(MongoContext mongoContext)
+    public static void SetClientsCollection(ShardedMongoContext mongoContext)
     {
         MongoClient mongoClient = mongoContext.GetMongoClient();
         IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
         _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
     }
 
-    public static async Task Seed(MongoContext mongoContext, string? rootPath, int count = 2)
+    public static async Task Seed(ShardedMongoContext mongoContext, string? rootPath, int count = 2)
     {
         if (_filePath == null || _clientCollection == null) Setup(mongoContext, rootPath);
 

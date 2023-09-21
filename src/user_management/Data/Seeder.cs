@@ -5,11 +5,11 @@ using user_management.Data.Seeders;
 public class Seeder
 {
     private readonly string? _rootPath;
-    public MongoContext MongoContext { get; set; }
+    public ShardedMongoContext ShardedMongoContext { get; set; }
 
-    public Seeder(MongoContext mongoContext, string? rootPath = null)
+    public Seeder(ShardedMongoContext mongoContext, string? rootPath = null)
     {
-        MongoContext = mongoContext;
+        ShardedMongoContext = mongoContext;
         _rootPath = rootPath;
     }
 
@@ -17,8 +17,8 @@ public class Seeder
     {
         System.Console.WriteLine("\nSeeding...");
 
-        await ClientSeeder.Seed(MongoContext, _rootPath, count: 10);
-        await UserSeeder.Seed(MongoContext, _rootPath, count: 50);
+        await ClientSeeder.Seed(ShardedMongoContext, _rootPath, count: 10);
+        await UserSeeder.Seed(ShardedMongoContext, _rootPath, count: 50);
 
         System.Console.WriteLine("Seeded...\n");
     }

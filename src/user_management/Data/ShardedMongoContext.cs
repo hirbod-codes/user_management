@@ -7,7 +7,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 using user_management.Models;
 
-public class MongoContext
+public class ShardedMongoContext
 {
     public string Username { get; set; } = null!;
     public string CaPem { get; set; } = null!;
@@ -24,7 +24,7 @@ public class MongoContext
         IMongoCollection<Models.User> userCollection = database.GetCollection<Models.User>(Collections.Users);
         IMongoCollection<Models.Client> clientCollection = database.GetCollection<Models.Client>(Collections.Clients);
 
-        await ClearDatabaseAsync(database);
+        await ClearDatabase(database);
 
         await CreateClientsCollectionIndexes(clientCollection);
         await CreateUsersCollectionIndexes(userCollection);
@@ -102,7 +102,7 @@ public class MongoContext
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(tokenValueIndex, new CreateIndexOptions<Models.User>() { Unique = true, Sparse = true }));
     }
 
-    public MongoClient GetMongoClient() => new MongoClient(new MongoClientSettings()
+    public MongoClient GetMongoClient() => new(settings: new()
     {
         Credential = MongoCredential.CreateMongoX509Credential(Username),
         SslSettings = new SslSettings
@@ -123,13 +123,12 @@ public class MongoContext
         ReadPreference = ReadPreference.Primary
     });
 
-    public static async Task ClearDatabaseAsync(IMongoDatabase database)
+    public async Task ClearDatabase(IMongoDatabase database)
     {
         foreach (string collection in database.ListCollectionNames().ToList())
             await database.DropCollectionAsync(collection);
     }
 }
-
 
 public class Collections
 {

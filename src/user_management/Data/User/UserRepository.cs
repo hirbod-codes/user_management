@@ -14,7 +14,7 @@ public class UserRepository : IUserRepository
     private readonly IMongoCollection<User> _userCollection;
     private readonly IMongoCollection<PartialUser> _partialUserCollection;
 
-    public UserRepository(MongoContext mongoContext)
+    public UserRepository(ShardedMongoContext mongoContext)
     {
         MongoClient mongoClient = mongoContext.GetMongoClient();
 

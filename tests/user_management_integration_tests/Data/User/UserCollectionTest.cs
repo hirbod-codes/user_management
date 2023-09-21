@@ -23,8 +23,8 @@ public class UserCollectionTest
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
 
-        builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
-        MongoContext mongoContext = new();
+        builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
+        ShardedMongoContext mongoContext = new();
         builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
 
         _mongoClient = mongoContext.GetMongoClient();

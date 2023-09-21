@@ -22,14 +22,14 @@ public class UserRepositoryTest : IAsyncLifetime
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
     private readonly IMongoDatabase _mongoDatabase;
     private readonly UserRepository _userRepository;
-    private MongoContext _mongoContext = new();
+    private ShardedMongoContext _mongoContext = new();
     public static Faker Faker = new("en");
 
     public UserRepositoryTest()
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
 
-        builder.Services.Configure<MongoContext>(builder.Configuration.GetSection("MongoDB"));
+        builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
         builder.Configuration.GetSection("MongoDB").Bind(_mongoContext);
 
         _mongoClient = _mongoContext.GetMongoClient();

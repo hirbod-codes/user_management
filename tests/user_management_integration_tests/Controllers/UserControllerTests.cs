@@ -22,7 +22,7 @@ public class UserControllerTestsCollectionDefinition { }
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly IMongoClient _mongoClient = null!;
-    private readonly MongoContext _mongoContext = null!;
+    private readonly ShardedMongoContext _mongoContext = null!;
     private readonly CustomWebApplicationFactory<Program> _factory;
     private Faker _faker = new();
     private IMongoCollection<User> _userCollection;
@@ -34,7 +34,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         _factory = factory;
 
         _mongoClient = factory.Services.GetService<IMongoClient>()!;
-        _mongoContext = factory.Services.GetService<MongoContext>()!;
+        _mongoContext = factory.Services.GetService<ShardedMongoContext>()!;
 
         _database = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
         _userCollection = _database.GetCollection<User>(_mongoContext.Collections.Users);

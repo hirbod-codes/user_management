@@ -23,7 +23,7 @@ public class ClientControllerTestsCollectionDefinition { }
 public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly IMongoClient _mongoClient = null!;
-    private readonly MongoContext _mongoContext = null!;
+    private readonly ShardedMongoContext _mongoContext = null!;
     private readonly CustomWebApplicationFactory<Program> _factory;
     private Faker _faker = new();
     private IMongoCollection<User> _userCollection;
@@ -35,7 +35,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         _factory = factory;
 
         _mongoClient = factory.Services.GetService<IMongoClient>()!;
-        _mongoContext = factory.Services.GetService<MongoContext>()!;
+        _mongoContext = factory.Services.GetService<ShardedMongoContext>()!;
 
         _database = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
         _userCollection = _database.GetCollection<User>(_mongoContext.Collections.Users);
@@ -148,8 +148,8 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         Assert.NotNull(responseData);
         Assert.Equal(client.RedirectUrl, responseData.RedirectUrl);
-        Assert.Equal(Math.Floor((double)(client.UpdatedAt.Ticks/10000)!), Math.Floor((double)(responseData.UpdatedAt?.Ticks/10000)!));
-        Assert.Equal(Math.Floor((double)(client.CreatedAt.Ticks/10000)!), Math.Floor((double)(responseData.CreatedAt?.Ticks/10000)!));
+        Assert.Equal(Math.Floor((double)(client.UpdatedAt.Ticks / 10000)!), Math.Floor((double)(responseData.UpdatedAt?.Ticks / 10000)!));
+        Assert.Equal(Math.Floor((double)(client.CreatedAt.Ticks / 10000)!), Math.Floor((double)(responseData.CreatedAt?.Ticks / 10000)!));
     }
 
     [Fact]

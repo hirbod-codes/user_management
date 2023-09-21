@@ -11,7 +11,7 @@ public class ClientRepository : IClientRepository
     private readonly IMongoCollection<Client> _clientCollection;
     private readonly MongoClient _mongoClient;
 
-    public ClientRepository(MongoContext mongoContext)
+    public ClientRepository(ShardedMongoContext mongoContext)
     {
         _mongoClient = mongoContext.GetMongoClient();
 
