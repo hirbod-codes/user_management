@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Reflection;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -29,8 +28,6 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
     private IMongoCollection<User> _userCollection;
     private IMongoCollection<Client> _clientCollection;
     private IMongoDatabase _database;
-    public string? _jwtToken;
-    public string? _authenticatedUserId;
 
     public UserControllerTests(CustomWebApplicationFactory<Program> factory)
     {
