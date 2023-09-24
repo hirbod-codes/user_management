@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+    user_management:
+        container_name: user_management_unit_test
+        build:
+            context: ./
+            dockerfile: ./tests/user_management_unit_tests/Dockerfile.unit_test
+        environment:
+            ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
+            ENVIRONMENT: "${ENVIRONMENT}"
+            Logging__LogLevel__Default: "${Logging_LogLevel_Default}"
+            Logging__LogLevel__Microsoft.AspNetCore: "${Logging_LogLevel_Microsoft_AspNetCore}"
+            Jwt__SecretKey: "${Jwt_SecretKey}"
