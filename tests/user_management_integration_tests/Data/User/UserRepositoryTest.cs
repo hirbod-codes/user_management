@@ -16,30 +16,20 @@ namespace user_management_integration_tests.Data.User;
 public class UserRepositoryTestCollectionDefinition { }
 
 [Collection("UserRepositoryTest")]
-public class UserRepositoryTest : IAsyncLifetime
+public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly MongoClient _mongoClient;
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
-    private readonly IMongoDatabase _mongoDatabase;
     private readonly UserRepository _userRepository;
-    private ShardedMongoContext _mongoContext = new();
     public static Faker Faker = new("en");
 
-    public UserRepositoryTest()
+    public UserRepositoryTest(CustomWebApplicationFactory<Program> factory)
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
-
-        builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
-        builder.Configuration.GetSection("MongoDB").Bind(_mongoContext);
-
-        _mongoClient = _mongoContext.GetMongoClient();
-        _mongoDatabase = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
-        _userCollection = _mongoDatabase.GetCollection<user_management.Models.User>(_mongoContext.Collections.Users);
-
-        _userRepository = new UserRepository(_mongoContext);
+        MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
+        _userCollection = mongoCollections.Users;
+        _userRepository = new(mongoCollections);
     }
 
-    public Task InitializeAsync() => _mongoContext.Initialize();
+    public Task InitializeAsync() => _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty);
 
     public Task DisposeAsync() => Task.CompletedTask;
 

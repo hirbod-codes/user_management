@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using user_management.Data;
 using user_management.Data.User;
 using user_management.Data.Client;
@@ -10,8 +9,6 @@ using user_management.Authorization.Permissions;
 using user_management.Authorization.Roles;
 using user_management.Authorization.Scopes;
 using user_management.Utilities;
-using MongoDB.Driver;
-using user_management.Models;
 using user_management.Middlewares;
 using static System.Net.Mime.MediaTypeNames;
 using user_management.Services;
@@ -38,11 +35,8 @@ builder.Services.AddScoped<IUserPrivilegesManagement, UserPrivilegesManagement>(
 builder.Services.AddScoped<IClientManagement, ClientManagement>();
 builder.Services.AddScoped<ITokenManagement, TokenManagement>();
 
-builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
-ShardedMongoContext mongoContext = new();
-builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
-builder.Services.AddSingleton<ShardedMongoContext>(mongoContext);
-builder.Services.AddSingleton<IMongoClient>(mongoContext.GetMongoClient());
+DatabaseManagement.ResolveDatabase(builder);
+
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IClientRepository, ClientRepository>();
 
@@ -95,22 +89,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-if (app.Environment.IsDevelopment())
-{
-    IWebHostEnvironment? env = app.Services.GetService<IWebHostEnvironment>();
-    if (env == null)
-        throw new Exception("Failed to resolve IWebHostEnvironment.");
+await DatabaseManagement.InitializeDatabase(app);
 
-    mongoContext = app.Services.GetService<IOptions<ShardedMongoContext>>()!.Value;
-    var client = mongoContext.GetMongoClient();
-    if (client.GetDatabase(mongoContext.DatabaseName).GetCollection<User>(mongoContext.Collections.Users).CountDocuments(Builders<User>.Filter.Empty) == 0)
-    {
-        await mongoContext.Initialize();
-        await (new Seeder(app.Services.GetService<ShardedMongoContext>()!, env.ContentRootPath)).Seed();
-    }
-    else
-        System.Console.WriteLine("The database is already seeded.");
-}
+await DatabaseManagement.SeedDatabase(app);
 
 app.UseDatabaseExceptionHandler();
 app.UseExceptionHandler(handler => handler.Run(async context =>

@@ -14,13 +14,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("/home/hirbod/projects/microservice/user_management/src/user_management/appsettings.Development.json")
-            .Build();
-
         builder
-            .UseConfiguration(configuration)
             .ConfigureServices((ctx, services) =>
                 {
                     services.AddSingleton(INotificationHelper.Object);

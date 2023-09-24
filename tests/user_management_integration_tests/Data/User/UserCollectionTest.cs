@@ -1,10 +1,7 @@
 using Bogus;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using user_management.Data;
-using user_management.Data.User;
 
 namespace user_management_integration_tests.Data.User;
 
@@ -12,27 +9,17 @@ namespace user_management_integration_tests.Data.User;
 public class UserCollectionTestCollectionDefinition { }
 
 [Collection("UserCollectionTest")]
-public class UserCollectionTest
+public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly MongoClient _mongoClient;
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
-    private readonly UserRepository _userRepository;
     public static Faker Faker = new("en");
 
-    public UserCollectionTest()
+    public UserCollectionTest(CustomWebApplicationFactory<Program> factory)
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
+        MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
+        _userCollection = mongoCollections.Users;
 
-        builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
-        ShardedMongoContext mongoContext = new();
-        builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
-
-        _mongoClient = mongoContext.GetMongoClient();
-        _userCollection = _mongoClient.GetDatabase(mongoContext.DatabaseName).GetCollection<user_management.Models.User>(mongoContext.Collections.Users);
-
-        _userRepository = new UserRepository(mongoContext);
-
-        mongoContext.Initialize().Wait();
+        _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty).Wait();
     }
 
     private static user_management.Models.User TemplateUser(IEnumerable<user_management.Models.User>? users = null)

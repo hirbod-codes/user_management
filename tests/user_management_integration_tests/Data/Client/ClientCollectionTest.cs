@@ -1,11 +1,8 @@
 using Bogus;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
-using user_management.Data.Client;
 
 namespace user_management_integration_tests.Data.Client;
 
@@ -13,29 +10,19 @@ namespace user_management_integration_tests.Data.Client;
 public class ClientCollectionTestCollectionDefinition { }
 
 [Collection("ClientCollectionTest")]
-public class ClientCollectionTest
+public class ClientCollectionTest : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly MongoClient _mongoClient;
     private readonly IMongoCollection<user_management.Models.Client> _clientCollection;
-    private readonly IMongoDatabase _mongoDatabase;
-    private readonly ClientRepository _clientRepository;
     public static Faker Faker = new("en");
+    private MongoClient _mongoClient;
 
-    public ClientCollectionTest()
+    public ClientCollectionTest(CustomWebApplicationFactory<Program> factory)
     {
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { EnvironmentName = "Development" });
+        MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
+        _clientCollection = mongoCollections.Clients;
+        _mongoClient = factory.Services.GetService<MongoClient>()!;
 
-        builder.Services.Configure<ShardedMongoContext>(builder.Configuration.GetSection("MongoDB"));
-        ShardedMongoContext mongoContext = new();
-        builder.Configuration.GetSection("MongoDB").Bind(mongoContext);
-
-        _mongoClient = mongoContext.GetMongoClient();
-        _mongoDatabase = _mongoClient.GetDatabase(mongoContext.DatabaseName);
-        _clientCollection = _mongoDatabase.GetCollection<user_management.Models.Client>(mongoContext.Collections.Clients);
-
-        _clientRepository = new ClientRepository(mongoContext);
-
-        mongoContext.Initialize().Wait();
+        _clientCollection.DeleteManyAsync(Builders<user_management.Models.Client>.Filter.Empty).Wait();
     }
 
     private static user_management.Models.Client TemplateClient() => new user_management.Models.Client()

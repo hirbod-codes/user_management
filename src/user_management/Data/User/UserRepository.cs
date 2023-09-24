@@ -14,14 +14,10 @@ public class UserRepository : IUserRepository
     private readonly IMongoCollection<User> _userCollection;
     private readonly IMongoCollection<PartialUser> _partialUserCollection;
 
-    public UserRepository(ShardedMongoContext mongoContext)
+    public UserRepository(MongoCollections mongoCollections)
     {
-        MongoClient mongoClient = mongoContext.GetMongoClient();
-
-        IMongoDatabase mongoDatabase = mongoClient.GetDatabase(mongoContext.DatabaseName);
-
-        _userCollection = mongoDatabase.GetCollection<User>(mongoContext.Collections.Users);
-        _partialUserCollection = mongoDatabase.GetCollection<PartialUser>(mongoContext.Collections.Users);
+        _userCollection = mongoCollections.Users;
+        _partialUserCollection = mongoCollections.PartialUsers;
     }
 
     public async Task<User?> Create(User user)

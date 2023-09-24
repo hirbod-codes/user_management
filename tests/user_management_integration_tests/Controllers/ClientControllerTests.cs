@@ -22,27 +22,17 @@ public class ClientControllerTestsCollectionDefinition { }
 
 public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly IMongoClient _mongoClient = null!;
-    private readonly ShardedMongoContext _mongoContext = null!;
     private readonly CustomWebApplicationFactory<Program> _factory;
     private Faker _faker = new();
     private IMongoCollection<User> _userCollection;
     private IMongoCollection<Client> _clientCollection;
-    private IMongoDatabase _database;
 
     public ClientControllerTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
 
-        _mongoClient = factory.Services.GetService<IMongoClient>()!;
-        _mongoContext = factory.Services.GetService<ShardedMongoContext>()!;
-
-        _database = _mongoClient.GetDatabase(_mongoContext.DatabaseName);
-        _userCollection = _database.GetCollection<User>(_mongoContext.Collections.Users);
-        _clientCollection = _database.GetCollection<Client>(_mongoContext.Collections.Clients);
-
-        _mongoContext.Initialize().Wait();
-        new Seeder(_mongoContext).Seed().Wait();
+        _userCollection = factory.Services.GetService<MongoCollections>()!.Users;
+        _clientCollection = factory.Services.GetService<MongoCollections>()!.Clients;
     }
 
     [Fact]

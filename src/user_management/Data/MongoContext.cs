@@ -1,17 +1,14 @@
 namespace user_management.Data;
 
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 using user_management.Models;
 
-public class ShardedMongoContext
+public class MongoContext
 {
     public string Username { get; set; } = null!;
-    public string CaPem { get; set; } = null!;
-    public string CertificateP12 { get; set; } = null!;
+    public string Password { get; set; } = null!;
     public string Host { get; set; } = null!;
     public int Port { get; set; }
     public string DatabaseName { get; set; } = null!;
@@ -98,18 +95,8 @@ public class ShardedMongoContext
 
     public MongoClient GetClient() => new(settings: new()
     {
-        Credential = MongoCredential.CreateMongoX509Credential(Username),
-        SslSettings = new SslSettings
-        {
-            ClientCertificates = new List<X509Certificate>()
-                {
-                    new X509Certificate2(CertificateP12, "") {}
-                },
-            CheckCertificateRevocation = false,
-            EnabledSslProtocols = SslProtocols.Tls12
-        },
-        AllowInsecureTls = true,
-        UseTls = true,
+        Credential = MongoCredential.CreateCredential("admin", Username, Password),
+        UseTls = false,
         Server = new MongoServerAddress(Host, Port),
         Scheme = ConnectionStringScheme.MongoDB,
         WriteConcern = WriteConcern.WMajority,
@@ -120,21 +107,18 @@ public class ShardedMongoContext
     public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.DropCollections(mongoDatabase);
 }
 
-
-public static class ShardedMongoContextExtensions
+public static class MongoContextExtensions
 {
-    public static void ConfigureShardedMongodb(this WebApplicationBuilder builder)
+    public static void ConfigureMongodb(this WebApplicationBuilder builder)
     {
-        ShardedMongoContext dbContext = new()
+        MongoContext dbContext = new()
         {
             DatabaseName = Environment.GetEnvironmentVariable("DB_OPTIONS__DatabaseName")!,
             Username = Environment.GetEnvironmentVariable("DB_OPTIONS__Username")!,
+            Password = Environment.GetEnvironmentVariable("DB_OPTIONS__Password")!,
             Host = Environment.GetEnvironmentVariable("DB_OPTIONS__Host")!,
-            Port = Int32.Parse(Environment.GetEnvironmentVariable("DB_OPTIONS__Port")!),
-            CaPem = Environment.GetEnvironmentVariable("DB_OPTIONS__CaPem")!,
-            CertificateP12 = Environment.GetEnvironmentVariable("DB_OPTIONS__CertificateP12")!,
+            Port = Int32.Parse(Environment.GetEnvironmentVariable("DB_OPTIONS__Port")!)
         };
-
         builder.Services.AddSingleton(dbContext);
 
         MongoClient dbClient = dbContext.GetClient();
