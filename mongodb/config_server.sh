@@ -22,6 +22,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# Enable job controll
 set -m
 
 mongod --configsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile /security/app.pem --tlsCAFile /security/ca.pem --tlsClusterFile /security/member.pem --tlsClusterCAFile /security/ca.pem &

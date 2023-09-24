@@ -22,6 +22,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# Enable job controll
 set -m
 
 echo "\n\nWaiting...................................................................................\n\n"

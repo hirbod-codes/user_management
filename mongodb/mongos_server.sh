@@ -22,11 +22,19 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-dbAdminUsername=$(cat $dbAdminUsername)
-dbPassword=$(cat $dbPassword)
-dbName=$(cat $dbName)
-
+# Enable job controll
 set -m
+
+if [[ (-z $dbAdminUsernameFile || -z $dbPasswordFile || -z $dbNameFile) && (-z $dbAdminUsername || -z $dbPassword || -z $dbName) ]]; then
+    echo "Insufficient parameters provided."
+    exit
+fi
+
+if [[ -z $dbAdminUsername && -z $dbPassword && -z $dbName ]]; then
+    dbAdminUsername=$dbAdminUsernameFile
+    dbPassword=$dbPasswordFile
+    dbName=$dbNameFile
+fi
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 160s
@@ -50,28 +58,6 @@ db.auth(\"$dbAdminUsername\", \"$dbPassword\")
 sh.addShard(\"$shardReplSet/$shardMember0:$dbPort,$shardMember1:$dbPort,$shardMember2:$dbPort\");
 sh.status();
 
-db.getSiblingDB(\"\$external\").runCommand(
-    {
-        createUser: \"CN=local_client,OU=mongodb_client,O=user_management,ST=NY,C=US\",
-        roles: [
-            { role: \"dbAdmin\", db: \"$dbName\" },
-            { role: \"readWrite\", db: \"$dbName\" },
-            { role: \"userAdminAnyDatabase\", db: \"admin\" }
-        ],
-        writeConcern: { w: \"majority\", wtimeout: 5000 }
-    }
-)
-db.getSiblingDB(\"\$external\").runCommand(
-    {
-        createUser: \"CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US\",
-        roles: [
-            { role: \"dbAdmin\", db: \"$dbName\" },
-            { role: \"readWrite\", db: \"$dbName\" },
-            { role: \"userAdminAnyDatabase\", db: \"admin\" }
-        ],
-        writeConcern: { w: \"majority\", wtimeout: 5000 }
-    }
-)
 db.getSiblingDB(\"\$external\").runCommand(
     {
         createUser: \"CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US\",
@@ -98,4 +84,4 @@ else
     echo "The mogos instance already initialized......................................................................................."
 fi
 
-fg %1
+fg
