@@ -19,7 +19,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
                 {
                     services.AddSingleton(INotificationHelper.Object);
                 })
-            .UseEnvironment("Production")
+            .UseEnvironment("IntegrationTest")
             ;
     }
 }
