@@ -9,15 +9,12 @@ using user_management.Services.Data;
 public class ClientRepository : IClientRepository
 {
     private readonly IMongoCollection<Client> _clientCollection;
-    private readonly MongoClient _mongoClient;
+    private readonly IMongoClient _mongoClient;
 
-    public ClientRepository(ShardedMongoContext mongoContext)
+    public ClientRepository(IMongoClient mongoClient, MongoCollections mongoCollections)
     {
-        _mongoClient = mongoContext.GetMongoClient();
-
-        var mongoDatabase = _mongoClient.GetDatabase(mongoContext.DatabaseName);
-
-        _clientCollection = mongoDatabase.GetCollection<Client>(mongoContext.Collections.Clients);
+        _mongoClient = mongoClient;
+        _clientCollection = mongoCollections.Clients;
     }
 
     public async Task<Client> Create(Client client, IClientSessionHandle? session = null)
