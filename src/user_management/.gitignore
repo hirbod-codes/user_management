@@ -4,8 +4,6 @@
 
 tmp.yml
 
-/security
-
 /Data/Seeders/Logs/*
 
 .env*
