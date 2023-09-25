@@ -60,3 +60,26 @@ cd path-to-project-root-directory/ && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
     sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 ```
+
+## for docker compose only with sharded mongodb cluster (so you can run the dotnet application outside docker container)
+
+```bash
+#!/bin/bash
+
+cd path-to-project-root-directory/ && \
+    sudo chmod ug+x ./*.sh && \
+    ./prepare_environment_variables.sh --projectRootDirectory ./ && \
+    ./generate_certificates.sh --projectRootDirectory ./ && \
+    sudo docker compose -f ./docker-compose.sharded_mongodb.yml --env-file ./.env.sharded_mongodb up -d --build --remove-orphans -V
+```
+
+## for docker compose only with single mongodb container (so you can run the dotnet application outside docker container)
+
+```bash
+#!/bin/bash
+
+cd path-to-project-root-directory/ && \
+    sudo chmod ug+x ./*.sh && \
+    ./prepare_environment_variables.sh --projectRootDirectory ./ && \
+    sudo docker compose -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up -d --build --remove-orphans -V
+```

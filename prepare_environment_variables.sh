@@ -138,3 +138,35 @@ Logging_LogLevel_Microsoft_AspNetCore=information
 Jwt_SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 " >$projectRootDirectory/.env.unit_test
 fi
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+if [[ ! -e "$projectRootDirectory/.env.mongodb" ]]; then
+    echo "DB_SERVER_PORT=27017
+DB_CONTAINER_PORT=8081
+
+DB_USERNAME=hirbod
+DB_PASSWORD=password
+
+ME_CONTAINER_PORT=8082
+ME_CONFIG_BASICAUTH_USERNAME=hirbod
+ME_CONFIG_BASICAUTH_PASSWORD=password
+" >$projectRootDirectory/.env.mongodb
+fi
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+if [[ ! -e "$projectRootDirectory/.env.sharded_mongodb" ]]; then
+    echo "DB_SERVER_PORT=27017
+DB_CONTAINER_PORT=8081
+
+ME_CONTAINER_PORT=8082
+ME_CONFIG_BASICAUTH_USERNAME=hirbod
+ME_CONFIG_BASICAUTH_PASSWORD=password
+
+DB_USERNAME=hirbod
+DB_PASSWORD=password
+
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
+" >$projectRootDirectory/.env.sharded_mongodb
+fi

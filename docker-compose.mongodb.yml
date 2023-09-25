@@ -1,0 +1,31 @@
+version: '3.8'
+volumes:
+    user_management_mongo_data: {}
+    user_management_mongo_config_data: {}
+services:
+    user_management_mongo_express:
+        container_name: user_management_mongo_express
+        image: mongo-express:0.54.0
+        restart: always
+        ports:
+            - '${ME_CONTAINER_PORT}:8081'
+        depends_on:
+            - user_management_mongodb
+        environment:
+            ME_CONFIG_BASICAUTH_USERNAME: "${ME_CONFIG_BASICAUTH_USERNAME}"
+            ME_CONFIG_BASICAUTH_PASSWORD: "${ME_CONFIG_BASICAUTH_PASSWORD}"
+            ME_CONFIG_MONGODB_SERVER: user_management_mongodb
+            ME_CONFIG_MONGODB_PORT: "${DB_SERVER_PORT}"
+            ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+    user_management_mongodb:
+        container_name: user_management_mongodb
+        image: mongo:4.4.18
+        ports:
+            - '${DB_CONTAINER_PORT}:${DB_SERVER_PORT}'
+        environment:
+            MONGO_INITDB_DATABASE: "${DATABASE_NAME}"
+            MONGO_INITDB_ROOT_USERNAME: "${DB_USERNAME}"
+            MONGO_INITDB_ROOT_PASSWORD: "${DB_PASSWORD}"
+        volumes:
+            - user_management_mongo_data:/data/db
+            - user_management_mongo_config_data:/data/configdb
