@@ -1,3 +1,4 @@
+using System;
 using user_management.Data;
 using user_management.Authentication.JWT;
 using user_management.Authentication.Bearer;
@@ -20,7 +21,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 if (builder.Configuration.GetSection("SHOULD_NOT_USE_ENV_FILE").Value != "true")
-    builder.Configuration.AddDotNetEnv("../../.env.mongodb.development", LoadOptions.TraversePath());
+    builder.Configuration.AddDotNetEnv(builder.Configuration.GetSection("ENV_FILE_PATH").Value ?? "../../.env.mongodb.development", LoadOptions.TraversePath());
 
 // Add services to the container.
 builder.Services.AddControllers();
