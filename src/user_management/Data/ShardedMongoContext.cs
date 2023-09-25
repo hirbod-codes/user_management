@@ -6,6 +6,10 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
 using user_management.Models;
+using user_management.Data.Client;
+using user_management.Data.User;
+using user_management.Services.Client;
+using user_management.Services.Data.User;
 
 public class ShardedMongoContext
 {
@@ -138,5 +142,8 @@ public static class ShardedMongoContextExtensions
         MongoCollections mongoCollections = new();
         mongoCollections.InitializeCollections(dbClient.GetDatabase(dbContext.DatabaseName));
         builder.Services.AddSingleton(mongoCollections);
+
+        builder.Services.AddSingleton<IUserRepository, UserRepository>();
+        builder.Services.AddSingleton<IClientRepository, ClientRepository>();
     }
 }

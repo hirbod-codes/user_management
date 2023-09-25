@@ -43,9 +43,6 @@ builder.Services.AddScoped<ITokenManagement, TokenManagement>();
 
 DatabaseManagement.ResolveDatabase(builder);
 
-builder.Services.AddSingleton<IUserRepository, UserRepository>();
-builder.Services.AddSingleton<IClientRepository, ClientRepository>();
-
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.Configure<JWTAuthenticationOptions>(builder.Configuration.GetSection("JWT"));
