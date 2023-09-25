@@ -1,6 +1,4 @@
 using user_management.Data;
-using user_management.Data.User;
-using user_management.Data.Client;
 using user_management.Authentication.JWT;
 using user_management.Authentication.Bearer;
 using Microsoft.AspNetCore.Authorization;
@@ -12,8 +10,6 @@ using user_management.Utilities;
 using user_management.Middlewares;
 using static System.Net.Mime.MediaTypeNames;
 using user_management.Services;
-using user_management.Services.Data.User;
-using user_management.Services.Client;
 using user_management.Controllers.Services;
 using user_management.Authentication;
 using DotNetEnv;
