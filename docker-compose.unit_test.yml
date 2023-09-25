@@ -6,6 +6,7 @@ services:
             context: ./
             dockerfile: ./tests/user_management_unit_tests/Dockerfile.unit_test
         environment:
+            SHOULD_NOT_USE_ENV_FILE: true
             ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
             ENVIRONMENT: "${ENVIRONMENT}"
             Logging__LogLevel__Default: "${Logging_LogLevel_Default}"

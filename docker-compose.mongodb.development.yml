@@ -14,6 +14,7 @@ services:
             - '${APP_HTTP_PORT}:5000'
             - '${APP_HTTPS_PORT}:5001'
         environment:
+            SHOULD_NOT_USE_ENV_FILE: true
             ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
             ENVIRONMENT: "${ENVIRONMENT}"
             DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
