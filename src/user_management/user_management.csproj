@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DotNetEnv" Version="2.5.0" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
         <Protobuf Include="Protos/user_privileges.proto" GrpcServices="Server" />
         <PackageReference Include="Grpc.Tools" Version="2.54.0">
