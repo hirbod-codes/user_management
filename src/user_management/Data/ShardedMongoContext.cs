@@ -125,16 +125,9 @@ public static class ShardedMongoContextExtensions
 {
     public static void ConfigureShardedMongodb(this WebApplicationBuilder builder)
     {
-        ShardedMongoContext dbContext = new()
-        {
-            DatabaseName = Environment.GetEnvironmentVariable("DB_OPTIONS__DatabaseName")!,
-            Username = Environment.GetEnvironmentVariable("DB_OPTIONS__Username")!,
-            Host = Environment.GetEnvironmentVariable("DB_OPTIONS__Host")!,
-            Port = Int32.Parse(Environment.GetEnvironmentVariable("DB_OPTIONS__Port")!),
-            CaPem = Environment.GetEnvironmentVariable("DB_OPTIONS__CaPem")!,
-            CertificateP12 = Environment.GetEnvironmentVariable("DB_OPTIONS__CertificateP12")!,
-        };
+        ShardedMongoContext dbContext = new();
 
+        builder.Configuration.GetSection("DB_OPTIONS").Bind(dbContext);
         builder.Services.AddSingleton(dbContext);
 
         MongoClient dbClient = dbContext.GetClient();

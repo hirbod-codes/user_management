@@ -16,11 +16,17 @@ using user_management.Services.Data.User;
 using user_management.Services.Client;
 using user_management.Controllers.Services;
 using user_management.Authentication;
+using DotNetEnv;
+using DotNetEnv.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Configuration.AddEnvironmentVariables();
 
+if (builder.Configuration.GetSection("SHOULD_NOT_USE_ENV_FILE").Value != "true")
+    builder.Configuration.AddDotNetEnv("../../.env.mongodb.development", LoadOptions.TraversePath());
+
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

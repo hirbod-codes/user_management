@@ -111,14 +111,8 @@ public static class MongoContextExtensions
 {
     public static void ConfigureMongodb(this WebApplicationBuilder builder)
     {
-        MongoContext dbContext = new()
-        {
-            DatabaseName = Environment.GetEnvironmentVariable("DB_OPTIONS__DatabaseName")!,
-            Username = Environment.GetEnvironmentVariable("DB_OPTIONS__Username")!,
-            Password = Environment.GetEnvironmentVariable("DB_OPTIONS__Password")!,
-            Host = Environment.GetEnvironmentVariable("DB_OPTIONS__Host")!,
-            Port = Int32.Parse(Environment.GetEnvironmentVariable("DB_OPTIONS__Port")!)
-        };
+        MongoContext dbContext = new();
+        builder.Configuration.GetSection("DB_OPTIONS").Bind(dbContext);
         builder.Services.AddSingleton(dbContext);
 
         MongoClient dbClient = dbContext.GetClient();
