@@ -83,3 +83,10 @@ cd path-to-project-root-directory/ && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
     sudo docker compose -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up -d --build --remove-orphans -V
 ```
+
+## Caveat
+
+if you don't specify a .env file relative path (aka `ENV_FILE_PATH=../../.env.file dotnet run`) for running a project outside the container
+it will use the default "../../.env.mongodb.development" value as the env file path.
+
+also remember to change "DB_OPTIONS__Host" and "DB_OPTIONS__Host" environment values .env file accordingly when running outside a docker container.
