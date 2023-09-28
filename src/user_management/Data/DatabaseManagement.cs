@@ -10,6 +10,7 @@ public static class DatabaseManagement
             builder.ConfigureShardedMongodb();
         else if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS:IsSharded").Value != "true")
             builder.ConfigureMongodb();
+        else throw new MissingDatabaseConfiguration();
     }
 
     public static async Task InitializeDatabase(WebApplication app)
