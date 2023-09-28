@@ -108,7 +108,7 @@ public class MongoContext
         ReadPreference = ReadPreference.Primary
     });
 
-    public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.DropCollections(mongoDatabase);
+    public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.ClearCollections(mongoDatabase);
 }
 
 public static class MongoContextExtensions
