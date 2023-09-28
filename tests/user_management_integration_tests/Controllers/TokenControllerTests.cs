@@ -40,8 +40,14 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         // Given
         HttpClient httpClient = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
-        u.Privileges = u.Privileges.Append(new() { Name = StaticData.AUTHORIZE_CLIENT, Value = true }).ToArray();
+        FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
+        FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
+
+        User u = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        u.VerificationSecret = _faker.Random.String2(40);
+        u.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
+        u.IsVerified = true;
+        u.Privileges = u.Privileges.Where(p => p.Name != StaticData.AUTHORIZE_CLIENT).Append(new() { Name = StaticData.AUTHORIZE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);

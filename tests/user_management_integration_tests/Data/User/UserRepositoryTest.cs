@@ -1,13 +1,12 @@
 using System.Reflection;
 using Bogus;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using user_management.Data;
 using user_management.Data.User;
+using user_management.Models;
 using user_management.Services.Data;
 
 namespace user_management_integration_tests.Data.User;
@@ -18,44 +17,42 @@ public class UserRepositoryTestCollectionDefinition { }
 [Collection("UserRepositoryTest")]
 public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private readonly MongoCollections _mongoCollections;
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
+    private readonly IMongoCollection<user_management.Models.Client> _clientCollection;
     private readonly UserRepository _userRepository;
+    private readonly IMongoDatabase _mongoDatabase;
     public static Faker Faker = new("en");
+    private static IEnumerable<user_management.Models.Client> _clients = Array.Empty<user_management.Models.Client>();
 
     public UserRepositoryTest(CustomWebApplicationFactory<Program> factory)
     {
-        MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
-        _userCollection = mongoCollections.Users;
-        _userRepository = new(mongoCollections);
+        _mongoCollections = factory.Services.GetService<MongoCollections>()!;
+        _mongoDatabase = factory.Services.GetService<IMongoDatabase>()!;
+        _userCollection = _mongoCollections.Users;
+        _clientCollection = _mongoCollections.Clients;
+
+        _userRepository = new(_mongoCollections);
     }
 
-    public Task InitializeAsync() => _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty);
+    public Task InitializeAsync() => _mongoCollections.ClearCollections(_mongoDatabase);
 
     public Task DisposeAsync() => Task.CompletedTask;
 
     /// <exception cref="System.Exception"></exception>
     public static IEnumerable<user_management.Models.User> GenerateUsers(int count = 1)
     {
-        IEnumerable<user_management.Models.Client> clients = new user_management.Models.Client[] { };
-        for (int i = 0; i < 5; i++)
-            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients)).ToArray();
-        IEnumerable<user_management.Models.User> users = new user_management.Models.User[] { };
+        if (_clients.Count() == 0)
+            for (int i = 0; i < 5; i++)
+                _clients = _clients.Append(user_management.Models.Client.FakeClient(out string secret, _clients));
+
+        IEnumerable<user_management.Models.User> users = Array.Empty<user_management.Models.User>();
+
         for (int i = 0; i < count; i++)
         {
-            user_management.Models.User user = user_management.Models.User.FakeUser(users, clients);
-            int safety = 0;
-            do { user = user_management.Models.User.FakeUser(users, clients, new() { RandomClients = false, GiveUserPrivilegesToRandomUsers = false, GiveUserPrivilegesToItSelf = true }); safety++; }
-            while (safety < 500 && users.FirstOrDefault<user_management.Models.User?>(u => u != null && (
-                u.Username == user.Username ||
-                u.Email == user.Email ||
-                u.PhoneNumber == user.PhoneNumber ||
-                (
-                    u.FirstName == user.FirstName &&
-                    u.MiddleName == user.MiddleName &&
-                    u.LastName == user.LastName
-                )
-            )) != null);
-            if (safety >= 500) throw new Exception("While loop safety triggered at GenerateUsers private method of UserRepositoryTests.");
+            user_management.Models.User user = user_management.Models.User.FakeUser(users, _clients);
+
+            if (user.Clients.Length == 0) user.Clients = user.Clients.Append(UserClient.FakeUserClient(_clients.ElementAt(0))).ToArray();
 
             users = users.Append(user);
         }
@@ -63,27 +60,9 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         return users;
     }
 
-    public static IEnumerable<object?[]> OneUser =>
-        new List<object?[]>
-        {
-            new object?[] {
-                GenerateUsers().ElementAt(0)
-            },
-        };
-
-    public static IEnumerable<object?[]> TwoUsers =>
-        new List<object?[]>
-        {
-            GenerateUsers(2).ToArray(),
-        };
-
-    public static IEnumerable<object?[]> ManyUsers =>
-        new List<object?[]>
-        {
-            new object?[] {
-                GenerateUsers(20).ToArray()
-            },
-        };
+    public static IEnumerable<object?[]> OneUser => new List<object?[]> { new object?[] { GenerateUsers().ElementAt(0) } };
+    public static IEnumerable<object?[]> TwoUsers => new List<object?[]> { GenerateUsers(2).ToArray() };
+    public static IEnumerable<object?[]> ManyUsers => new List<object?[]> { new object?[] { GenerateUsers(20).ToArray() } };
 
     [Theory]
     [MemberData(nameof(TwoUsers))]
@@ -719,8 +698,6 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void Login(user_management.Models.User user)
     {
-        string token = user.Clients[0].Token!.Value!;
-
         // Success
         Assert.NotNull(user.LoggedOutAt);
 
@@ -1045,7 +1022,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPrivileges.AllUpdaters = new() { };
         user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.Clients[1].ClientId;
+        ObjectId clientId = user.Clients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1075,7 +1052,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPrivileges.AllUpdaters = new() { };
         user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { UpdatesFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.Clients[1].ClientId;
+        ObjectId clientId = user.Clients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1105,7 +1082,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPrivileges.AllUpdaters = new() { };
         user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { DeletesUser = true };
-        ObjectId clientId = user.Clients[1].ClientId;
+        ObjectId clientId = user.Clients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1130,7 +1107,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_userAlreadyPrivileged(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.Clients[1].ClientId;
+        ObjectId clientId = user.Clients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
 
         user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
@@ -1161,7 +1138,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_allCases(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.Clients[1].ClientId;
+        ObjectId clientId = user.Clients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new()
         {
             ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray(),

@@ -11,15 +11,19 @@ public class UserCollectionTestCollectionDefinition { }
 [Collection("UserCollectionTest")]
 public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private readonly IMongoClient _mongoClient;
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
     public static Faker Faker = new("en");
 
     public UserCollectionTest(CustomWebApplicationFactory<Program> factory)
     {
         MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
-        _userCollection = mongoCollections.Users;
+        IMongoDatabase mongoDatabase = factory.Services.GetService<IMongoDatabase>()!;
+        mongoCollections.ClearCollections(mongoDatabase).Wait();
 
-        _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty).Wait();
+        _mongoClient = factory.Services.GetService<IMongoClient>()!;
+
+        _userCollection = mongoCollections.Users;
     }
 
     private static user_management.Models.User TemplateUser(IEnumerable<user_management.Models.User>? users = null)

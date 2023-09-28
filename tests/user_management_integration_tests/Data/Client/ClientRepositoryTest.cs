@@ -1,9 +1,6 @@
 using System.Reflection;
 using Bogus;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using user_management.Data;
@@ -18,44 +15,32 @@ public class ClientRepositoryTestCollectionDefinition { }
 [Collection("ClientRepositoryTest")]
 public class ClientRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private readonly MongoCollections _mongoCollections;
+    private readonly IMongoDatabase _mongoDatabase;
     private readonly IMongoCollection<user_management.Models.Client> _clientCollection;
     private readonly ClientRepository _clientRepository;
     public static Faker Faker = new("en");
 
     public ClientRepositoryTest(CustomWebApplicationFactory<Program> factory)
     {
-        MongoCollections mongoCollections = factory.Services.GetService<MongoCollections>()!;
-        _clientCollection = mongoCollections.Clients;
-        _clientRepository = new(factory.Services.GetService<MongoClient>()!, mongoCollections);
+        _mongoCollections = factory.Services.GetService<MongoCollections>()!;
+        _mongoDatabase = factory.Services.GetService<IMongoDatabase>()!;
+
+        _clientCollection = _mongoCollections.Clients;
+        _clientRepository = new(factory.Services.GetService<IMongoClient>()!, _mongoCollections);
     }
 
-    public Task InitializeAsync() => _clientCollection.DeleteManyAsync(Builders<user_management.Models.Client>.Filter.Empty);
+    public Task InitializeAsync() => _mongoCollections.ClearCollections(_mongoDatabase);
 
     public Task DisposeAsync() => Task.CompletedTask;
-
-    private static user_management.Models.Client TemplateClient() => new user_management.Models.Client()
-    {
-        Id = ObjectId.GenerateNewId(),
-        RedirectUrl = Faker.Internet.Url(),
-        Secret = ObjectId.GenerateNewId().ToString(),
-        UpdatedAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-7), DateTime.UtcNow),
-        CreatedAt = (new Faker()).Date.Between(DateTime.UtcNow.AddDays(-14), DateTime.UtcNow.AddDays(-8))
-    };
 
     /// <exception cref="System.Exception"></exception>
     public static IEnumerable<user_management.Models.Client> GenerateClients(int count = 1)
     {
         IEnumerable<user_management.Models.Client> clients = new user_management.Models.Client[] { };
-        for (int i = 0; i < count; i++)
-        {
-            user_management.Models.Client client = TemplateClient();
-            int safety = 0;
-            do { client = TemplateClient(); safety++; }
-            while (safety < 500 && clients.FirstOrDefault<user_management.Models.Client?>(u => u != null && (u.Secret == client.Secret || u.RedirectUrl == client.RedirectUrl)) != null);
-            if (safety >= 500) throw new Exception("While loop safety triggered at GenerateClients private method of ClientRepositoryTests.");
 
-            clients = clients.Append(client);
-        }
+        for (int i = 0; i < count; i++)
+            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients));
 
         return clients;
     }
