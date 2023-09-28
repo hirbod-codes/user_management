@@ -28,19 +28,31 @@ public static class DatabaseManagement
             await app.Services.GetService<MongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
     }
 
-    public static async Task SeedDatabase(WebApplication app)
+    public static async Task SeedDatabase(IMongoClient client, MongoCollections mongoCollections, string environment, string dbName, string dbOptionsDatabaseName)
     {
         if (
-            app.Environment.IsEnvironment("Development")
-            && app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS__DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            environment == "Development"
+            && dbName == "mongodb"
+            && (
+                client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+                || client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.Client>(MongoCollections.CLIENTS).EstimatedDocumentCount() == 0
+            )
         )
-            await new MongoSeeder(app.Services.GetService<MongoCollections>()!, app.Environment.ContentRootPath).Seed();
+        {
+            await mongoCollections.ClearCollections(client.GetDatabase(dbOptionsDatabaseName));
+            await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+        }
         else if (
-            app.Environment.IsEnvironment("IntegrationTest")
-            && app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS__DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            environment == "IntegrationTest"
+            && dbName == "mongodb"
+            && (
+                client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+                || client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.Client>(MongoCollections.CLIENTS).EstimatedDocumentCount() == 0
+            )
         )
-            await new MongoSeeder(app.Services.GetService<MongoCollections>()!, app.Environment.ContentRootPath).Seed();
+        {
+            await mongoCollections.ClearCollections(client.GetDatabase(dbOptionsDatabaseName));
+            await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+        }
     }
 }

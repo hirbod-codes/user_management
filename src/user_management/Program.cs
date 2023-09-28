@@ -13,6 +13,7 @@ using user_management.Services;
 using user_management.Controllers.Services;
 using user_management.Authentication;
 using DotNetEnv.Configuration;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,22 +92,34 @@ app.MapControllers();
 
 await DatabaseManagement.InitializeDatabase(app);
 
-await DatabaseManagement.SeedDatabase(app);
+await DatabaseManagement.SeedDatabase(
+    app.Services.GetService<IMongoClient>()!,
+    app.Services.GetService<MongoCollections>()!,
+    app.Configuration["ENVIRONMENT"]!,
+    app.Configuration["DB_NAME"]!,
+    app.Configuration["DB_OPTIONS:DatabaseName"]!
+    );
 
-app.UseDatabaseExceptionHandler();
-app.UseExceptionHandler(handler => handler.Run(async context =>
+if (!app.Environment.IsDevelopment())
 {
-    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    // app.UseDatabaseExceptionHandler();
+    // app.UseExceptionHandler(handler => handler.Run(async context =>
+    // {
+    //     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-    // using static System.Net.Mime.MediaTypeNames;
-    context.Response.ContentType = Text.Plain;
+    //     // using static System.Net.Mime.MediaTypeNames;
+    //     context.Response.ContentType = Text.Plain;
 
-    await context.Response.WriteAsync("An exception was thrown.");
-}));
+    //     await context.Response.WriteAsync("An exception was thrown.");
+    // }));
+}
 
 app.Run();
 
 public partial class Program
 {
+    public const string ENV_PREFIX = "USER_MANAGEMENT_";
+    public static string RootPath { get; set; } = "";
+
     public void Configure() { }
 }
