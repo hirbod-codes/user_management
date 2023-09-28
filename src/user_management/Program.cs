@@ -102,16 +102,16 @@ await DatabaseManagement.SeedDatabase(
 
 if (!app.Environment.IsDevelopment())
 {
-    // app.UseDatabaseExceptionHandler();
-    // app.UseExceptionHandler(handler => handler.Run(async context =>
-    // {
-    //     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    app.UseDatabaseExceptionHandler();
+    app.UseExceptionHandler(handler => handler.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-    //     // using static System.Net.Mime.MediaTypeNames;
-    //     context.Response.ContentType = Text.Plain;
+        // using static System.Net.Mime.MediaTypeNames;
+        context.Response.ContentType = Text.Plain;
 
-    //     await context.Response.WriteAsync("An exception was thrown.");
-    // }));
+        await context.Response.WriteAsync("An exception was thrown.");
+    }));
 }
 
 app.Run();
