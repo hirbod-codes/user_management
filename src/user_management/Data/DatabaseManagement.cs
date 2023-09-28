@@ -6,9 +6,9 @@ public static class DatabaseManagement
 {
     public static void ResolveDatabase(WebApplicationBuilder builder)
     {
-        if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS__IsSharded").Value == "true")
+        if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS:IsSharded").Value == "true")
             builder.ConfigureShardedMongodb();
-        else if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS__IsSharded").Value != "true")
+        else if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS:IsSharded").Value != "true")
             builder.ConfigureMongodb();
     }
 
@@ -16,14 +16,14 @@ public static class DatabaseManagement
     {
         if (
             app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Configuration.GetSection("DB_OPTIONS__IsSharded").Value == "true"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS__DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            && app.Configuration.GetSection("DB_OPTIONS:IsSharded").Value == "true"
+            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS:DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
         )
             await app.Services.GetService<ShardedMongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
         else if (
             app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Configuration.GetSection("DB_OPTIONS__IsSharded").Value != "true"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS__DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            && app.Configuration.GetSection("DB_OPTIONS:IsSharded").Value != "true"
+            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS:DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
         )
             await app.Services.GetService<MongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
     }

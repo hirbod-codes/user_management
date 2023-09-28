@@ -23,7 +23,7 @@ services:
         ports:
             - '${DB_CONTAINER_PORT}:${DB_SERVER_PORT}'
         environment:
-            MONGO_INITDB_DATABASE: "${DATABASE_NAME}"
+            MONGO_INITDB_DATABASE: "${DB_DATABASE_NAME}"
             MONGO_INITDB_ROOT_USERNAME: "${DB_USERNAME}"
             MONGO_INITDB_ROOT_PASSWORD: "${DB_PASSWORD}"
         volumes:

@@ -37,7 +37,7 @@ services:
     user_management_mongodb:
         container_name: user_management_mongodb
         image: mongo:4.4.18
-        command: bash -c "/mongodb/mongos_server.sh --dbUsername ${CRT_USERNAME} --dbAdminUsername ${DB_USERNAME} --dbPassword "${DB_PASSWORD}" --dbName ${DATABASE_NAME} --dbPort ${DB_SERVER_PORT} --configReplSet user_management_configReplicaSet --configMember0 user_management_configServer1 --configMember1 user_management_configServer2 --configMember2 user_management_configServer3 --shardReplSet user_management_shardReplicaSet --shardMember0 user_management_shardServer1 --shardMember1 user_management_shardServer2 --shardMember2 user_management_shardServer3"
+        command: bash -c "/mongodb/mongos_server.sh --dbUsername ${CRT_USERNAME} --dbAdminUsername ${DB_USERNAME} --dbPassword "${DB_PASSWORD}" --dbName ${DB_DATABASE_NAME} --dbPort ${DB_SERVER_PORT} --configReplSet user_management_configReplicaSet --configMember0 user_management_configServer1 --configMember1 user_management_configServer2 --configMember2 user_management_configServer3 --shardReplSet user_management_shardReplicaSet --shardMember0 user_management_shardServer1 --shardMember1 user_management_shardServer2 --shardMember2 user_management_shardServer3"
         ports:
             - '${DB_CONTAINER_PORT}:${DB_SERVER_PORT}'
         volumes:

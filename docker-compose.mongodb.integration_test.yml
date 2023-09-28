@@ -8,27 +8,28 @@ services:
         build:
             context: ./
             dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
+        command: bash -c "dotnet test --no-restore --filter \"FullyQualifiedName=user_management_integration_tests.Data.Client.ClientCollectionTest.SecretIndex\""
         environment:
-            SHOULD_NOT_USE_ENV_FILE: true
-            ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
-            ENVIRONMENT: "${ENVIRONMENT}"
-            Logging__LogLevel__Default: "${Logging_LogLevel_Default}"
-            Logging__LogLevel__Microsoft.AspNetCore: "${Logging_LogLevel_Microsoft_AspNetCore}"
-            Jwt__SecretKey: "${Jwt_SecretKey}"
-            DB_NAME: "${DB_NAME}"
-            DB_OPTIONS__IsSharded: "false"
-            DB_OPTIONS__DatabaseName: "${DATABASE_NAME}"
-            DB_OPTIONS__Host: user_management_mongodb
-            DB_OPTIONS__Port: "${DB_SERVER_PORT}"
-            DB_OPTIONS__Username: "${DB_USERNAME}"
-            DB_OPTIONS__Password: "${DB_PASSWORD}"
+            USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
+            USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft.AspNetCore}"
+            USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
+            USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
+            USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
+            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
+            USER_MANAGEMENT_DB_OPTIONS__Password: "${DB_OPTIONS__Password}"
         depends_on:
             - user_management_mongodb
     user_management_mongodb:
         container_name: user_management_mongodb
         image: mongo:4.4.18
         environment:
-            MONGO_INITDB_DATABASE: "${DATABASE_NAME}"
+            MONGO_INITDB_DATABASE: "${DB_DATABASE_NAME}"
             MONGO_INITDB_ROOT_USERNAME: "${DB_USERNAME}"
             MONGO_INITDB_ROOT_PASSWORD: "${DB_PASSWORD}"
         volumes:

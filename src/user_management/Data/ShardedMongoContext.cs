@@ -107,7 +107,7 @@ public class ShardedMongoContext
         {
             ClientCertificates = new List<X509Certificate>()
                 {
-                    new X509Certificate2(CertificateP12, "") {}
+                    new X509Certificate2(Program.RootPath + "/../../" + CertificateP12, "") {}
                 },
             CheckCertificateRevocation = false,
             EnabledSslProtocols = SslProtocols.Tls12

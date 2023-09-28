@@ -29,21 +29,21 @@ services:
             - '${APP_HTTP_PORT}:5000'
             - '${APP_HTTPS_PORT}:5001'
         environment:
-            SHOULD_NOT_USE_ENV_FILE: true
-            ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
-            ENVIRONMENT: "${ENVIRONMENT}"
-            DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
-            Logging__LogLevel__Default: "${Logging_LogLevel_Default}"
-            Logging__LogLevel__Microsoft.AspNetCore: "${Logging_LogLevel_Microsoft_AspNetCore}"
-            Jwt__SecretKey: "${Jwt_SecretKey}"
-            DB_NAME: "${DB_NAME}"
-            DB_OPTIONS__IsSharded: "true"
-            DB_OPTIONS__CaPem: /security/ca/ca.pem
-            DB_OPTIONS__CertificateP12: /security/user_management/app.p12
-            DB_OPTIONS__DatabaseName: "${DATABASE_NAME}"
-            DB_OPTIONS__Host: user_management_mongodb
-            DB_OPTIONS__Port: "${DB_SERVER_PORT}"
-            DB_OPTIONS__Username: "${CRT_USERNAME}"
+            USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
+            USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
+            USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft.AspNetCore}"
+            USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
+            USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
+            USER_MANAGEMENT_DB_OPTIONS__CaPem: "${DB_OPTIONS__CaPem}"
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
+            USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
+            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
         depends_on:
             - user_management_mongodb
     user_management_mongo_express:
@@ -68,7 +68,7 @@ services:
     user_management_mongodb:
         container_name: user_management_mongodb
         image: mongo:4.4.18
-        command: bash -c "/mongodb/mongos_server.sh --dbUsername ${CRT_USERNAME} --dbAdminUsername ${DB_USERNAME} --dbPassword "${DB_PASSWORD}" --dbName ${DATABASE_NAME} --dbPort ${DB_SERVER_PORT} --configReplSet user_management_configReplicaSet --configMember0 user_management_configServer1 --configMember1 user_management_configServer2 --configMember2 user_management_configServer3 --shardReplSet user_management_shardReplicaSet --shardMember0 user_management_shardServer1 --shardMember1 user_management_shardServer2 --shardMember2 user_management_shardServer3"
+        command: bash -c "/mongodb/mongos_server.sh --dbUsername ${CRT_USERNAME} --dbAdminUsername ${DB_USERNAME} --dbPassword "${DB_PASSWORD}" --dbName ${DB_DATABASE_NAME} --dbPort ${DB_SERVER_PORT} --configReplSet user_management_configReplicaSet --configMember0 user_management_configServer1 --configMember1 user_management_configServer2 --configMember2 user_management_configServer3 --shardReplSet user_management_shardReplicaSet --shardMember0 user_management_shardServer1 --shardMember1 user_management_shardServer2 --shardMember2 user_management_shardServer3"
         ports:
             - '${DB_CONTAINER_PORT}:${DB_SERVER_PORT}'
         volumes:

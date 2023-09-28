@@ -1,4 +1,3 @@
-using System;
 using user_management.Data;
 using user_management.Authentication.JWT;
 using user_management.Authentication.Bearer;
@@ -13,15 +12,16 @@ using static System.Net.Mime.MediaTypeNames;
 using user_management.Services;
 using user_management.Controllers.Services;
 using user_management.Authentication;
-using DotNetEnv;
 using DotNetEnv.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddEnvironmentVariables();
+Program.RootPath = builder.Environment.ContentRootPath;
 
-if (builder.Configuration.GetSection("SHOULD_NOT_USE_ENV_FILE").Value != "true")
-    builder.Configuration.AddDotNetEnv(builder.Configuration.GetSection("ENV_FILE_PATH").Value ?? "../../.env.mongodb.development", LoadOptions.TraversePath());
+builder.Configuration.AddEnvironmentVariables(Program.ENV_PREFIX);
+
+if (Environment.GetEnvironmentVariable("MUST_NOT_USE_ENV_FILE") != "true" && Environment.GetEnvironmentVariable(Program.ENV_PREFIX + "MUST_NOT_USE_ENV_FILE") != "true")
+    builder.Configuration.AddDotNetEnv(Program.RootPath + "/../../" + (Environment.GetEnvironmentVariable(Program.ENV_PREFIX + "ENV_FILE_PATH") ?? ".env.mongodb.development"));
 
 // Add services to the container.
 builder.Services.AddControllers();

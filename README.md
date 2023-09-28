@@ -86,7 +86,13 @@ cd path-to-project-root-directory/ && \
 
 ## Caveat
 
-if you don't specify a .env file relative path (aka `ENV_FILE_PATH=../../.env.file dotnet run`) for running a project outside the container
-it will use the default "../../.env.mongodb.development" value as the env file path.
+if you don't specify a .env file relative path (aka `ENV_FILE_PATH=.env.file dotnet run`) for running a project outside the container,
+it will use the default ".env.mongodb.development" value as the env file path.
 
-also remember to change "DB_OPTIONS__Host" and "DB_OPTIONS__Host" environment values .env file accordingly when running outside a docker container.
+also remember to change environment values in .env file properly when running outside a docker container.
+
+DB_OPTIONS__Host=localhost
+DB_OPTIONS__Port=the_port_of_db_container
+(and if it is sharded mongodb cluster)
+DB_OPTIONS__CaPem=security/ca/ca.pem
+DB_OPTIONS__CertificateP12=security/user_management/app.p12
