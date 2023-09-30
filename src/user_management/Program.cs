@@ -14,6 +14,7 @@ using user_management.Controllers.Services;
 using user_management.Authentication;
 using DotNetEnv.Configuration;
 using MongoDB.Driver;
+using user_management.Configuration.Providers.DockerSecrets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +22,9 @@ Program.RootPath = builder.Environment.ContentRootPath;
 
 builder.Configuration.AddEnvironmentVariables(Program.ENV_PREFIX);
 
-if (Environment.GetEnvironmentVariable("MUST_NOT_USE_ENV_FILE") != "true" && Environment.GetEnvironmentVariable(Program.ENV_PREFIX + "MUST_NOT_USE_ENV_FILE") != "true")
+if (builder.Environment.IsProduction())
+    builder.Configuration.AddDockerSecrets(allowedPrefixesEnvVariableName: builder.Configuration["SECRETS_PREFIXES"]);
+else if (Environment.GetEnvironmentVariable("MUST_NOT_USE_ENV_FILE") != "true" && Environment.GetEnvironmentVariable(Program.ENV_PREFIX + "MUST_NOT_USE_ENV_FILE") != "true")
     builder.Configuration.AddDotNetEnv(Program.RootPath + "/../../" + (Environment.GetEnvironmentVariable(Program.ENV_PREFIX + "ENV_FILE_PATH") ?? ".env.mongodb.development"));
 
 // Add services to the container.
