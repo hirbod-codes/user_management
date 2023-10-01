@@ -1,0 +1,28 @@
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    build-dotnet-app:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v2
+              with:
+                  dotnet-version: 7.0.x
+
+            - run: |
+                chmod u+x ./prepare_environment_variables.sh
+                ./prepare_environment_variables.sh --projectRootDirectory ./
+
+                
+            - name: Run unit tests
+              run: sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
+            
+            - name: Run integration tests
+              run: docker compose -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
