@@ -1,0 +1,93 @@
+version: "3.8"
+volumes:
+    user_management_mongo_data: {}
+    user_management_mongo_config_data: {}
+networks:
+    db:
+        driver: overlay
+    backend:
+        driver: overlay
+secrets:
+    JWT__SECRET_KEY:
+        external: true
+    DB_NAME:
+        external: true
+    DB_OPTIONS__IsSharded:
+        external: true
+    DB_OPTIONS__DatabaseName:
+        external: true
+    DB_OPTIONS__Host:
+        external: true
+    DB_OPTIONS__Port:
+        external: true
+    DB_OPTIONS__Username:
+        external: true
+    DB_OPTIONS__Password:
+        external: true
+    DB_DATABASE_NAME:
+        external: true
+    DB_USERNAME:
+        external: true
+    DB_PASSWORD:
+        external: true
+    DB_SERVER_PORT:
+        external: true
+    Kestrel__Endpoints__Https__Certificate:
+        external: true
+services:
+    user_management:
+        image: ghcr.io/hirbod-codes/user_management:latest
+        ports:
+            - '80:5000'
+            - '443:5001'
+        environment:
+            DOTNET_GENERATE_ASPNET_CERTIFICATE: "false"
+            USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: "true"
+            USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: Production
+            USER_MANAGEMENT_ENVIRONMENT: Production
+            USER_MANAGEMENT_Logging__LogLevel__Default: warning
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
+            Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
+        secrets:
+            - JWT__SECRET_KEY
+            - DB_NAME
+            - DB_OPTIONS__IsSharded
+            - DB_OPTIONS__DatabaseName
+            - DB_OPTIONS__Host
+            - DB_OPTIONS__Port
+            - DB_OPTIONS__Username
+            - DB_OPTIONS__Password
+            - Kestrel__Endpoints__Https__Certificate
+        networks:
+            - backend
+            - db
+    user_management_mongo_express:
+        image: mongo-express:0.54.0
+        ports:
+            - "45687:8081"
+        secrets:
+            - DB_USERNAME
+            - DB_PASSWORD
+        environment:
+            ME_CONFIG_BASICAUTH_USERNAME_FILE: /run/secrets/DB_USERNAME
+            ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+            ME_CONFIG_MONGODB_SERVER: user_management_mongodb
+            ME_CONFIG_MONGODB_PORT_FILE: /run/secrets/DB_SERVER_PORT
+            ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+        networks:
+            - db
+    user_management_mongodb:
+        image: mongo:4.4.18
+        secrets:
+            - DB_DATABASE_NAME
+            - DB_USERNAME
+            - DB_PASSWORD
+        environment:
+            MONGO_INITDB_DATABASE_FILE: /run/secrets/DB_DATABASE_NAME
+            MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/DB_USERNAME
+            MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+        volumes:
+            - user_management_mongo_data:/data/db
+            - user_management_mongo_config_data:/data/configdb
+        networks:
+            - db

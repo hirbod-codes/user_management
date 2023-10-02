@@ -66,6 +66,7 @@ createServiceCert() {
 
 echo "Preparing services x509 certificates..."
 
+# For https connections
 rm -r $projectRootDirectory/security
 
 mkdir -p $projectRootDirectory/security/ca/
@@ -92,3 +93,8 @@ createServiceCert user_management_configServer3
 createServiceCert user_management_shardServer1
 createServiceCert user_management_shardServer2
 createServiceCert user_management_shardServer3
+
+# For https connections
+mkdir -p $projectRootDirectory/security/user_management_https/
+openssl req -x509 -nodes -days 1000 -newkey rsa:4096 -sha256 -keyout ./security/user_management_https/private.key -out ./security/user_management_https/server.crt -config ./src/user_management/https_x509.ext -extensions https
+openssl pkcs12 -password pass: -export -out ./security/user_management_https/https.pfx -inkey ./security/user_management_https/private.key -in ./security/user_management_https/server.crt
