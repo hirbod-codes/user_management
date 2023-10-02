@@ -9,6 +9,6 @@ services:
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
             USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
             USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
-            USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
-            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft.AspNetCore}"
-            USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_Logging__LogLevel__Default: ${Logging__LogLevel__Default}
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: ${Logging__LogLevel__Microsoft__AspNetCore}
+            USER_MANAGEMENT_Jwt__SecretKey: ${Jwt__SecretKey}

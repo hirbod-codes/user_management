@@ -36,8 +36,8 @@ fi
 if [[ ! -e "$projectRootDirectory/.env.mongodb.development" || $reset == "true" ]]; then
     echo "ENVIRONMENT=Development
 
-Logging_Log_Level_Default=information
-Logging_Log_Level_Microsoft.AspNetCore=information
+Logging__LogLevel__Default=information
+Logging__LogLevel__Microsoft_AspNetCore=information
 
 APP_HTTP_PORT=5000
 APP_HTTPS_PORT=5001
@@ -70,8 +70,8 @@ fi
 if [[ ! -e "$projectRootDirectory/.env.mongodb.integration_test" || $reset == "true" ]]; then
     echo "ENVIRONMENT=IntegrationTest
 
-Logging_Log_Level_Default=information
-Logging_Log_Level_Microsoft.AspNetCore=information
+Logging__LogLevel__Default=information
+Logging__LogLevel__Microsoft_AspNetCore=information
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
@@ -96,8 +96,8 @@ fi
 if [[ ! -e "$projectRootDirectory/.env.sharded_mongodb.development" || $reset == "true" ]]; then
     echo "ENVIRONMENT=Development
 
-Logging_Log_Level_Default=information
-Logging_Log_Level_Microsoft.AspNetCore=information
+Logging__LogLevel__Default=information
+Logging__LogLevel__Microsoft_AspNetCore=information
 
 APP_HTTP_PORT=5000
 APP_HTTPS_PORT=5001
@@ -133,8 +133,8 @@ fi
 if [[ ! -e "$projectRootDirectory/.env.sharded_mongodb.integration_test" || $reset == "true" ]]; then
     echo "ENVIRONMENT=IntegrationTest
 
-Logging_Log_Level_Default=information
-Logging_Log_Level_Microsoft.AspNetCore=information
+Logging__LogLevel__Default=information
+Logging__LogLevel__Microsoft_AspNetCore=information
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
@@ -160,8 +160,8 @@ fi
 if [[ ! -e "$projectRootDirectory/.env.unit_test" || $reset == "true" ]]; then
     echo "ENVIRONMENT=UnitTest
 
-Logging_Log_Level_Default=information
-Logging_Log_Level_Microsoft.AspNetCore=information
+Logging__LogLevel__Default=information
+Logging__LogLevel__Microsoft_AspNetCore=information
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 " >$projectRootDirectory/.env.unit_test

@@ -34,7 +34,7 @@ services:
             USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
             USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
             USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
-            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft.AspNetCore}"
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft_AspNetCore}"
             USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
             USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
