@@ -17,13 +17,17 @@ jobs:
                   dotnet-version: 7.0.x
 
             - run: |
+                cd $GITHUB_WORKSPACE
                 chmod u+x ./prepare_environment_variables.sh
                 ./prepare_environment_variables.sh --projectRootDirectory ./
 
             - name: Run unit tests
-              run: sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
+              run: |
+                cd $GITHUB_WORKSPACE
+                sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 
             - name: Run integration tests
               run: |
+                cd $GITHUB_WORKSPACE
                 docker compose -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
                 docker compose -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
