@@ -16,8 +16,10 @@ jobs:
               with:
                   dotnet-version: 7.0.x
 
-            - run: |
+            - name: Prepare environment variables
+              run: |
                 cd $GITHUB_WORKSPACE
+                ls -al
                 chmod u+x ./prepare_environment_variables.sh
                 ./prepare_environment_variables.sh --projectRootDirectory ./
 
