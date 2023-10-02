@@ -1,20 +1,17 @@
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
-WORKDIR /app
-EXPOSE 5000 5001 6001
+FROM mcr.microsoft.com/dotnet/sdk:7.0
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
-WORKDIR /src
-COPY ["user_management.csproj", "."]
-RUN dotnet restore "./user_management.csproj"
-COPY . .
-RUN dotnet build "user_management.csproj" -c Release -o /app/build
+WORKDIR /project
 
-FROM build AS publish
-RUN dotnet publish "user_management.csproj" -c Release -o /app/publish
+COPY ./src/user_management/user_management.csproj ./
+RUN dotnet restore -v d
 
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-COPY ./security/ca/ca.pem /security/ca.pem
-COPY ./security/user_management/app.p12 /security/app.p12
-ENTRYPOINT ["dotnet", "user_management.dll"]
+RUN apt update && apt install openssl
+
+COPY ./src/user_management/ ./
+
+RUN dotnet publish --disable-build-servers --no-restore -c Release -o /publish
+
+WORKDIR /publish
+
+EXPOSE 5001 5000
+CMD dotnet user_management.dll
