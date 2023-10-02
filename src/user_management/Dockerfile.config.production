@@ -1,8 +1,0 @@
-FROM mongo:4.4.18
-
-COPY ./mongodb/config_server.sh /mongodb/config_server.sh
-COPY ./security/ca/ca.pem /security/ca.pem
-COPY ./security/user_management_configServer1/app.pem /security/app.pem
-COPY ./security/user_management_configServer1/member.pem /security/member.pem
-
-CMD ["bash", "-c", "/mongodb/config_server.sh"]

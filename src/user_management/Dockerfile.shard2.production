@@ -1,5 +1,0 @@
-FROM mongo:4.4.18
-
-COPY ./security/ca/ca.pem /security/ca.pem
-COPY ./security/user_management_shardServer2/app.pem /security/app.pem
-COPY ./security/user_management_shardServer2/member.pem /security/member.pem
