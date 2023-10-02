@@ -5,8 +5,6 @@
 ### for single mongodb container as the database run
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -16,8 +14,6 @@ cd path-to-project-root-directory/ && \
 ### for sharded mongodb cluster as the database run
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -30,8 +26,6 @@ cd path-to-project-root-directory/ && \
 ### for single mongodb container as the database run
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -41,8 +35,6 @@ cd path-to-project-root-directory/ && \
 ### for sharded mongodb cluster as the database run
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -53,8 +45,6 @@ cd path-to-project-root-directory/ && \
 ## In UnitTest Environment (Linux/WSL)
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -64,8 +54,6 @@ cd path-to-project-root-directory/ && \
 ## for docker compose only with sharded mongodb cluster (so you can run the dotnet application outside docker container)
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
@@ -76,8 +64,6 @@ cd path-to-project-root-directory/ && \
 ## for docker compose only with single mongodb container (so you can run the dotnet application outside docker container)
 
 ```bash
-#!/bin/bash
-
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory ./ && \
