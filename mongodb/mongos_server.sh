@@ -25,28 +25,37 @@ done
 # Enable job controll
 set -m
 
-if [[ (-z $dbAdminUsernameFile || -z $dbPasswordFile || -z $dbNameFile) && (-z $dbAdminUsername || -z $dbPassword || -z $dbName) ]]; then
+if [[ (-z $dbUsername || -z $dbAdminUsername || -z $dbPassword || -z $dbName || -z $dbPort) && (-z $dbUsernameFile || -z $dbAdminUsernameFile || -z $dbPasswordFile || -z $dbNameFile || -z $dbPortFile) ]]; then
     echo "Insufficient parameters provided."
     exit
 fi
 
-if [[ -z $dbAdminUsername && -z $dbPassword && -z $dbName ]]; then
-    dbAdminUsername=$dbAdminUsernameFile
-    dbPassword=$dbPasswordFile
-    dbName=$dbNameFile
+if [[ -z $dbUsername && -z $dbAdminUsername && -z $dbPassword && -z $dbName && -z $dbPort ]]; then
+    dbUsername=$(cat $dbUsernameFile)
+    dbAdminUsername=$(cat $dbAdminUsernameFile)
+    dbPassword=$(cat $dbPasswordFile)
+    dbName=$(cat $dbNameFile)
+    dbPort=$(cat $dbPortFile)
+fi
+
+if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+    tlsClusterFile=/security/member.pem
+    tlsCertificateKeyFile=/security/app.pem
+    tlsCAFile=/security/ca.pem
+    tlsClusterCAFile=/security/ca.pem
 fi
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 160s
 echo "\n\nWaited...................................................................................\n\n"
 
-mongos --bind_ip "0.0.0.0" --port $dbPort --configdb "$configReplSet/$configMember0:$dbPort,$configMember1:$dbPort,$configMember2:$dbPort" --tlsMode requireTLS --clusterAuthMode x509 --tlsClusterFile /security/member.pem --tlsCertificateKeyFile /security/app.pem --tlsCAFile /security/ca.pem --tlsClusterCAFile /security/ca.pem &
+mongos --bind_ip "0.0.0.0" --port $dbPort --configdb "$configReplSet/$configMember0:$dbPort,$configMember1:$dbPort,$configMember2:$dbPort" --tlsMode requireTLS --clusterAuthMode x509 --tlsClusterFile $tlsClusterFile --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterCAFile $tlsClusterCAFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 60s
 echo "\n\nWaited...................................................................................\n\n"
 
-status=$(mongo --tls --tlsCertificateKeyFile /security/member.pem --tlsCAFile /security/ca.pem --tlsAllowInvalidHostnames --quiet --eval 'rs.status().ok')
+status=$(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --quiet --eval 'rs.status().ok')
 echo "status------------------------------------->$status"
 
 if [[ $status != "1" ]]; then
@@ -60,7 +69,7 @@ sh.status();
 
 db.getSiblingDB(\"\$external\").runCommand(
     {
-        createUser: \"CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US\",
+        createUser: \"$dbUsername\",
         roles: [
             { role: \"dbAdmin\", db: \"$dbName\" },
             { role: \"readWrite\", db: \"$dbName\" },
@@ -75,7 +84,7 @@ db.getUsers()
 
 " >/mongo-tmp-init
 
-    mongo --tls --tlsCertificateKeyFile /security/member.pem --tlsCAFile /security/ca.pem --tlsAllowInvalidHostnames </mongo-tmp-init
+    mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames </mongo-tmp-init
 
     echo "The mogos instance initialized successfully......................................................................................."
 
