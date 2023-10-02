@@ -4,6 +4,8 @@ on:
             - main
     workflow_dispatch:
 
+    pull_request:
+
 jobs:
     build-dotnet-app:
         runs-on: ubuntu-latest
