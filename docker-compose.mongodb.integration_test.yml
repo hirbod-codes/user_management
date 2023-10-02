@@ -8,7 +8,7 @@ services:
         build:
             context: ./
             dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
-        command: bash -c "dotnet test --no-restore --filter \"FullyQualifiedName=user_management_integration_tests.Data.Client.ClientCollectionTest.SecretIndex\""
+        command: bash -c "sleep 10s && dotnet test --no-restore"
         environment:
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
             USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
