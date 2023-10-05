@@ -25,13 +25,17 @@ done
 # Enable job controll
 set -m
 
-if [[ -z $dbPort && -z $dbPortFile ]]; then
+if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSetFile || -z $member0File || -z $member1File || -z $member2File) ]]; then
     echo "Insufficient parameters provided."
     exit
 fi
 
-if [[ -z $dbPort ]]; then
+if [[ -z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2 ]]; then
     dbPort=$(cat $dbPortFile)
+    replSet=$(cat $replSetFile)
+    member0=$(cat $member0File)
+    member1=$(cat $member1File)
+    member2=$(cat $member2File)
 fi
 
 if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
@@ -47,13 +51,7 @@ echo "\n\nWaiting...............................................................
 sleep 60s
 echo "\n\nWaited...................................................................................\n\n"
 
-echo mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval 'rs.status()'
-echo $(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval 'rs.status()')
-status=$(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --quiet --eval 'rs.status()')
-echo "status------------------------------------->$status"
-
-if [[ $status != "1" ]]; then
-    mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval "
+mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval "
         rs.initiate(
             { 
                 _id: \"$replSet\",
@@ -64,12 +62,10 @@ if [[ $status != "1" ]]; then
                     { _id: 2, host: \"$member2:$dbPort\" }
                 ] 
             }
-        );
-    "
-    echo $(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval 'rs.status()')
-    echo "The replication initialized successfully......................................................................................."
-else
-    echo "The replication already initialized......................................................................................."
-fi
+        )
 
-fg %1
+        rs.status()
+    "
+echo "The replication initialized successfully......................................................................................."
+
+fg

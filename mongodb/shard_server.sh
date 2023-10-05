@@ -25,13 +25,17 @@ done
 # Enable job controll
 set -m
 
-if [[ -z $dbPort && -z $dbPortFile ]]; then
+if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSetFile || -z $member0File || -z $member1File || -z $member2File) ]]; then
     echo "Insufficient parameters provided."
     exit
 fi
 
-if [[ -z $dbPort ]]; then
+if [[ -z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2 ]]; then
     dbPort=$(cat $dbPortFile)
+    replSet=$(cat $replSetFile)
+    member0=$(cat $member0File)
+    member1=$(cat $member1File)
+    member2=$(cat $member2File)
 fi
 
 if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
@@ -45,7 +49,7 @@ echo "\n\nWaiting...............................................................
 sleep 80s
 echo "\n\nWaited...................................................................................\n\n"
 
-mongod --shardsvr --replSet "$replSet/$member0:$dbPort,$member1:$dbPort,$member2:$dbPort" --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
+mongod --shardsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 60s

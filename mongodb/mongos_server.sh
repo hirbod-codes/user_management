@@ -55,11 +55,7 @@ echo "\n\nWaiting...............................................................
 sleep 60s
 echo "\n\nWaited...................................................................................\n\n"
 
-status=$(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --quiet --eval 'rs.status().ok')
-echo "status------------------------------------->$status"
-
-if [[ $status != "1" ]]; then
-    echo "
+echo "
 use admin
 db.createUser({ user: \"$dbAdminUsername\", pwd: \"$dbPassword\", roles: [{ role: \"root\", db: \"admin\" }] })
 db.auth(\"$dbAdminUsername\", \"$dbPassword\")
@@ -78,19 +74,32 @@ db.getSiblingDB(\"\$external\").runCommand(
         writeConcern: { w: \"majority\", wtimeout: 5000 }
     }
 )
-
-use \$external
-db.getUsers()
-
 " >/mongo-tmp-init
 
-    mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames </mongo-tmp-init
+if [[ -n $localhostUsername ]]; then
+    echo "
+use admin
 
-    echo "The mogos instance initialized successfully......................................................................................."
+db.auth('$dbAdminUsername', '$dbPassword')
 
-    rm /mongo-tmp-init
-else
-    echo "The mogos instance already initialized......................................................................................."
+db.getSiblingDB('\$external').runCommand(
+    {
+        createUser: '$localhostUsername',
+        roles: [
+            { role: 'dbAdmin', db: '$dbName' },
+            { role: 'readWrite', db: '$dbName' },
+            { role: 'userAdminAnyDatabase', db: 'admin' }
+        ],
+        writeConcern: { w: 'majority', wtimeout: 5000 }
+    }
+)
+" >>/mongo-tmp-init
 fi
+
+mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames </mongo-tmp-init
+
+echo "The mogos instance initialized successfully......................................................................................."
+
+rm /mongo-tmp-init
 
 fg

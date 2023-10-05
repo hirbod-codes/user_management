@@ -22,9 +22,9 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [[ (-z $dbPort || -z $replSet) && (-z $dbPortFile || -z $replSetFile) ]]; then
+if [[ (-z $replSet || -z $dbPort) && (-z $replSetFile || -z $dbPortFile) ]]; then
     echo "Insufficient parameters provided."
-    exit
+    exit 1
 fi
 
 if [[ -z $dbPort || -z $replSet ]]; then
@@ -39,4 +39,4 @@ if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tl
     tlsClusterCAFile=/security/ca.pem
 fi
 
-mongod --shardsvr --replSet $replSet --port $dbPort --bind_ip "0.0.0.0" --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsClusterFile $tlsClusterFile --tlsCAFile $tlsCAFile --tlsClusterCAFile $tlsClusterCAFile
+mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile
