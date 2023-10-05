@@ -12,8 +12,6 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        Environment.SetEnvironmentVariable(Program.ENV_PREFIX + "ENV_FILE_PATH", ".env.sharded_mongodb.development");
-        Environment.SetEnvironmentVariable("ENV_FILE_PATH", ".env.sharded_mongodb.development");
         builder
             .ConfigureServices((ctx, services) =>
                 {

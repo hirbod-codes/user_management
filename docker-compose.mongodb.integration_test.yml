@@ -1,37 +1,107 @@
 version: '3.8'
 volumes:
-    user_management_mongo_data: {}
-    user_management_mongo_config_data: {}
+    user_management_replicaSet_p_data: {}
+    user_management_replicaSet_p_config_data: {}
+    user_management_replicaSet_s_1_data: {}
+    user_management_replicaSet_s_1_config_data: {}
+    user_management_replicaSet_s_2_data: {}
+    user_management_replicaSet_s_2_config_data: {}
 services:
     user_management:
         container_name: user_management_integration_test
         build:
             context: ./
             dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
-        command: bash -c "sleep 10s && dotnet test --no-restore"
+        command: bash -c "sleep 100s && dotnet test --no-restore"
         environment:
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
             USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
             USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
             USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft_AspNetCore}"
             USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
             USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
+            USER_MANAGEMENT_DB_OPTIONS__CaPem: "${DB_OPTIONS__CaPem}"
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
             USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
-            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
-            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__ReplicaSetName: "${DB_OPTIONS__ReplicaSetName}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host: "${DB_OPTIONS__Servers__0__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port: "${DB_OPTIONS__Servers__0__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host: "${DB_OPTIONS__Servers__1__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port: "${DB_OPTIONS__Servers__1__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host: "${DB_OPTIONS__Servers__2__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port: "${DB_OPTIONS__Servers__2__Port}"
             USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
-            USER_MANAGEMENT_DB_OPTIONS__Password: "${DB_OPTIONS__Password}"
-        depends_on:
-            - user_management_mongodb
-    user_management_mongodb:
-        container_name: user_management_mongodb
-        image: mongo:4.4.18
-        environment:
-            MONGO_INITDB_DATABASE: "${DB_DATABASE_NAME}"
-            MONGO_INITDB_ROOT_USERNAME: "${DB_USERNAME}"
-            MONGO_INITDB_ROOT_PASSWORD: "${DB_PASSWORD}"
         volumes:
-            - user_management_mongo_data:/data/db
-            - user_management_mongo_config_data:/data/configdb
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management/app.p12:/security/app.p12
+        depends_on:
+            - user_management_replicaSet_p
+    user_management_replicaSet_p:
+        container_name: user_management_replicaSet_p
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            member0: user_management_replicaSet_p
+            member1: user_management_replicaSet_s_1
+            member2: user_management_replicaSet_s_2
+            dbPort: ${DB_SERVER_PORT}
+            dbName: ${DB_DATABASE_NAME}
+            dbAdminUsername: ${DB_USERNAME}
+            dbUsername: ${CRT_USERNAME}
+            dbPassword: ${DB_PASSWORD}
+            tlsCertificateKeyFile: /security/app.pem
+            tlsCAFile: /security/ca.pem
+            tlsClusterFile: /security/member.pem
+            tlsClusterCAFile: /security/ca.pem
+            localhostUsername: ${LOCALHOST_USERNAME}
+        volumes:
+            - user_management_replicaSet_p_data:/data/db
+            - user_management_replicaSet_p_config_data:/data/configdb
+            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management_replicaSet_p/member.pem:/security/member.pem
+            - ./security/user_management_replicaSet_p/app.pem:/security/app.pem
+        # healthcheck:
+        #     test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"mongo1:27017\"},{_id:1,host:\"mongo2:27017\"},{_id:2,host:\"mongo3:27017\"}]}).ok || rs.status().ok" | mongo --tls --tlsCertificateKeyFile /security/app.pem --tlsCAFile /security/ca.pem --tlsAllowInvalidHostnames --quiet) -eq 1
+        #     interval: 10s
+        #     start_period: 30s
+    user_management_replicaSet_s_1:
+        container_name: user_management_replicaSet_s_1
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/secondary_rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            dbPort: ${DB_SERVER_PORT}
+        volumes:
+            - user_management_replicaSet_s_1_data:/data/db
+            - user_management_replicaSet_s_1_config_data:/data/configdb
+            - ./mongodb/secondary_rs_server.sh:/mongodb/secondary_rs_server.sh
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management_replicaSet_s_1/member.pem:/security/member.pem
+            - ./security/user_management_replicaSet_s_1/app.pem:/security/app.pem
+        # healthcheck:
+        #     test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"mongo1:27017\"},{_id:1,host:\"mongo2:27017\"},{_id:2,host:\"mongo3:27017\"}]}).ok || rs.status().ok" | mongo --tls --tlsCertificateKeyFile /security/app.pem --tlsCAFile /security/ca.pem --tlsAllowInvalidHostnames --quiet) -eq 1
+        #     interval: 10s
+        #     start_period: 30s
+    user_management_replicaSet_s_2:
+        container_name: user_management_replicaSet_s_2
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/secondary_rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            dbPort: ${DB_SERVER_PORT}
+        volumes:
+            - user_management_replicaSet_s_2_data:/data/db
+            - user_management_replicaSet_s_2_config_data:/data/configdb
+            - ./mongodb/secondary_rs_server.sh:/mongodb/secondary_rs_server.sh
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management_replicaSet_s_2/member.pem:/security/member.pem
+            - ./security/user_management_replicaSet_s_2/app.pem:/security/app.pem
+        # healthcheck:
+        #     test: test $$(echo "rs.initiate({_id:'my-replica-set',members:[{_id:0,host:\"mongo1:27017\"},{_id:1,host:\"mongo2:27017\"},{_id:2,host:\"mongo3:27017\"}]}).ok || rs.status().ok" | mongo --tls --tlsCertificateKeyFile /security/app.pem --tlsCAFile /security/ca.pem --tlsAllowInvalidHostnames --quiet) -eq 1
+        #     interval: 10s
+        #     start_period: 30s

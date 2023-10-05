@@ -24,7 +24,7 @@ done
 
 # Validating Arguments
 if [[ -z $projectRootDirectory ]]; then
-    echo "Insufficient arguments"
+    echo "projectRootDirectory is a required parameter."
     exit
 elif [[ $projectRootDirectory == '/' ]]; then
     echo "Project root directory must not be system root '/'"
@@ -77,14 +77,14 @@ openssl req -in $projectRootDirectory/security/ca/ca.csr -noout -subject
 openssl x509 -req -sha256 -extfile $projectRootDirectory/x509.ext -extensions ca -in $projectRootDirectory/security/ca/ca.csr -signkey $projectRootDirectory/security/ca/ca.key -days 1095 -out $projectRootDirectory/security/ca/ca.pem
 
 createClientCert localhost mongodb_client
-createClientCert local_client mongodb_client
+openssl pkcs12 -export -password pass: -in $projectRootDirectory/security/localhost/app.crt -inkey $projectRootDirectory/security/localhost/app.key -out $projectRootDirectory/security/localhost/app.p12
 
 createClientCert user_management mongodb_client
+openssl pkcs12 -export -password pass: -in $projectRootDirectory/security/user_management/app.crt -inkey $projectRootDirectory/security/user_management/app.key -out $projectRootDirectory/security/user_management/app.p12
 
 createClientCert user_management_mongo_express mongodb_client
 
 createServiceCert user_management_mongodb
-openssl pkcs12 -export -password pass: -in $projectRootDirectory/security/user_management/app.crt -inkey $projectRootDirectory/security/user_management/app.key -out $projectRootDirectory/security/user_management/app.p12
 
 createServiceCert user_management_configServer1
 createServiceCert user_management_configServer2
@@ -94,7 +94,11 @@ createServiceCert user_management_shardServer1
 createServiceCert user_management_shardServer2
 createServiceCert user_management_shardServer3
 
+createServiceCert user_management_replicaSet_p
+createServiceCert user_management_replicaSet_s_1
+createServiceCert user_management_replicaSet_s_2
+
 # For https connections
 mkdir -p $projectRootDirectory/security/user_management_https/
-openssl req -x509 -nodes -days 1000 -newkey rsa:4096 -sha256 -keyout ./security/user_management_https/private.key -out ./security/user_management_https/server.crt -config ./src/user_management/https_x509.ext -extensions https
+openssl req -x509 -nodes -days 1000 -newkey rsa:4096 -sha256 -keyout ./security/user_management_https/private.key -out ./security/user_management_https/server.crt -config ./https_x509.ext -extensions https
 openssl pkcs12 -password pass: -export -out ./security/user_management_https/https.pfx -inkey ./security/user_management_https/private.key -in ./security/user_management_https/server.crt
