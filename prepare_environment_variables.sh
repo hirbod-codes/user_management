@@ -48,11 +48,10 @@ DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
 DB_OPTIONS__ReplicaSetName=user_management_replicaSet
-DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-DB_OPTIONS__Host=user_management_p
+DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
+DB_OPTIONS__Host=user_management_replicaSet_p
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=false
-DB_OPTIONS__CaPem=/security/ca.pem
 DB_OPTIONS__CertificateP12=/security/app.p12
 
 DB_DATABASE_NAME=user_management_db
@@ -62,12 +61,8 @@ DB_SERVER_PORT=27017
 DB_PRIMARY_CONTAINER_PORT=8081
 DB_SECONDARY_1_CONTAINER_PORT=8082
 DB_SECONDARY_2_CONTAINER_PORT=8083
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
-
-ME_CONTAINER_PORT=8082
-ME_CONFIG_BASICAUTH_USERNAME=hirbod
-ME_CONFIG_BASICAUTH_PASSWORD=password
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 " >$projectRootDirectory/.env.mongodb.development
 fi
 
@@ -84,20 +79,18 @@ Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
-DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
+DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__ReplicaSetName=user_management_replicaSet
 DB_OPTIONS__Host=user_management_p
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=false
-DB_OPTIONS__CaPem=/security/ca.pem
 DB_OPTIONS__CertificateP12=/security/app.p12
 
 DB_DATABASE_NAME=user_management_db
 DB_USERNAME=hirbod
 DB_PASSWORD=password
 DB_SERVER_PORT=27017
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
 " >$projectRootDirectory/.env.mongodb.integration_test
 fi
 
@@ -117,11 +110,10 @@ Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
-DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
+DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__Host=user_management_replicaSet_p
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=true
-DB_OPTIONS__CaPem=/security/ca.pem
 DB_OPTIONS__CertificateP12=/security/app.p12
 
 DB_DATABASE_NAME=user_management_db
@@ -129,12 +121,9 @@ DB_USERNAME=hirbod
 DB_PASSWORD=password
 DB_SERVER_PORT=27017
 DB_CONTAINER_PORT=8081
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 
-ME_CONTAINER_PORT=8082
-ME_CONFIG_BASICAUTH_USERNAME=hirbod
-ME_CONFIG_BASICAUTH_PASSWORD=password
 " >$projectRootDirectory/.env.sharded_mongodb.development
 fi
 
@@ -149,20 +138,19 @@ Logging__LogLevel__Microsoft_AspNetCore=information
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
 DB_OPTIONS__DatabaseName=user_management_db
-DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
+DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__Password=password
 DB_OPTIONS__Host=user_management_replicaSet_p
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=true
-DB_OPTIONS__CaPem=/security/ca.pem
 DB_OPTIONS__CertificateP12=/security/app.p12
 
 DB_DATABASE_NAME=user_management_db
 DB_USERNAME=hirbod
 DB_PASSWORD=password
 DB_SERVER_PORT=27017
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 " >$projectRootDirectory/.env.sharded_mongodb.integration_test
 fi
 
@@ -188,12 +176,9 @@ DB_SERVER_PORT=27017
 DB_PRIMARY_CONTAINER_PORT=8081
 DB_SECONDARY_1_CONTAINER_PORT=8082
 DB_SECONDARY_2_CONTAINER_PORT=8083
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 
-ME_CONTAINER_PORT=8082
-ME_CONFIG_BASICAUTH_USERNAME=hirbod
-ME_CONFIG_BASICAUTH_PASSWORD=password
 " >$projectRootDirectory/.env.mongodb
 fi
 
@@ -205,11 +190,8 @@ DB_USERNAME=hirbod
 DB_PASSWORD=password
 DB_SERVER_PORT=27017
 DB_CONTAINER_PORT=8081
-CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management,ST=NY,C=US
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management,ST=NY,C=US
+CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 
-ME_CONTAINER_PORT=8082
-ME_CONFIG_BASICAUTH_USERNAME=hirbod
-ME_CONFIG_BASICAUTH_PASSWORD=password
 " >$projectRootDirectory/.env.sharded_mongodb
 fi
