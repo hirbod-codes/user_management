@@ -38,14 +38,12 @@ if [[ -z $dbAdminUsername || -z $dbPassword || -z $dbUsername || -z $dbName || -
     dbPort=$(cat $dbPortFile)
 fi
 
-if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+if [[ -z $tlsCAFile || -z $tlsCertificateKeyFile ]]; then
     tlsCertificateKeyFile=/security/app.pem
     tlsCAFile=/security/ca.pem
-    tlsClusterFile=/security/member.pem
-    tlsClusterCAFile=/security/ca.pem
 fi
 
-mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
+mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 20s

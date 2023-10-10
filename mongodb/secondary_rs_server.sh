@@ -32,11 +32,9 @@ if [[ -z $dbPort || -z $replSet ]]; then
     replSet=$(cat $replSetFile)
 fi
 
-if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+if [[ -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
     tlsCertificateKeyFile=/security/app.pem
     tlsCAFile=/security/ca.pem
-    tlsClusterFile=/security/member.pem
-    tlsClusterCAFile=/security/ca.pem
 fi
 
-mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile
+mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile
