@@ -213,7 +213,7 @@ services:
             - SHARD_1_TLS_CERTIFICATE_KEY_FILE
             - TLS_CAFILE
             - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/shard_server.sh shardServer1 --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_shardReplicaSet --member0 user_management_shardServer1 --member1 user_management_shardServer2 --member2 user_management_shardServer3  --tlsClusterFile /run/secrets/SHARD_1_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/SHARD_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
+        command: bash -c "/mongodb/shard_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_shardReplicaSet --member0 user_management_shardServer1 --member1 user_management_shardServer2 --member2 user_management_shardServer3  --tlsClusterFile /run/secrets/SHARD_1_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/SHARD_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
         volumes:
             - user_management_shardServer1:/data/db
             - user_management_shardServer1_config:/data/configdb
