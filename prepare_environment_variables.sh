@@ -137,10 +137,12 @@ Logging__LogLevel__Microsoft_AspNetCore=information
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
+DB_NAME=mongodb
+
 DB_OPTIONS__DatabaseName=user_management_db
 DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__Password=password
-DB_OPTIONS__Host=user_management_replicaSet_p
+DB_OPTIONS__Host=user_management_mongodb
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=true
 DB_OPTIONS__CertificateP12=/security/app.p12
