@@ -38,18 +38,17 @@ if [[ -z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2 ]];
     member2=$(cat $member2File)
 fi
 
-if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
     tlsCertificateKeyFile=/security/app.pem
     tlsCAFile=/security/ca.pem
     tlsClusterFile=/security/member.pem
-    tlsClusterCAFile=/security/ca.pem
 fi
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 80s
 echo "\n\nWaited...................................................................................\n\n"
 
-mongod --shardsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
+mongod --shardsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 60s

@@ -38,18 +38,17 @@ if [[ -z $dbUsername && -z $dbAdminUsername && -z $dbPassword && -z $dbName && -
     dbPort=$(cat $dbPortFile)
 fi
 
-if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
     tlsClusterFile=/security/member.pem
     tlsCertificateKeyFile=/security/app.pem
     tlsCAFile=/security/ca.pem
-    tlsClusterCAFile=/security/ca.pem
 fi
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 160s
 echo "\n\nWaited...................................................................................\n\n"
 
-mongos --bind_ip "0.0.0.0" --port $dbPort --configdb "$configReplSet/$configMember0:$dbPort,$configMember1:$dbPort,$configMember2:$dbPort" --tlsMode requireTLS --clusterAuthMode x509 --tlsClusterFile $tlsClusterFile --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterCAFile $tlsClusterCAFile &
+mongos --bind_ip "0.0.0.0" --port $dbPort --configdb "$configReplSet/$configMember0:$dbPort,$configMember1:$dbPort,$configMember2:$dbPort" --tlsMode requireTLS --clusterAuthMode x509 --tlsClusterFile $tlsClusterFile --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 60s
@@ -57,11 +56,14 @@ echo "\n\nWaited................................................................
 
 echo "
 use admin
+
 db.createUser({ user: \"$dbAdminUsername\", pwd: \"$dbPassword\", roles: [{ role: \"root\", db: \"admin\" }] })
+
 db.auth(\"$dbAdminUsername\", \"$dbPassword\")
 
-sh.addShard(\"$shardReplSet/$shardMember0:$dbPort,$shardMember1:$dbPort,$shardMember2:$dbPort\");
-sh.status();
+sh.addShard(\"$shardReplSet/$shardMember0:$dbPort,$shardMember1:$dbPort,$shardMember2:$dbPort\")
+
+sh.status()
 
 db.getSiblingDB(\"\$external\").runCommand(
     {
