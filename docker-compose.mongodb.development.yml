@@ -16,6 +16,7 @@ services:
         volumes:
             - ./src/user_management:/app
             - ./security/user_management/app.p12:/security/app.p12
+            - ./security/ca/ca.crt:/security/ca.pem
             - ./security/ca/ca.crt:/etc/ssl/certs/ca.crt
         ports:
             - '${APP_HTTP_PORT}:5000'
