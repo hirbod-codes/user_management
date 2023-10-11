@@ -4,6 +4,6 @@ prompt = no
 
 [ req_ext ]
 basicConstraints = CA:FALSE
-keyUsage = digitalSignature, nonRepudiation
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment
 extendedKeyUsage = serverAuth, clientAuth
 subjectKeyIdentifier=hash
