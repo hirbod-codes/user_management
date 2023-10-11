@@ -81,7 +81,7 @@ DB_NAME=mongodb
 DB_OPTIONS__DatabaseName=user_management_db
 DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__ReplicaSetName=user_management_replicaSet
-DB_OPTIONS__Host=user_management_p
+DB_OPTIONS__Host=user_management_replicaSet_p
 DB_OPTIONS__Port=27017
 DB_OPTIONS__IsSharded=false
 DB_OPTIONS__CertificateP12=/security/app.p12
@@ -150,7 +150,6 @@ DB_USERNAME=hirbod
 DB_PASSWORD=password
 DB_SERVER_PORT=27017
 CRT_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
-LOCALHOST_USERNAME=CN=localhost,OU=mongodb_client,O=user_management
 " >$projectRootDirectory/.env.sharded_mongodb.integration_test
 fi
 
