@@ -1,5 +1,9 @@
 namespace user_management.Data;
 
+using System.Collections.Generic;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Configuration;
@@ -9,13 +13,21 @@ using user_management.Models;
 using user_management.Services.Client;
 using user_management.Services.Data.User;
 
+public class MongoServer
+{
+    public string Host { get; set; } = null!;
+    public int Port { get; set; }
+}
+
 public class MongoContext
 {
     public string Username { get; set; } = null!;
-    public string Password { get; set; } = null!;
+    public string DatabaseName { get; set; } = null!;
+    public string ReplicaSetName { get; set; } = null!;
+    public string CaPem { get; set; } = null!;
+    public string CertificateP12 { get; set; } = null!;
     public string Host { get; set; } = null!;
     public int Port { get; set; }
-    public string DatabaseName { get; set; } = null!;
 
     public async Task Initialize(MongoCollections mongoCollections, IMongoDatabase mongoDatabase)
     {
@@ -99,13 +111,22 @@ public class MongoContext
 
     public MongoClient GetClient() => new(settings: new()
     {
-        Credential = MongoCredential.CreateCredential("admin", Username, Password),
-        UseTls = false,
-        Server = new MongoServerAddress(Host, Port),
+        ReplicaSetName = ReplicaSetName,
         Scheme = ConnectionStringScheme.MongoDB,
-        WriteConcern = WriteConcern.WMajority,
+        Server = new MongoServerAddress(Host, Port),
+        Credential = MongoCredential.CreateMongoX509Credential(Username),
+        UseTls = true,
+        SslSettings = new()
+        {
+            ClientCertificates = new List<X509Certificate>() { new X509Certificate2(CertificateP12.StartsWith('/') ? CertificateP12 : Program.RootPath + "/../../" + CertificateP12, "") },
+            CheckCertificateRevocation = false,
+            EnabledSslProtocols = SslProtocols.Tls12
+        },
+        RetryReads = true,
         ReadConcern = ReadConcern.Majority,
-        ReadPreference = ReadPreference.Primary
+        ReadPreference = ReadPreference.Primary,
+        RetryWrites = true,
+        WriteConcern = WriteConcern.WMajority
     });
 
     public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.ClearCollections(mongoDatabase);

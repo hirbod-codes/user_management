@@ -105,10 +105,7 @@ public class ShardedMongoContext
         Credential = MongoCredential.CreateMongoX509Credential(Username),
         SslSettings = new SslSettings
         {
-            ClientCertificates = new List<X509Certificate>()
-                {
-                    new X509Certificate2(Program.RootPath + "/../../" + CertificateP12, "") {}
-                },
+            ClientCertificates = new List<X509Certificate>() { new X509Certificate2(CertificateP12.StartsWith('/') ? CertificateP12 : Program.RootPath + "/../../" + CertificateP12, "") },
             CheckCertificateRevocation = false,
             EnabledSslProtocols = SslProtocols.Tls12
         },
