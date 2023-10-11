@@ -22,8 +22,9 @@ services:
             dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
         command: bash -c "sleep 240s && dotnet test --no-restore"
         volumes:
-            - ./security/ca/ca.pem:/security/ca/ca.pem
-            - ./security/user_management/app.p12:/security/user_management/app.p12
+            - ./security/ca/ca.crt:/etc/ssl/certs/ca.crt
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management/app.p12:/security/app.p12
         environment:
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
             USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
@@ -33,7 +34,6 @@ services:
             USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
             USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
-            USER_MANAGEMENT_DB_OPTIONS__CaPem: "${DB_OPTIONS__CaPem}"
             USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
             USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
             USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
