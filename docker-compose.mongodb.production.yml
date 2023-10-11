@@ -1,7 +1,7 @@
 version: "3.8"
 volumes:
-    user_management_mongo_data: {}
-    user_management_mongo_config_data: {}
+    user_management_mongo_rs_p_data: {}
+    user_management_mongo_rs_p_config_data: {}
 networks:
     db:
         driver: overlay
@@ -33,6 +33,18 @@ secrets:
     DB_SERVER_PORT:
         external: true
     Kestrel__Endpoints__Https__Certificate:
+        external: true
+    RS_P_TLS_CLUSTER_FILE:
+        external: true
+    RS_P_TLS_CERTIFICATE_KEY_FILE:
+        external: true
+    RS_S_1_TLS_CLUSTER_FILE:
+        external: true
+    RS_S_1_TLS_CERTIFICATE_KEY_FILE:
+        external: true
+    RS_S_2_TLS_CLUSTER_FILE:
+        external: true
+    RS_S_2_TLS_CERTIFICATE_KEY_FILE:
         external: true
 services:
     user_management:
@@ -66,28 +78,62 @@ services:
         ports:
             - "45687:8081"
         secrets:
+            - ME_CRT
             - DB_USERNAME
             - DB_PASSWORD
+            - DB_SERVER_PORT
         environment:
             ME_CONFIG_BASICAUTH_USERNAME_FILE: /run/secrets/DB_USERNAME
             ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/DB_PASSWORD
             ME_CONFIG_MONGODB_SERVER: user_management_mongodb
             ME_CONFIG_MONGODB_PORT_FILE: /run/secrets/DB_SERVER_PORT
             ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+            ME_CONFIG_SITE_SSL_ENABLED: "true"
+            ME_CONFIG_SITE_SSL_CRT_PATH_FILE: /run/secrets/ME_CRT
         networks:
             - db
     user_management_mongodb:
         image: mongo:4.4.18
+        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_P_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
         secrets:
-            - DB_DATABASE_NAME
-            - DB_USERNAME
-            - DB_PASSWORD
-        environment:
-            MONGO_INITDB_DATABASE_FILE: /run/secrets/DB_DATABASE_NAME
-            MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/DB_USERNAME
-            MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+            - DB_SERVER_PORT
+            - RS_P_TLS_CLUSTER_FILE
+            - RS_P_TLS_CERTIFICATE_KEY_FILE
+            - TLS_CAFILE
+            - TLS_CLUSTER_CAFILE
         volumes:
-            - user_management_mongo_data:/data/db
-            - user_management_mongo_config_data:/data/configdb
+            - user_management_mongo_rs_p_data:/data/db
+            - user_management_mongo_rs_p_config_data:/data/configdb
+            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
+        networks:
+            - db
+    user_management_mongodb_s_1:
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_S_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
+        secrets:
+            - DB_SERVER_PORT
+            - RS_P_TLS_CLUSTER_FILE
+            - RS_S_1_TLS_CERTIFICATE_KEY_FILE
+            - TLS_CAFILE
+            - TLS_CLUSTER_CAFILE
+        volumes:
+            - user_management_mongo_rs_s_1_data:/data/db
+            - user_management_mongo_rs_s_1_config_data:/data/configdb
+            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
+        networks:
+            - db
+    user_management_mongodb_s_2:
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_S_2_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
+        secrets:
+            - DB_SERVER_PORT
+            - RS_P_TLS_CLUSTER_FILE
+            - RS_S_2_TLS_CERTIFICATE_KEY_FILE
+            - TLS_CAFILE
+            - TLS_CLUSTER_CAFILE
+        volumes:
+            - user_management_mongo_rs_s_2_data:/data/db
+            - user_management_mongo_rs_s_2_config_data:/data/configdb
+            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
         networks:
             - db
