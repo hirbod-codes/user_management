@@ -25,17 +25,13 @@ done
 # Enable job controll
 set -m
 
-if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSetFile || -z $member0File || -z $member1File || -z $member2File) ]]; then
+if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSet || -z $member0 || -z $member1 || -z $member2) ]]; then
     echo "Insufficient parameters provided."
     exit
 fi
 
-if [[ -z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2 ]]; then
-    dbPort=$(cat $dbPortFile)
-    replSet=$(cat $replSetFile)
-    member0=$(cat $member0File)
-    member1=$(cat $member1File)
-    member2=$(cat $member2File)
+if [[ -z $dbPort ]]; then
+    dbPort="$(cat $dbPortFile)"
 fi
 
 if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then

@@ -25,29 +25,30 @@ done
 # Enable job controll
 set -m
 
-if [[ (-z $dbAdminUsername || -z $dbPassword || -z $dbUsername || -z $dbName || -z $replSet || -z $member0 || -z $member1 || -z $member2 || -z $dbPort) && (-z $replSet || -z $member0 || -z $member1 || -z $member2 || -z $dbAdminUsername || -z $dbPassword || -z $dbUsername || -z $dbNameFile || -z $dbPortFile) ]]; then
+if [[ (-z $dbAdminUsername || -z $dbPassword || -z $dbUsername || -z $dbName || -z $replSet || -z $member0 || -z $member1 || -z $member2 || -z $dbPort) && (-z $replSet || -z $member0 || -z $member1 || -z $member2 || -z $dbAdminUsernameFile || -z $dbPasswordFile || -z $dbUsernameFile || -z $dbNameFile || -z $dbPortFile) ]]; then
     echo "Insufficient parameters provided."
     exit 1
 fi
 
 if [[ -z $dbAdminUsername || -z $dbPassword || -z $dbUsername || -z $dbName || -z $dbPort ]]; then
-    dbAdminUsername=$(cat $dbAdminUsernameFile)
-    dbPassword=$(cat $dbPasswordFile)
-    dbUsername=$(cat $dbUsernameFile)
-    dbName=$(cat $dbNameFile)
-    dbPort=$(cat $dbPortFile)
+    dbAdminUsername="$(cat $dbAdminUsernameFile)"
+    dbPassword="$(cat $dbPasswordFile)"
+    dbUsername="$(cat $dbUsernameFile)"
+    dbName="$(cat $dbNameFile)"
+    dbPort="$(cat $dbPortFile)"
 fi
 
-if [[ -z $tlsCAFile || -z $tlsCertificateKeyFile || -z $tlsClusterFile ]]; then
+if [[ -z $tlsCAFile || -z $tlsCertificateKeyFile || -z $tlsClusterFile || -z $tlsClusterCAFile ]]; then
     tlsCertificateKeyFile=/security/app.pem
     tlsClusterFile=/security/member.pem
+    tlsClusterCAFile=/security/ca.pem
     tlsCAFile=/security/ca.pem
 fi
 
-mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile &
+mongod --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
-sleep 20s
+sleep 40s
 echo "\n\nWaited...................................................................................\n\n"
 
 mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval "

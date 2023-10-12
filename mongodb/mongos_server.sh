@@ -30,12 +30,17 @@ if [[ (-z $dbUsername || -z $dbAdminUsername || -z $dbPassword || -z $dbName || 
     exit
 fi
 
+if [[ -z $configReplSet || -z $configMember0 || -z $configMember1 || -z $configMember2 ]]; then
+    echo "Insufficient parameters provided."
+    exit
+fi
+
 if [[ -z $dbUsername && -z $dbAdminUsername && -z $dbPassword && -z $dbName && -z $dbPort ]]; then
-    dbUsername=$(cat $dbUsernameFile)
-    dbAdminUsername=$(cat $dbAdminUsernameFile)
-    dbPassword=$(cat $dbPasswordFile)
-    dbName=$(cat $dbNameFile)
-    dbPort=$(cat $dbPortFile)
+    dbUsername="$(cat $dbUsernameFile)"
+    dbAdminUsername="$(cat $dbAdminUsernameFile)"
+    dbPassword="$(cat $dbPasswordFile)"
+    dbName="$(cat $dbNameFile)"
+    dbPort="$(cat $dbPortFile)"
 fi
 
 if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then

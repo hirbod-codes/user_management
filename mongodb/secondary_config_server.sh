@@ -22,14 +22,13 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [[ (-z $dbPort || -z $replSet) && (-z $dbPortFile || -z $replSetFile) ]]; then
+if [[ (-z $dbPort || -z $replSet) && (-z $dbPortFile || -z $replSet) ]]; then
     echo "Insufficient parameters provided."
     exit
 fi
 
-if [[ -z $dbPort || -z $replSet ]]; then
-    dbPort=$(cat $dbPortFile)
-    replSet=$(cat $replSetFile)
+if [[ -z $dbPort ]]; then
+    dbPort="$(cat $dbPortFile)"
 fi
 
 if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
