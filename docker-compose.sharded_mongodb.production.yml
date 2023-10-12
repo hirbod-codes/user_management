@@ -4,91 +4,26 @@ networks:
         driver: overlay
     backend:
         driver: overlay
-volumes:
-    user_management_mongos_data: {}
-    user_management_mongos_config_data: {}
-    user_management_configServer1: {}
-    user_management_configServer1_config: {}
-    user_management_configServer2: {}
-    user_management_configServer2_config: {}
-    user_management_configServer3: {}
-    user_management_configServer3_config: {}
-    user_management_shardServer1: {}
-    user_management_shardServer1_config: {}
-    user_management_shardServer2: {}
-    user_management_shardServer2_config: {}
-    user_management_shardServer3: {}
-    user_management_shardServer3_config: {}
 secrets:
     Kestrel__Endpoints__Https__Certificate:
         external: true
-    Jwt__SecretKey:
+    USER_MANAGEMENT_Jwt__SecretKey:
         external: true
-    DB_NAME:
+    USER_MANAGEMENT_DB_NAME:
         external: true
-    DB_OPTIONS__IsSharded:
+    USER_MANAGEMENT_DB_OPTIONS__IsSharded:
         external: true
-    DB_OPTIONS_CaPem:
+    CaPem:
         external: true
-    DB_OPTIONS_CertificateP12:
+    CertificateP12:
         external: true
-    DB_OPTIONS__DatabaseName:
+    USER_MANAGEMENT_DB_OPTIONS__DatabaseName:
         external: true
-    DB_OPTIONS__Host:
+    USER_MANAGEMENT_DB_OPTIONS__Host:
         external: true
-    DB_OPTIONS__Port:
+    USER_MANAGEMENT_DB_OPTIONS__Port:
         external: true
-    DB_OPTIONS__Username:
-        external: true
-
-    ME_CRT:
-        external: true
-
-    DB_USERNAME:
-        external: true
-    DB_PASSWORD:
-        external: true
-    DB_SERVER_PORT:
-        external: true
-    CRT_USERNAME:
-        external: true
-    DB_DATABASE_NAME:
-        external: true
-
-    TLS_CAFILE:
-        external: true
-    TLS_CLUSTER_CAFILE:
-        external: true
-
-    MONGODB_TLS_CLUSTER_FILE:
-        external: true
-    MONGODB_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-
-    CONFIG_1_TLS_CLUSTER_FILE:
-        external: true
-    CONFIG_1_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-    CONFIG_2_TLS_CLUSTER_FILE:
-        external: true
-    CONFIG_2_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-    CONFIG_3_TLS_CLUSTER_FILE:
-        external: true
-    CONFIG_3_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-
-    SHARD_1_TLS_CLUSTER_FILE:
-        external: true
-    SHARD_1_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-    SHARD_2_TLS_CLUSTER_FILE:
-        external: true
-    SHARD_2_TLS_CERTIFICATE_KEY_FILE:
-        external: true
-    SHARD_3_TLS_CLUSTER_FILE:
-        external: true
-    SHARD_3_TLS_CERTIFICATE_KEY_FILE:
+    USER_MANAGEMENT_DB_OPTIONS__Username:
         external: true
 services:
     user_management:
@@ -98,15 +33,15 @@ services:
             - "80:5000"
             - "443:5001"
         secrets:
-            - Jwt__SecretKey
-            - DB_NAME
-            - DB_OPTIONS__IsSharded
-            - DB_OPTIONS_CaPem
-            - DB_OPTIONS_CertificateP12
-            - DB_OPTIONS__DatabaseName
-            - DB_OPTIONS__Host
-            - DB_OPTIONS__Port
-            - DB_OPTIONS__Username
+            - USER_MANAGEMENT_Jwt__SecretKey
+            - USER_MANAGEMENT_DB_NAME
+            - USER_MANAGEMENT_DB_OPTIONS__IsSharded
+            - CaPem
+            - CertificateP12
+            - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
+            - USER_MANAGEMENT_DB_OPTIONS__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Username
             - Kestrel__Endpoints__Https__Certificate
         environment:
             DOTNET_GENERATE_ASPNET_CERTIFICATE: "false"
@@ -116,137 +51,9 @@ services:
             USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "true"
             USER_MANAGEMENT_Logging__LogLevel__Default: warning
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
-            Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
-            USER_MANAGEMENT_DB_OPTIONS__CaPem: /run/secrets/DB_OPTIONS_CaPem
-            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/DB_OPTIONS_CertificateP12
+            USER_MANAGEMENT_Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
+            USER_MANAGEMENT_DB_OPTIONS__CaPem: /run/secrets/CaPem
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/CertificateP12
         networks:
             - backend
-            - db
-    user_management_mongo_express:
-        image: mongo-express:0.54.0
-        ports:
-            - "45687:8081"
-        secrets:
-            - ME_CRT
-            - DB_USERNAME
-            - DB_PASSWORD
-            - DB_SERVER_PORT
-        environment:
-            ME_CONFIG_BASICAUTH_USERNAME_FILE: /run/secrets/DB_USERNAME
-            ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/DB_PASSWORD
-            ME_CONFIG_MONGODB_SERVER: user_management_mongodb
-            ME_CONFIG_MONGODB_PORT_FILE: /run/secrets/DB_SERVER_PORT
-            ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-            ME_CONFIG_SITE_SSL_ENABLED: "true"
-            ME_CONFIG_SITE_SSL_CRT_PATH_FILE: /run/secrets/ME_CRT
-        networks:
-            - db
-    user_management_mongodb:
-        image: mongo:4.4.18
-        secrets:
-            - CRT_USERNAME
-            - DB_USERNAME
-            - DB_PASSWORD
-            - DB_DATABASE_NAME
-            - DB_SERVER_PORT
-            - MONGODB_TLS_CLUSTER_FILE
-            - MONGODB_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/mongos_server.sh --dbUsernameFile /run/secrets/CRT_USERNAME --dbAdminUsernameFile /run/secrets/DB_USERNAME --dbPasswordFile /run/secrets/DB_PASSWORD --dbNameFile /run/secrets/DB_DATABASE_NAME --dbPortFile /run/secrets/DB_SERVER_PORT --configReplSet user_management_configReplicaSet --configMember0 user_management_configServer1 --configMember1 user_management_configServer2 --configMember2 user_management_configServer3 --shardReplSet user_management_shardReplicaSet --shardMember0 user_management_shardServer1 --shardMember1 user_management_shardServer2 --shardMember2 user_management_shardServer3 --tlsClusterFile /run/secrets/MONGODB_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/MONGODB_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_mongos_data:/data/db
-            - user_management_mongos_config_data:/data/configdb
-            - ./mongodb/mongos_server.sh:/mongodb/mongos_server.sh
-        networks:
-            - db
-    user_management_configServer1:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - CONFIG_1_TLS_CLUSTER_FILE
-            - CONFIG_1_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/config_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_configReplicaSet --member0 user_management_configServer1 --member1 user_management_configServer2 --member2 user_management_configServer3 --tlsClusterFile /run/secrets/CONFIG_1_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/CONFIG_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_configServer1:/data/db
-            - user_management_configServer1_config:/data/configdb
-            - ./mongodb/config_server.sh:/mongodb/config_server.sh
-        networks:
-            - db
-    user_management_configServer2:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - CONFIG_2_TLS_CLUSTER_FILE
-            - CONFIG_2_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/secondary_config_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --tlsCertificateKeyFile /run/secrets/CONFIG_2_TLS_CERTIFICATE_KEY_FILE --tlsClusterFile /run/secrets/CONFIG_2_TLS_CLUSTER_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_configServer2:/data/db
-            - user_management_configServer2_config:/data/configdb
-            - ./mongodb/secondary_config_server.sh:/mongodb/secondary_config_server.sh
-        networks:
-            - db
-    user_management_configServer3:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - CONFIG_3_TLS_CLUSTER_FILE
-            - CONFIG_3_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/secondary_config_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --tlsCertificateKeyFile /run/secrets/CONFIG_3_TLS_CERTIFICATE_KEY_FILE --tlsClusterFile /run/secrets/CONFIG_3_TLS_CLUSTER_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_configServer3:/data/db
-            - user_management_configServer3_config:/data/configdb
-            - ./mongodb/secondary_config_server.sh:/mongodb/secondary_config_server.sh
-        networks:
-            - db
-    user_management_shardServer1:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - SHARD_1_TLS_CLUSTER_FILE
-            - SHARD_1_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/shard_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_shardReplicaSet --member0 user_management_shardServer1 --member1 user_management_shardServer2 --member2 user_management_shardServer3  --tlsClusterFile /run/secrets/SHARD_1_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/SHARD_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_shardServer1:/data/db
-            - user_management_shardServer1_config:/data/configdb
-            - ./mongodb/shard_server.sh:/mongodb/shard_server.sh
-        networks:
-            - db
-    user_management_shardServer2:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - SHARD_2_TLS_CLUSTER_FILE
-            - SHARD_2_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/secondary_shard_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --tlsCertificateKeyFile /run/secrets/SHARD_2_TLS_CERTIFICATE_KEY_FILE --tlsClusterFile /run/secrets/SHARD_2_TLS_CLUSTER_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_shardServer2:/data/db
-            - user_management_shardServer2:/data/configdb
-            - ./mongodb/secondary_shard_server.sh:/mongodb/secondary_shard_server.sh
-        networks:
-            - db
-    user_management_shardServer3:
-        image: mongo:4.4.18
-        secrets:
-            - DB_SERVER_PORT
-            - SHARD_3_TLS_CLUSTER_FILE
-            - SHARD_3_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        command: bash -c "/mongodb/secondary_shard_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --tlsCertificateKeyFile /run/secrets/SHARD_3_TLS_CERTIFICATE_KEY_FILE --tlsClusterFile /run/secrets/SHARD_3_TLS_CLUSTER_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        volumes:
-            - user_management_shardServer3:/data/db
-            - user_management_shardServer3_config:/data/configdb
-            - ./mongodb/secondary_shard_server.sh:/mongodb/secondary_shard_server.sh
-        networks:
             - db

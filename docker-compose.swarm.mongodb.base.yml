@@ -1,0 +1,123 @@
+version: "3.8"
+volumes:
+    user_management_replicaSet_p_data: {}
+    user_management_replicaSet_p_config_data: {}
+    user_management_replicaSet_s_1_data: {}
+    user_management_replicaSet_s_1_config_data: {}
+    user_management_replicaSet_s_2_data: {}
+    user_management_replicaSet_s_2_config_data: {}
+networks:
+    db:
+        driver: overlay
+secrets:
+    DB_SERVER_PORT:
+        external: true
+    CA:
+        external: true
+    CLUSTER_CA:
+        external: true
+    DB_DATABASE_NAME:
+        external: true
+    DB_ADMIN_USERNAME:
+        external: true
+    DB_USERNAME:
+        external: true
+    DB_PASSWORD:
+        external: true
+
+    USER_MANAGEMENT_REPLICA_SET_P_CRT:
+        external: true
+    USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT:
+        external: true
+    USER_MANAGEMENT_REPLICA_SET_S_1_CRT:
+        external: true
+    USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT:
+        external: true
+    USER_MANAGEMENT_REPLICA_SET_S_2_CRT:
+        external: true
+    USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT:
+        external: true
+services:
+    user_management_replicaSet_p:
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            member0: user_management_replicaSet_p
+            member1: user_management_replicaSet_s_1
+            member2: user_management_replicaSet_s_2
+            dbPortFile: /run/secrets/DB_SERVER_PORT
+            dbName: /run/secrets/DB_DATABASE_NAME
+            dbAdminUsername: /run/secrets/DB_ADMIN_USERNAME
+            dbUsername: /run/secrets/DB_USERNAME
+            dbPassword: /run/secrets/DB_PASSWORD
+            tlsCertificateKeyFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_P_CRT
+            tlsCAFile: run/secrets/CA
+            tlsClusterFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT
+            tlsClusterCAFile: run/secrets/CLUSTER_CA
+        secrets:
+            - DB_SERVER_PORT
+            - DB_DATABASE_NAME
+            - DB_ADMIN_USERNAME
+            - DB_USERNAME
+            - DB_PASSWORD
+            - USER_MANAGEMENT_REPLICA_SET_P_CRT
+            - CA
+            - USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT
+            - CLUSTER_CA
+        volumes:
+            - user_management_replicaSet_p_data:/data/db
+            - user_management_replicaSet_p_config_data:/data/configdb
+            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
+        networks:
+            - db
+    user_management_replicaSet_s_1:
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/secondary_rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            member0: user_management_replicaSet_p
+            member1: user_management_replicaSet_s_1
+            member2: user_management_replicaSet_s_2
+            dbPortFile: /run/secrets/DB_SERVER_PORT
+            tlsCertificateKeyFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_S_1_CRT
+            tlsCAFile: run/secrets/CA
+            tlsClusterFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT
+            tlsClusterCAFile: run/secrets/CLUSTER_CA
+        secrets:
+            - DB_SERVER_PORT
+            - USER_MANAGEMENT_REPLICA_SET_S_1_CRT
+            - CA
+            - USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT
+            - CLUSTER_CA
+        volumes:
+            - user_management_replicaSet_s_1_data:/data/db
+            - user_management_replicaSet_s_1_config_data:/data/configdb
+            - ./mongodb/secondary_rs_server.sh:/mongodb/secondary_rs_server.sh
+        networks:
+            - db
+    user_management_replicaSet_s_2:
+        image: mongo:4.4.18
+        command: bash -c "/mongodb/secondary_rs_server.sh"
+        environment:
+            replSet: user_management_replicaSet
+            member0: user_management_replicaSet_p
+            member1: user_management_replicaSet_s_1
+            member2: user_management_replicaSet_s_2
+            dbPortFile: /run/secrets/DB_SERVER_PORT
+            tlsCertificateKeyFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_S_2_CRT
+            tlsCAFile: run/secrets/CA
+            tlsClusterFile: run/secrets/USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT
+            tlsClusterCAFile: run/secrets/CLUSTER_CA
+        secrets:
+            - DB_SERVER_PORT
+            - USER_MANAGEMENT_REPLICA_SET_S_2_CRT
+            - CA
+            - USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT
+            - CLUSTER_CA
+        volumes:
+            - user_management_replicaSet_s_2_data:/data/db
+            - user_management_replicaSet_s_2_config_data:/data/configdb
+            - ./mongodb/secondary_rs_server.sh:/mongodb/secondary_rs_server.sh
+        networks:
+            - db

@@ -1,50 +1,27 @@
 version: "3.8"
-volumes:
-    user_management_mongo_rs_p_data: {}
-    user_management_mongo_rs_p_config_data: {}
 networks:
     db:
         driver: overlay
     backend:
         driver: overlay
 secrets:
-    JWT__SECRET_KEY:
-        external: true
-    DB_NAME:
-        external: true
-    DB_OPTIONS__IsSharded:
-        external: true
-    DB_OPTIONS__DatabaseName:
-        external: true
-    DB_OPTIONS__Host:
-        external: true
-    DB_OPTIONS__Port:
-        external: true
-    DB_OPTIONS__Username:
-        external: true
-    DB_OPTIONS__Password:
-        external: true
-    DB_DATABASE_NAME:
-        external: true
-    DB_USERNAME:
-        external: true
-    DB_PASSWORD:
-        external: true
-    DB_SERVER_PORT:
-        external: true
     Kestrel__Endpoints__Https__Certificate:
         external: true
-    RS_P_TLS_CLUSTER_FILE:
+    USER_MANAGEMENT_Jwt__SecretKey:
         external: true
-    RS_P_TLS_CERTIFICATE_KEY_FILE:
+    USER_MANAGEMENT_DB_NAME:
         external: true
-    RS_S_1_TLS_CLUSTER_FILE:
+    USER_MANAGEMENT_DB_OPTIONS__IsSharded:
         external: true
-    RS_S_1_TLS_CERTIFICATE_KEY_FILE:
+    USER_MANAGEMENT_DB_OPTIONS__DatabaseName:
         external: true
-    RS_S_2_TLS_CLUSTER_FILE:
+    USER_MANAGEMENT_DB_OPTIONS__Host:
         external: true
-    RS_S_2_TLS_CERTIFICATE_KEY_FILE:
+    USER_MANAGEMENT_DB_OPTIONS__Port:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Username:
+        external: true
+    CertificateP12:
         external: true
 services:
     user_management:
@@ -59,81 +36,18 @@ services:
             USER_MANAGEMENT_ENVIRONMENT: Production
             USER_MANAGEMENT_Logging__LogLevel__Default: warning
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/CertificateP12
             Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
         secrets:
             - JWT__SECRET_KEY
-            - DB_NAME
-            - DB_OPTIONS__IsSharded
-            - DB_OPTIONS__DatabaseName
-            - DB_OPTIONS__Host
-            - DB_OPTIONS__Port
-            - DB_OPTIONS__Username
-            - DB_OPTIONS__Password
+            - USER_MANAGEMENT_DB_NAME
+            - USER_MANAGEMENT_DB_OPTIONS__IsSharded
+            - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
+            - USER_MANAGEMENT_DB_OPTIONS__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Username
             - Kestrel__Endpoints__Https__Certificate
+            - CertificateP12
         networks:
             - backend
-            - db
-    user_management_mongo_express:
-        image: mongo-express:0.54.0
-        ports:
-            - "45687:8081"
-        secrets:
-            - ME_CRT
-            - DB_USERNAME
-            - DB_PASSWORD
-            - DB_SERVER_PORT
-        environment:
-            ME_CONFIG_BASICAUTH_USERNAME_FILE: /run/secrets/DB_USERNAME
-            ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/DB_PASSWORD
-            ME_CONFIG_MONGODB_SERVER: user_management_mongodb
-            ME_CONFIG_MONGODB_PORT_FILE: /run/secrets/DB_SERVER_PORT
-            ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-            ME_CONFIG_SITE_SSL_ENABLED: "true"
-            ME_CONFIG_SITE_SSL_CRT_PATH_FILE: /run/secrets/ME_CRT
-        networks:
-            - db
-    user_management_mongodb:
-        image: mongo:4.4.18
-        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_P_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        secrets:
-            - DB_SERVER_PORT
-            - RS_P_TLS_CLUSTER_FILE
-            - RS_P_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        volumes:
-            - user_management_mongo_rs_p_data:/data/db
-            - user_management_mongo_rs_p_config_data:/data/configdb
-            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
-        networks:
-            - db
-    user_management_mongodb_s_1:
-        image: mongo:4.4.18
-        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_S_1_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        secrets:
-            - DB_SERVER_PORT
-            - RS_P_TLS_CLUSTER_FILE
-            - RS_S_1_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        volumes:
-            - user_management_mongo_rs_s_1_data:/data/db
-            - user_management_mongo_rs_s_1_config_data:/data/configdb
-            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
-        networks:
-            - db
-    user_management_mongodb_s_2:
-        image: mongo:4.4.18
-        command: bash -c "/mongodb/rs_server.sh --dbPortFile /run/secrets/DB_SERVER_PORT --replSet user_management_replicaSet --member0 user_management_mongodb --member1 user_management_mongodb_s_1 --member2 user_management_mongodb_s_2  --tlsClusterFile /run/secrets/RS_P_TLS_CLUSTER_FILE --tlsCertificateKeyFile /run/secrets/RS_S_2_TLS_CERTIFICATE_KEY_FILE --tlsCAFile /run/secrets/TLS_CAFILE --tlsClusterCAFile /run/secrets/TLS_CLUSTER_CAFILE"
-        secrets:
-            - DB_SERVER_PORT
-            - RS_P_TLS_CLUSTER_FILE
-            - RS_S_2_TLS_CERTIFICATE_KEY_FILE
-            - TLS_CAFILE
-            - TLS_CLUSTER_CAFILE
-        volumes:
-            - user_management_mongo_rs_s_2_data:/data/db
-            - user_management_mongo_rs_s_2_config_data:/data/configdb
-            - ./mongodb/rs_server.sh:/mongodb/rs_server.sh
-        networks:
             - db
