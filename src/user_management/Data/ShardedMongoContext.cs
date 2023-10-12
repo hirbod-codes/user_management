@@ -14,7 +14,6 @@ using user_management.Services.Data.User;
 public class ShardedMongoContext
 {
     public string Username { get; set; } = null!;
-    public string CaPem { get; set; } = null!;
     public string CertificateP12 { get; set; } = null!;
     public string Host { get; set; } = null!;
     public int Port { get; set; }
