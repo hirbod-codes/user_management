@@ -12,7 +12,7 @@ services:
         build:
             context: ./
             dockerfile: ./src/user_management/Dockerfile.development
-        command: bash -c "sleep 100s && dotnet watch run --no-restore"
+        command: bash -c "sleep 120s && dotnet watch run --no-restore"
         volumes:
             - ./src/user_management:/app
             - ./security/user_management/app.p12:/security/app.p12

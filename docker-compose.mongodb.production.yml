@@ -5,8 +5,6 @@ networks:
     backend:
         driver: overlay
 secrets:
-    Kestrel__Endpoints__Https__Certificate:
-        external: true
     USER_MANAGEMENT_Jwt__SecretKey:
         external: true
     USER_MANAGEMENT_DB_NAME:
@@ -21,7 +19,15 @@ secrets:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__Username:
         external: true
-    CertificateP12:
+    CA:
+        external: true
+    AppHttpsCrt:
+        external: true
+    AppHttpsKey:
+        external: true
+    AppCrt:
+        external: true
+    AppKey:
         external: true
 services:
     user_management:
@@ -36,18 +42,22 @@ services:
             USER_MANAGEMENT_ENVIRONMENT: Production
             USER_MANAGEMENT_Logging__LogLevel__Default: warning
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
-            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/CertificateP12
-            Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/AppP12
+            Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/AppHttpsP12
+            USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
         secrets:
-            - JWT__SECRET_KEY
+            - USER_MANAGEMENT_Jwt__SecretKey
             - USER_MANAGEMENT_DB_NAME
             - USER_MANAGEMENT_DB_OPTIONS__IsSharded
             - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
             - USER_MANAGEMENT_DB_OPTIONS__Host
             - USER_MANAGEMENT_DB_OPTIONS__Port
             - USER_MANAGEMENT_DB_OPTIONS__Username
-            - Kestrel__Endpoints__Https__Certificate
-            - CertificateP12
+            - CA
+            - AppHttpsCrt
+            - AppHttpsKey
+            - AppCrt
+            - AppKey
         networks:
             - backend
             - db
