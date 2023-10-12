@@ -1,8 +1,6 @@
 # Instructions
 
-## In Development Environment (Linux/WSL)
-
-### for mongodb replica set as the database, run
+## In Development Environment (Linux/WSL) with mongodb replica set as the database, run
 
 ```bash
 cd path-to-project-root-directory/ && \
@@ -12,7 +10,7 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.development.yml --env-file ./.env.mongodb.development up -d --build --remove-orphans -V
 ```
 
-### for sharded mongodb cluster as the database, run
+## In Development Environment (Linux/WSL) with sharded mongodb cluster as the database, run
 
 ```bash
 cd path-to-project-root-directory/ && \
@@ -22,9 +20,7 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.development.yml --env-file ./.env.sharded_mongodb.development up -d --build --remove-orphans -V
 ```
 
-## In IntegrationTest Environment (Linux/WSL)
-
-### for mongodb replica set as the database, run
+## In IntegrationTest Environment (Linux/WSL) with mongodb replica set as the database, run
 
 ```bash
 cd path-to-project-root-directory/ && \
@@ -34,7 +30,7 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
-### for sharded mongodb cluster as the database, run
+## In IntegrationTest Environment (Linux/WSL) with sharded mongodb cluster as the database, run
 
 ```bash
 cd path-to-project-root-directory/ && \
@@ -74,9 +70,7 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up -d --build --remove-orphans -V
 ```
 
-## for testing docker swarm
-
-### for mongodb replica set as the database, run
+## for testing docker swarm with mongodb replica set as the database, run
 
 ```bash
 sudo docker swarm init && \
@@ -87,10 +81,31 @@ sudo docker swarm init && \
     sudo docker stack deploy -c ./docker-compose.swarm.mongodb.base.yml -c ./docker-compose.mongodb.production.yml app
 ```
 
-## for running dotnet application outside container
+## for testing docker swarm with sharded mongodb cluster as the database, run
+
+```bash
+sudo docker swarm init && \
+    sudo chmod ug+x ./*.sh && \
+    ./generate_certificates.sh --projectRootDirectory . && \
+    ./recreate_secrets_sharded_mongodb.sh --projectRootDirectory . --useTestValues && \
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management:latest -f ./src/user_management/Dockerfile.production ./ && \
+    sudo docker stack deploy -c ./docker-compose.swarm.sharded_mongodb.base.yml -c ./docker-compose.sharded_mongodb.production.yml app
+```
+
+## for dotnet application outside container
+
+### for running the application
 
 if you don't specify a .env file relative path (aka `ENV_FILE_PATH=.env.file dotnet run`) for running a project outside the container,
 it will use the default ".env.mongodb.development" value as the env file path.
+
+### for debugging the application
+
+you can temporarily set the environment in Program.cs like
+
+```C#
+Environment.SetEnvironmentVariable("ENV_FILE_PATH", ".env.file");
+```
 
 TO DO:
 
