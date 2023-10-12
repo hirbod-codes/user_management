@@ -74,15 +74,30 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up -d --build --remove-orphans -V
 ```
 
+## for testing docker swarm
+
+### for mongodb replica set as the database, run
+
+```bash
+sudo docker swarm init && \
+    sudo chmod ug+x ./*.sh && \
+    ./generate_certificates.sh --projectRootDirectory . && \
+    ./recreate_secrets_mongodb.sh --projectRootDirectory . --useTestValues && \
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management:latest -f ./src/user_management/Dockerfile.production ./ && \
+    sudo docker stack deploy -c ./docker-compose.swarm.mongodb.base.yml -c ./docker-compose.mongodb.production.yml app
+```
+
 ## for running dotnet application outside container
 
 if you don't specify a .env file relative path (aka `ENV_FILE_PATH=.env.file dotnet run`) for running a project outside the container,
 it will use the default ".env.mongodb.development" value as the env file path.
 
-also remember to change environment values in .env file properly when running outside a docker container.
+TO DO:
+
+Change environment values in .env file properly when running outside a docker container.
 
 DB_OPTIONS__Host=localhost
 DB_OPTIONS__Port=the_port_of_db_container
-(and if it is sharded mongodb cluster)
-DB_OPTIONS__CaPem=security/ca/ca.pem
 DB_OPTIONS__CertificateP12=security/user_management/app.p12
+
+Copy security/ca/ca.crt to /etc/ssl/certs (so your mongodb c# driver can verify mongodb certificate) or set AllowInsecureTls to true.
