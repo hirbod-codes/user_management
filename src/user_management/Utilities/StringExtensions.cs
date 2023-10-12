@@ -76,4 +76,15 @@ public static class StringExtentions
 
         return sb.ToString();
     }
+    public static string TrimStart(this string source, string value, StringComparison comparisonType)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+
+        int valueLength = value.Length;
+        int startIndex = 0;
+        while (source.IndexOf(value, startIndex, comparisonType) == startIndex)
+            startIndex += valueLength;
+
+        return source[startIndex..];
+    }
 }
