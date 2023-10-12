@@ -1,7 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0
 
-COPY ./security/ca/ca.crt /etc/ssl/certs/
-
 WORKDIR /project
 
 COPY ./src/user_management/user_management.csproj ./
@@ -16,4 +14,4 @@ RUN dotnet publish --disable-build-servers --no-restore -c Release -o /publish
 WORKDIR /publish
 
 EXPOSE 5001 5000
-CMD dotnet user_management.dll
+CMD cp /run/secrets/CA /etc/ssl/certs/ && openssl pkcs12 -export -password pass: -in /run/secrets/AppCrt -inkey /run/secrets/AppKey -out /run/secrets/AppP12 && openssl pkcs12 -export -password pass: -in /run/secrets/AppHttpsCrt -inkey /run/secrets/AppHttpsKey -out /run/secrets/AppHttpsP12 && dotnet user_management.dll 
