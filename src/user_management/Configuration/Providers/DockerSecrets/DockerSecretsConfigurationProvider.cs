@@ -1,4 +1,5 @@
 using System.IO.Abstractions;
+using user_management.Utilities;
 
 namespace user_management.Configuration.Extensions.DockerSecrets;
 
@@ -36,7 +37,17 @@ public class DockerSecretsConfigurationProvider : ConfigurationProvider
 
         if (string.IsNullOrWhiteSpace(secretFileName)) return;
 
-        if (_allowedPrefixes != null && _allowedPrefixes.Count > 0 && !_allowedPrefixes.Any(prefix => secretFileName.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)))
+        string? thisFilePrefix = null;
+        if (
+            _allowedPrefixes != null
+            && _allowedPrefixes.Count > 0
+            && !_allowedPrefixes.Any(prefix =>
+            {
+                bool result = secretFileName.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase);
+                if (result) thisFilePrefix = prefix;
+                return result;
+            })
+        )
             return;
 
         using (var reader = new StreamReader(_fileSystem.File.OpenRead(secretFilePath)))
@@ -47,6 +58,12 @@ public class DockerSecretsConfigurationProvider : ConfigurationProvider
 
             string secretKey = secretFileName.Replace(_colonPlaceholder, ":");
             Data.Add(secretKey, secretValue);
+
+            if (thisFilePrefix != null)
+            {
+                secretKey = secretKey.TrimStart(thisFilePrefix, StringComparison.InvariantCultureIgnoreCase);
+                Data.Add(secretKey, secretValue);
+            }
         }
     }
 }

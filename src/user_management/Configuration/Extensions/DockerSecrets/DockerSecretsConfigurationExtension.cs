@@ -30,22 +30,20 @@ public static class DockerSecretsConfigurationExtension
     /// Read configuration from mounted docker secrets files
     /// </summary>
     /// <param name="configurationBuilder">Configuration builder</param>
-    /// <param name="allowedPrefixesEnvVariableName">Name of the environment variable that holds comma separated
-    /// allowed prefixes. If prefixes are defined then processed are only secrets which file names start with any of the provided
+    /// <param name="allowedPrefixesCommaDelimited">comma separated allowed prefixes. If prefixes are defined then processed are only secrets which file names start with any of the provided
     /// prefixes.</param>
     /// <param name="secretsDirectoryPath">Path to the folder what holds the mounted Docker secret files.</param>
     /// <param name="colonPlaceholder">Provided placeholder value will be replaced with `:` within the secret filename.</param>
     /// <returns>Configuration builder</returns>
     public static IConfigurationBuilder AddDockerSecrets(
         this IConfigurationBuilder configurationBuilder,
-        string? allowedPrefixesEnvVariableName = null,
+        string? allowedPrefixesCommaDelimited = null,
         string secretsDirectoryPath = DefaultSecretsDirectoryPath,
         string colonPlaceholder = DefaultColonPlaceholder
     )
     {
-        if (string.IsNullOrWhiteSpace(allowedPrefixesEnvVariableName)) return AddDockerSecrets(configurationBuilder, secretsDirectoryPath: secretsDirectoryPath, colonPlaceholder, null);
+        if (string.IsNullOrWhiteSpace(allowedPrefixesCommaDelimited)) return AddDockerSecrets(configurationBuilder, secretsDirectoryPath: secretsDirectoryPath, colonPlaceholder);
 
-        string? allowedPrefixesCommaDelimited = Environment.GetEnvironmentVariable(allowedPrefixesEnvVariableName);
         ICollection<string>? allowedDockerPrefixes = string.IsNullOrWhiteSpace(allowedPrefixesCommaDelimited)
             ? null
             : allowedPrefixesCommaDelimited
@@ -55,5 +53,26 @@ public static class DockerSecretsConfigurationExtension
                 .ToList();
 
         return configurationBuilder.AddDockerSecrets(secretsDirectoryPath, colonPlaceholder, allowedDockerPrefixes);
+    }
+
+    /// <summary>
+    /// Read configuration from mounted docker secrets files
+    /// </summary>
+    /// <param name="configurationBuilder">Configuration builder</param>
+    /// <param name="allowedPrefixes">allowed prefixes. If prefixes are defined then processed files are only secrets which file names start with any of the provided
+    /// prefixes.</param>
+    /// <param name="secretsDirectoryPath">Path to the folder what holds the mounted Docker secret files.</param>
+    /// <param name="colonPlaceholder">Provided placeholder value will be replaced with `:` within the secret filename.</param>
+    /// <returns>Configuration builder</returns>
+    public static IConfigurationBuilder AddDockerSecrets(
+        this IConfigurationBuilder configurationBuilder,
+        IEnumerable<string>? allowedPrefixes = null,
+        string secretsDirectoryPath = DefaultSecretsDirectoryPath,
+        string colonPlaceholder = DefaultColonPlaceholder
+    )
+    {
+        if (allowedPrefixes == null || !allowedPrefixes.Any()) return AddDockerSecrets(configurationBuilder, secretsDirectoryPath: secretsDirectoryPath, colonPlaceholder);
+
+        return configurationBuilder.AddDockerSecrets(secretsDirectoryPath, colonPlaceholder, (ICollection<string>?)allowedPrefixes);
     }
 }

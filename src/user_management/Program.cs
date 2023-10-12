@@ -23,7 +23,7 @@ Program.RootPath = builder.Environment.ContentRootPath;
 builder.Configuration.AddEnvironmentVariables(Program.ENV_PREFIX);
 
 if (builder.Environment.IsProduction())
-    builder.Configuration.AddDockerSecrets(allowedPrefixesEnvVariableName: builder.Configuration[Program.SECRET_PREFIX]);
+    builder.Configuration.AddDockerSecrets(allowedPrefixesCommaDelimited: builder.Configuration["SECRETS_PREFIX"]);
 else if (builder.Configuration["MUST_NOT_USE_ENV_FILE"] != "true" && builder.Configuration["MUST_NOT_USE_ENV_FILE"] != "true")
     builder.Configuration.AddDotNetEnv(Program.RootPath + "/../../" + (builder.Configuration["ENV_FILE_PATH"] ?? ".env.mongodb.development"));
 
@@ -122,7 +122,6 @@ app.Run();
 public partial class Program
 {
     public const string ENV_PREFIX = "USER_MANAGEMENT_";
-    public const string SECRET_PREFIX = "USER_MANAGEMENT_";
     public static string RootPath { get; set; } = "";
 
     public void Configure() { }
