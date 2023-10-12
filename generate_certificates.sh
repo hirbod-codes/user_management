@@ -40,7 +40,6 @@ openssl genrsa -out $projectRootDirectory/security/ca/ca.key
 openssl req -x509 -sha256 -config ca.cnf -key $projectRootDirectory/security/ca/ca.key -out $projectRootDirectory/security/ca/ca.crt -subj /O=user_management/OU=mongodb/CN=user_management_certificate_authority
 echo ""
 
-user_management_https
 bash -c "./generate_certificate.sh --dir $projectRootDirectory/security/user_management_https --caCrt $projectRootDirectory/security/ca/ca.crt --caKey $projectRootDirectory/security/ca/ca.key --configFile client.cnf --extensions req_ext --ou user_management --cn user_management --san user_management -shouldExportPkcs12"
 
 # Clients
