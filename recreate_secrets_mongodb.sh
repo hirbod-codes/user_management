@@ -22,27 +22,85 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [[ -z $Kestrel__Endpoints__Https__Certificate || -z $JWT__SECRET_KEY || -z $DB_NAME || -z $DB_OPTIONS__IsSharded || -z $DB_OPTIONS__DatabaseName || -z $DB_OPTIONS__Host || -z $DB_OPTIONS__Port || -z $DB_OPTIONS__Username || -z $DB_OPTIONS__Password || -z $DB_DATABASE_NAME || -z $DB_USERNAME || -z $DB_PASSWORD || -z $DB_SERVER_PORT ]]; then
-    echo invalid arguments
+# Validating Arguments
+if [[ -z $projectRootDirectory ]]; then
+    echo "projectRootDirectory is a required parameter."
     exit 1
+elif [[ $projectRootDirectory == '/' ]]; then
+    echo "Project root directory must not be system root '/'"
+    exit 1
+fi
+
+if [[ $useTestValues == "true" ]]; then
+    Kestrel__Endpoints__Https__Certificate=$(cat $projectRootDirectory/security/user_management_https/app.p12)
+    USER_MANAGEMENT_Jwt__SecretKey="123abc123abc"
+    USER_MANAGEMENT_DB_NAME=mongodb
+    USER_MANAGEMENT_DB_OPTIONS__IsSharded="true"
+    CertificateP12=$(cat $projectRootDirectory/security/user_management/app.p12)
+    USER_MANAGEMENT_DB_OPTIONS__DatabaseName=user_management_db
+    USER_MANAGEMENT_DB_OPTIONS__Host=user_management_mongodb
+    USER_MANAGEMENT_DB_OPTIONS__Port=27017
+    USER_MANAGEMENT_DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
+    DB_USERNAME=CN=user_management,OU=mongodb_client,O=user_management
+    DB_ADMIN_USERNAME=hirbod
+    DB_PASSWORD=password
+    DB_DATABASE_NAME=user_management_db
+    DB_SERVER_PORT=27017
+    CA=$(cat $projectRootDirectory/security/ca/ca.crt)
+    CLUSTER_CA=$(cat $projectRootDirectory/security/ca/ca.crt)
+    USER_MANAGEMENT_REPLICA_SET_P_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_p/app.pem)
+    USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_p_member/app.pem)
+    USER_MANAGEMENT_REPLICA_SET_S_1_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_s_1/app.pem)
+    USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_s_1_member/app.pem)
+    USER_MANAGEMENT_REPLICA_SET_S_2_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_s_2/app.pem)
+    USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT=$(cat $projectRootDirectory/security/user_management_replicaSet_s_2_member/app.pem)
 fi
 
 sudo docker secret rm $(sudo docker secret ls -q)
 
-echo $Kestrel__Endpoints__Https__Certificate | sudo docker secret create Kestrel__Endpoints__Https__Certificate -
+if [[ -z $Kestrel__Endpoints__Https__Certificate ]];     then echo "Kestrel__Endpoints__Https__Certificate     parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]];             then echo "USER_MANAGEMENT_Jwt__SecretKey             parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_NAME ]];                    then echo "USER_MANAGEMENT_DB_NAME                    parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__IsSharded ]];      then echo "USER_MANAGEMENT_DB_OPTIONS__IsSharded      parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__DatabaseName ]];   then echo "USER_MANAGEMENT_DB_OPTIONS__DatabaseName   parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Host ]];           then echo "USER_MANAGEMENT_DB_OPTIONS__Host           parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Port ]];           then echo "USER_MANAGEMENT_DB_OPTIONS__Port           parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Username ]];       then echo "USER_MANAGEMENT_DB_OPTIONS__Username       parameter is required."; exit 1; fi
+if [[ -z $CertificateP12 ]];                             then echo "CertificateP12                             parameter is required."; exit 1; fi
+if [[ -z $DB_SERVER_PORT ]];                             then echo "DB_SERVER_PORT                             parameter is required."; exit 1; fi
+if [[ -z $CA ]];                                         then echo "CA                                         parameter is required."; exit 1; fi
+if [[ -z $CLUSTER_CA ]];                                 then echo "CLUSTER_CA                                 parameter is required."; exit 1; fi
+if [[ -z $DB_DATABASE_NAME ]];                           then echo "DB_DATABASE_NAME                           parameter is required."; exit 1; fi
+if [[ -z $DB_ADMIN_USERNAME ]];                          then echo "DB_ADMIN_USERNAME                          parameter is required."; exit 1; fi
+if [[ -z $DB_USERNAME ]];                                then echo "DB_USERNAME                                parameter is required."; exit 1; fi
+if [[ -z $DB_PASSWORD ]];                                then echo "DB_PASSWORD                                parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_P_CRT ]];          then echo "USER_MANAGEMENT_REPLICA_SET_P_CRT          parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT ]];   then echo "USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT   parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_S_1_CRT ]];        then echo "USER_MANAGEMENT_REPLICA_SET_S_1_CRT        parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT ]]; then echo "USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_S_2_CRT ]];        then echo "USER_MANAGEMENT_REPLICA_SET_S_2_CRT        parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT ]]; then echo "USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT parameter is required."; exit 1; fi
 
-echo $JWT__SECRET_KEY | sudo docker secret create JWT__SECRET_KEY -
+echo $Kestrel__Endpoints__Https__Certificate     | sudo docker secret create Kestrel__Endpoints__Https__Certificate -
+echo $USER_MANAGEMENT_Jwt__SecretKey             | sudo docker secret create USER_MANAGEMENT_Jwt__SecretKey -
+echo $USER_MANAGEMENT_DB_NAME                    | sudo docker secret create USER_MANAGEMENT_DB_NAME -
+echo $USER_MANAGEMENT_DB_OPTIONS__IsSharded      | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__IsSharded -
+echo $USER_MANAGEMENT_DB_OPTIONS__DatabaseName   | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__DatabaseName -
+echo $USER_MANAGEMENT_DB_OPTIONS__Host           | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__Host -
+echo $USER_MANAGEMENT_DB_OPTIONS__Port           | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__Port -
+echo $USER_MANAGEMENT_DB_OPTIONS__Username       | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__Username -
+echo $CertificateP12                             | sudo docker secret create CertificateP12 -
 
-echo $DB_NAME | sudo docker secret create DB_NAME -
-
-echo $DB_OPTIONS__IsSharded | sudo docker secret create DB_OPTIONS__IsSharded -
-echo $DB_OPTIONS__DatabaseName | sudo docker secret create DB_OPTIONS__DatabaseName -
-echo $DB_OPTIONS__Host | sudo docker secret create DB_OPTIONS__Host -
-echo $DB_OPTIONS__Port | sudo docker secret create DB_OPTIONS__Port -
-echo $DB_OPTIONS__Username | sudo docker secret create DB_OPTIONS__Username -
-echo $DB_OPTIONS__Password | sudo docker secret create DB_OPTIONS__Password -
-
-echo $DB_DATABASE_NAME | sudo docker secret create DB_DATABASE_NAME -
-echo $DB_USERNAME | sudo docker secret create DB_USERNAME -
-echo $DB_PASSWORD | sudo docker secret create DB_PASSWORD -
-echo $DB_SERVER_PORT | sudo docker secret create DB_SERVER_PORT -
+echo $DB_SERVER_PORT                             | sudo docker secret create DB_SERVER_PORT -
+echo $CA                                         | sudo docker secret create CA -
+echo $CLUSTER_CA                                 | sudo docker secret create CLUSTER_CA -
+echo $DB_DATABASE_NAME                           | sudo docker secret create DB_DATABASE_NAME -
+echo $DB_ADMIN_USERNAME                          | sudo docker secret create DB_ADMIN_USERNAME -
+echo $DB_USERNAME                                | sudo docker secret create DB_USERNAME -
+echo $DB_PASSWORD                                | sudo docker secret create DB_PASSWORD -
+echo $USER_MANAGEMENT_REPLICA_SET_P_CRT          | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_P_CRT -
+echo $USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT   | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_P_MEMBER_CRT -
+echo $USER_MANAGEMENT_REPLICA_SET_S_1_CRT        | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_S_1_CRT -
+echo $USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_S_1_MEMBER_CRT -
+echo $USER_MANAGEMENT_REPLICA_SET_S_2_CRT        | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_S_2_CRT -
+echo $USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT | sudo docker secret create USER_MANAGEMENT_REPLICA_SET_S_2_MEMBER_CRT -
