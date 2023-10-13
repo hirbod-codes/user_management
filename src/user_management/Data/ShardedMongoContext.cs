@@ -108,7 +108,6 @@ public class ShardedMongoContext
             CheckCertificateRevocation = false,
             EnabledSslProtocols = SslProtocols.Tls12
         },
-        AllowInsecureTls = true,
         UseTls = true,
         Server = new MongoServerAddress(Host, Port),
         Scheme = ConnectionStringScheme.MongoDB,
