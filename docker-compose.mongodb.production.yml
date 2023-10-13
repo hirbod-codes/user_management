@@ -43,7 +43,7 @@ services:
             USER_MANAGEMENT_Logging__LogLevel__Default: warning
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
             USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/AppP12
-            Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/AppHttpsP12
+            USER_MANAGEMENT_Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/AppHttpsP12
             USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
         secrets:
             - USER_MANAGEMENT_Jwt__SecretKey
