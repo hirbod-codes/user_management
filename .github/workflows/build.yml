@@ -34,6 +34,9 @@ jobs:
                 username: ${{github.repository_owner}}
                 password: ${{secrets.PACKAGE_ACCESS_TOKEN}}
 
+            - name: Checkout
+              uses: actions/checkout@v4
+
             - name: Build user_management service' docker image
               uses: docker/build-push-action@v5
               with:
