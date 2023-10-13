@@ -22,7 +22,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-if [[ (-z $dbPort || -z $replSet) && (-z $dbPortFile || -z $replSet) ]]; then
+if [[ -z $dbPort && -z $dbPortFile ]]; then
+    echo "Insufficient parameters provided."
+    exit
+fi
+
+if [[ -z $replSet ]]; then
     echo "Insufficient parameters provided."
     exit
 fi

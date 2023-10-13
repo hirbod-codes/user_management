@@ -22,12 +22,22 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# Enable job controll
+# Enable job control
 set -m
 
-if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSet || -z $member0 || -z $member1 || -z $member2) ]]; then
+if [[ -z $dbPort && -z $dbPortFile ]]; then
     echo "Insufficient parameters provided."
-    exit
+    exit 1
+fi
+
+if [[ -z $replSet ]]; then
+    echo "Insufficient parameters provided."
+    exit 1
+fi
+
+if [[ -z $replSet || -z $member0 || -z $member1 || -z $member2 ]]; then
+    echo "Insufficient parameters provided."
+    exit 1
 fi
 
 if [[ -z $dbPort ]]; then
@@ -41,7 +51,7 @@ if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
 fi
 
 echo "\n\nWaiting...................................................................................\n\n"
-sleep 80s
+sleep 100s
 echo "\n\nWaited...................................................................................\n\n"
 
 mongod --shardsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile &
@@ -54,8 +64,7 @@ echo mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tls
 status=$(mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --quiet --eval 'rs.status()')
 echo "status------------------------------------->$status"
 
-if [[ $status != "1" ]]; then
-    mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval "
+mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames --eval "
         rs.initiate(
             { 
                 _id: \"$replSet\", 
@@ -68,9 +77,9 @@ if [[ $status != "1" ]]; then
         );
         rs.status();
     "
-    echo "The replication initialized successfully......................................................................................."
-else
-    echo "The replication already initialized......................................................................................."
-fi
 
-fg %1
+if [[ $? -ne 0 ]]; then exit $?; fi
+
+echo "The replication initialized successfully......................................................................................."
+
+fg

@@ -22,7 +22,7 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# Enable job controll
+# Enable job control
 set -m
 
 if [[ (-z $dbUsername || -z $dbAdminUsername || -z $dbPassword || -z $dbName || -z $dbPort) && (-z $dbUsernameFile || -z $dbAdminUsernameFile || -z $dbPasswordFile || -z $dbNameFile || -z $dbPortFile) ]]; then
@@ -50,7 +50,7 @@ if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
 fi
 
 echo "\n\nWaiting...................................................................................\n\n"
-sleep 160s
+sleep 180s
 echo "\n\nWaited...................................................................................\n\n"
 
 mongos --bind_ip "0.0.0.0" --port $dbPort --configdb "$configReplSet/$configMember0:$dbPort,$configMember1:$dbPort,$configMember2:$dbPort" --tlsMode requireTLS --clusterAuthMode x509 --tlsClusterFile $tlsClusterFile --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile &
@@ -68,8 +68,6 @@ db.auth(\"$dbAdminUsername\", \"$dbPassword\")
 
 sh.addShard(\"$shardReplSet/$shardMember0:$dbPort,$shardMember1:$dbPort,$shardMember2:$dbPort\")
 
-sh.status()
-
 db.getSiblingDB(\"\$external\").runCommand(
     {
         createUser: \"$dbUsername\",
@@ -81,14 +79,11 @@ db.getSiblingDB(\"\$external\").runCommand(
         writeConcern: { w: \"majority\", wtimeout: 5000 }
     }
 )
+
 " >/mongo-tmp-init
 
 if [[ -n $localhostUsername ]]; then
     echo "
-use admin
-
-db.auth('$dbAdminUsername', '$dbPassword')
-
 db.getSiblingDB('\$external').runCommand(
     {
         createUser: '$localhostUsername',
@@ -105,7 +100,7 @@ fi
 
 mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsAllowInvalidHostnames </mongo-tmp-init
 
-echo "The mogos instance initialized successfully......................................................................................."
+echo "The mongos instance initialized successfully......................................................................................."
 
 rm /mongo-tmp-init
 

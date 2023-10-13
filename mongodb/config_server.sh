@@ -22,26 +22,34 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# Enable job controll
+# Enable job control
 set -m
 
-if [[ (-z $dbPort || -z $replSet || -z $member0 || -z $member1 || -z $member2) && (-z $dbPortFile || -z $replSet || -z $member0 || -z $member1 || -z $member2) ]]; then
+if [[ -z $dbPort && -z $dbPortFile ]]; then
     echo "Insufficient parameters provided."
-    exit
+    exit 1
+fi
+
+if [[ -z $replSet || -z $member0 || -z $member1 || -z $member2 ]]; then
+    echo "Insufficient parameters provided."
+    exit 1
 fi
 
 if [[ -z $dbPort ]]; then
     dbPort="$(cat $dbPortFile)"
 fi
 
-if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile || -z $tlsClusterCAFile ]]; then
+if [[ -z $tlsClusterFile || -z $tlsCertificateKeyFile || -z $tlsCAFile ]]; then
     tlsCertificateKeyFile=/security/app.pem
     tlsCAFile=/security/ca.pem
     tlsClusterFile=/security/member.pem
-    tlsClusterCAFile=/security/ca.pem
 fi
 
-mongod --configsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile --tlsClusterCAFile $tlsClusterCAFile &
+echo "\n\nWaiting...................................................................................\n\n"
+sleep 20s
+echo "\n\nWaited...................................................................................\n\n"
+
+mongod --configsvr --replSet $replSet --bind_ip "0.0.0.0" --port $dbPort --dbpath /data/db --tlsMode requireTLS --clusterAuthMode x509 --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFile --tlsClusterFile $tlsClusterFile &
 
 echo "\n\nWaiting...................................................................................\n\n"
 sleep 60s
@@ -62,6 +70,7 @@ mongo --tls --tlsCertificateKeyFile $tlsCertificateKeyFile --tlsCAFile $tlsCAFil
 
         rs.status()
     "
+
 echo "The replication initialized successfully......................................................................................."
 
 fg
