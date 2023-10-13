@@ -5,17 +5,11 @@ networks:
     backend:
         driver: overlay
 secrets:
-    Kestrel__Endpoints__Https__Certificate:
-        external: true
     USER_MANAGEMENT_Jwt__SecretKey:
         external: true
     USER_MANAGEMENT_DB_NAME:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__IsSharded:
-        external: true
-    CaPem:
-        external: true
-    CertificateP12:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__DatabaseName:
         external: true
@@ -25,24 +19,22 @@ secrets:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__Username:
         external: true
+    CA:
+        external: true
+    AppHttpsCrt:
+        external: true
+    AppHttpsKey:
+        external: true
+    AppCrt:
+        external: true
+    AppKey:
+        external: true
 services:
     user_management:
         image: ghcr.io/hirbod-codes/user_management:latest
-        command: bash -c "sleep 240s && dotnet user_management.dll"
         ports:
             - "80:5000"
             - "443:5001"
-        secrets:
-            - USER_MANAGEMENT_Jwt__SecretKey
-            - USER_MANAGEMENT_DB_NAME
-            - USER_MANAGEMENT_DB_OPTIONS__IsSharded
-            - CaPem
-            - CertificateP12
-            - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
-            - USER_MANAGEMENT_DB_OPTIONS__Host
-            - USER_MANAGEMENT_DB_OPTIONS__Port
-            - USER_MANAGEMENT_DB_OPTIONS__Username
-            - Kestrel__Endpoints__Https__Certificate
         environment:
             DOTNET_GENERATE_ASPNET_CERTIFICATE: "false"
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: "true"
@@ -51,9 +43,22 @@ services:
             USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: "true"
             USER_MANAGEMENT_Logging__LogLevel__Default: warning
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: warning
-            USER_MANAGEMENT_Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/Kestrel__Endpoints__Https__Certificate
-            USER_MANAGEMENT_DB_OPTIONS__CaPem: /run/secrets/CaPem
-            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/CertificateP12
+            USER_MANAGEMENT_Kestrel__Endpoints__Https__Certificate__Path: /run/secrets/AppHttpsP12
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: /run/secrets/AppP12
+            USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
+        secrets:
+            - USER_MANAGEMENT_Jwt__SecretKey
+            - USER_MANAGEMENT_DB_NAME
+            - USER_MANAGEMENT_DB_OPTIONS__IsSharded
+            - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
+            - USER_MANAGEMENT_DB_OPTIONS__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Username
+            - CA
+            - AppHttpsCrt
+            - AppHttpsKey
+            - AppCrt
+            - AppKey
         networks:
             - backend
             - db
