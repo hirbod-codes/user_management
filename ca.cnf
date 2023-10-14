@@ -1,0 +1,8 @@
+[req]
+x509_extensions = cert_ext
+prompt = no
+
+[ cert_ext ]
+basicConstraints = CA:TRUE, pathlen:0
+keyUsage = keyCertSign, cRLSign
+subjectKeyIdentifier=hash

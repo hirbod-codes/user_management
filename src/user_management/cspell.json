@@ -1,0 +1,18 @@
+{
+    "version": "0.2",
+    "ignorePaths": [
+        "appsettings.Development.json",
+        "cspell.json",
+        "Properties/*",
+        "mongodb/*",
+        "dockerComposeDevelopmentFileInitializer.js",
+        "dockerComposeProductionFileInitializer.js"
+    ],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "retoken"
+    ],
+    "ignoreWords": [],
+    "import": []
+}

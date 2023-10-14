@@ -1,14 +1,18 @@
-/.vscode
+.vscode
 
-/obj
-/bin
-/node_modules
+[Oo]bj/
+[Bb]in/
+.nuget/
+_ReSharper.*
+packages/
+artifacts/
+*.user
+*.suo
+*.userprefs
+*DS_Store
+*.sln.ide
 
-/mongodb
-
-/Data/Seeders/Logs/*
-
-.env*
+.env.*
 !.env.example
 
-package-lock.json
+security/

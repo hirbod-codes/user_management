@@ -1,0 +1,37 @@
+version: '3.8'
+volumes:
+    user_management_replicaSet_p_data: {}
+    user_management_replicaSet_p_config_data: {}
+    user_management_replicaSet_s_1_data: {}
+    user_management_replicaSet_s_1_config_data: {}
+    user_management_replicaSet_s_2_data: {}
+    user_management_replicaSet_s_2_config_data: {}
+services:
+    user_management:
+        container_name: user_management
+        build:
+            context: ./
+            dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
+        command: bash -c "sleep 120s && dotnet test --no-restore"
+        environment:
+            USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
+            USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_ENVIRONMENT: "${ENVIRONMENT}"
+            USER_MANAGEMENT_DOTNET_WATCH_RESTART_ON_RUDE_EDIT: true
+            USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
+            USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft_AspNetCore}"
+            USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
+            USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
+            USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
+            USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
+            USER_MANAGEMENT_DB_OPTIONS__ReplicaSetName: "${DB_OPTIONS__ReplicaSetName}"
+            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
+        volumes:
+            - ./security/ca/ca.pem:/security/ca.pem
+            - ./security/user_management/app.p12:/security/app.p12
+            - ./security/ca/ca.crt:/etc/ssl/certs/ca.crt
+        depends_on:
+            - user_management_replicaSet_p

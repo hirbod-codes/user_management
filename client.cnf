@@ -1,0 +1,9 @@
+[req]
+req_extensions = req_ext
+prompt = no
+
+[ req_ext ]
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment
+extendedKeyUsage = serverAuth, clientAuth
+subjectKeyIdentifier=hash

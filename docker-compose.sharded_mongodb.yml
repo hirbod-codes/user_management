@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+    user_management_mongodb:
+        ports:
+            - '${DB_CONTAINER_PORT}:${DB_SERVER_PORT}'
+        environment:
+            localhostUsername: ${LOCALHOST_USERNAME}

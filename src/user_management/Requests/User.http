@@ -1,0 +1,132 @@
+### 
+# @name full_name_existence_check
+GET {{scheme}}://{{host}}:{{port}}/api/full-name-existence-check/Sonya-Darien-Jacobi HTTP/1.1
+Content-Type: application/json
+
+### 
+# @name username_existence_check
+GET {{scheme}}://{{host}}:{{port}}/api/username-existence-check/hirbod HTTP/1.1
+Content-Type: application/json
+
+### 
+# @name email_existence_check
+GET {{scheme}}://{{host}}:{{port}}/api/email-existence-check/taghalloby@gmail.com HTTP/1.1
+Content-Type: application/json
+
+### 
+# @name phone_number_existence_check
+GET {{scheme}}://{{host}}:{{port}}/api/phone-number-existence-check/09380978577 HTTP/1.1
+Content-Type: application/json
+
+### 
+# @name register
+POST {{scheme}}://{{host}}:{{port}}/api/register HTTP/1.1
+Content-Type: application/json
+
+{
+    "FirstName": "Asdas",
+    "MiddleName": "",
+    "LastName": "",
+    "Email": "taghalloby3@gmail.com",
+    "Username": "asdasdasdsad",
+    "PhoneNumber": "09380978579",
+    "Password": "password"
+}
+
+### 
+# @name activate
+POST {{scheme}}://{{host}}:{{port}}/api/activate HTTP/1.1
+Content-Type: application/json
+
+{
+    "Email": "taghalloby@gmail.com",
+    "Password": "password",
+    "VerificationSecret": "Z8zUFK"
+}
+
+### 
+# @name resend_email_verification_messaeg
+POST {{scheme}}://{{host}}:{{port}}/api/resend-email-verification-message HTTP/1.1
+Content-Type: application/json
+
+"taghalloby@gmail.com"
+
+### 
+# @name forgot_password
+POST {{scheme}}://{{host}}:{{port}}/api/forgot-password HTTP/1.1
+Content-Type: application/json
+
+"taghalloby@gmail.com"
+
+### 
+# @name change_password
+POST {{scheme}}://{{host}}:{{port}}/api/change-password HTTP/1.1
+Content-Type: application/json
+
+{
+    "Email": "taghalloby@gmail.com",
+    "Password": "password",
+    "PasswordConfirmation": "password",
+    "VerificationSecret": "7KhOID"
+}
+
+### 
+# @name login
+POST {{scheme}}://{{host}}:{{port}}/api/login HTTP/1.1
+Content-Type: application/json
+
+{
+    "Username": "Lester_Boehm75",
+    "Password": "password"
+}
+
+### 
+# @name logout
+POST {{scheme}}://{{host}}:{{port}}/api/logout HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+### 
+# @name removeclient
+POST {{scheme}}://{{host}}:{{port}}/api/remove-client HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+"647c6dc442547ede0539172f"
+
+### 
+# @name removeclients
+POST {{scheme}}://{{host}}:{{port}}/api/remove-clients HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+###
+# @name retrieve
+GET {{scheme}}://{{host}}:{{port}}/api/user/647c6dc442547ede0539172f HTTP/1.1
+Authorization: JWT {{JWT}}
+
+###
+# @name retrieves
+GET {{scheme}}://{{host}}:{{port}}/api/users/Email::Eq::Paxton74@yahoo.com::string||Username::Eq::hirbod::string||FirstName::Eq::Taylor::string/2/0 HTTP/1.1
+Authorization: JWT {{JWT}}
+
+###
+# @name update
+PATCH {{scheme}}://{{host}}:{{port}}/api/users HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+# Authorization: Bearer {{Bearer}}
+
+{
+    "FiltersString": "Username::Eq::Lester_Boehm75::string",
+    "UpdatesString": "FirstName::Set::James::string|||LastName::Set::Hetfild::string"
+}
+
+###
+# @name delete
+DELETE {{scheme}}://{{host}}:{{port}}/api/user HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+# Authorization: Bearer {{Bearer}}
+
+"647c6dc442547ede0539172f"

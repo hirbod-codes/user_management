@@ -1,0 +1,194 @@
+@id = 647cc54f8a22657c21cdce59
+@targetId = 647cbd3baa26bbf94b64d7da
+
+### 
+# @name update_readers
+PATCH {{scheme}}://{{host}}:{{port}}/api/userprivileges/update-readers HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "id": "{{id}}",
+    "Readers": [
+        {
+            "AuthorId": "{{id}}",
+            "Author": "user",
+            "IsPermitted": true,
+            "Fields": [
+                {
+                    "Name": "_id",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "user_privileges",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "clients",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "first_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "middle_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "last_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "email",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "phone_number",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "username",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "is_verified",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "updated_at",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "created_at",
+                    "IsPermitted": true
+                }
+            ]
+        },
+        {
+            "AuthorId": "{{targetId}}",
+            "Author": "user",
+            "IsPermitted": true,
+            "Fields": [
+                {
+                    "Name": "last_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "email",
+                    "IsPermitted": true
+                }
+            ]
+        }
+    ]
+}
+
+### 
+# @name update_all_readers
+PATCH {{scheme}}://{{host}}:{{port}}/api/userprivileges/update-all-readers HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "id": "{{id}}",
+    "AllReaders": {
+        "ArePermitted": true,
+        "Fields": [
+            {
+                "Name": "username",
+                "IsPermitted": true
+            },
+            {
+                "Name": "email",
+                "IsPermitted": true
+            }
+        ]
+    }
+}
+
+### 
+# @name update_updaters
+PATCH {{scheme}}://{{host}}:{{port}}/api/userprivileges/update-updaters HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "id": "{{id}}",
+    "Updaters": [
+        {
+            "AuthorId": "{{id}}",
+            "IsPermitted": true,
+            "Fields": [
+                {
+                    "Name": "first_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "middle_name",
+                    "IsPermitted": true
+                },
+                {
+                    "Name": "last_name",
+                    "IsPermitted": true
+                }
+            ],
+            "Author": "user"
+        },
+        {
+            "AuthorId": "{{targetId}}",
+            "IsPermitted": true,
+            "Fields": [
+                {
+                    "Name": "first_name",
+                    "IsPermitted": true
+                }
+            ],
+            "Author": "user"
+        }
+    ]
+}
+
+### 
+# @name update_all_updaters
+PATCH {{scheme}}://{{host}}:{{port}}/api/userprivileges/update-all-updaters HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "id": "{{id}}",
+    "AllUpdaters": {
+        "ArePermitted": true,
+        "Fields": [
+            {
+                "Name": "username",
+                "IsPermitted": true
+            },
+            {
+                "Name": "email",
+                "IsPermitted": true
+            }
+        ]
+    }
+}
+
+### 
+# @name update_deleters
+PATCH {{scheme}}://{{host}}:{{port}}/api/userprivileges/update-deleters HTTP/1.1
+Content-Type: application/json
+Authorization: JWT {{JWT}}
+
+{
+    "id": "{{id}}",
+    "Deleters": [
+        {
+            "AuthorId": "{{id}}",
+            "Author": "user",
+            "IsPermitted": true
+        },
+        {
+            "AuthorId": "{{targetId}}",
+            "Author": "user",
+            "IsPermitted": true
+        }
+    ]
+}

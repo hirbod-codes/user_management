@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+service UserController {
+    rpc Get (GetRequest) returns (GetResponse);
+}
+
+message GetRequest {
+    string Id = 1;
+    string AuthorId = 2;
+    bool IsClient = 3;
+}
+
+message GetResponse {
+    optional google.protobuf.Any User = 1;
+}
