@@ -9,7 +9,7 @@ RUN apt update && apt install openssl
 
 COPY ./src/user_management/ ./
 
-RUN dotnet publish --disable-build-servers --no-restore -c Release -o /publish
+RUN dotnet publish --no-restore -c Release -o /publish
 
 WORKDIR /publish
 
