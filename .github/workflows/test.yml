@@ -19,7 +19,7 @@ jobs:
             - name: Prepare environment variables and certificates
               run: |
                 ls -al
-                chmod u+x ./prepare_environment_variables.sh
+                chmod u+x ./*.sh
                 chmod u+x ./mongodb/*.sh
                 ./prepare_environment_variables.sh --projectRootDirectory ./
                 ./generate_certificates.sh --projectRootDirectory .
