@@ -16,12 +16,13 @@ jobs:
               with:
                   dotnet-version: 7.0.x
 
-            - name: Prepare environment variables
+            - name: Prepare environment variables and certificates
               run: |
                 ls -al
                 chmod u+x ./prepare_environment_variables.sh
                 chmod u+x ./mongodb/*.sh
                 ./prepare_environment_variables.sh --projectRootDirectory ./
+                ./generate_certificates.sh --projectRootDirectory .
 
             - name: Run unit tests
               run: |
