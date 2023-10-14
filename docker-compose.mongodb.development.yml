@@ -41,6 +41,8 @@ services:
     user_management_replicaSet_p:
         ports:
           - "${DB_PRIMARY_CONTAINER_PORT}:${DB_SERVER_PORT}"
+        environment:
+            localhostUsername: ${LOCALHOST_USERNAME}
     user_management_replicaSet_s_1:
         ports:
           - "${DB_SECONDARY_1_CONTAINER_PORT}:${DB_SERVER_PORT}"
