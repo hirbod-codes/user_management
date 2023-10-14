@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 
 RUN apt-get update && apt-get install -y unzip curl
-RUN curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l /root/vsdbg
 
 WORKDIR /app
 COPY ./tests/user_management_integration_tests/user_management_integration_tests.csproj ./tests/user_management_integration_tests/
