@@ -10,8 +10,6 @@ services:
     user_management_replicaSet_p:
         container_name: user_management_replicaSet_p
         image: mongo:4.4.18
-        ports:
-          - "${DB_PRIMARY_CONTAINER_PORT}:${DB_SERVER_PORT}"
         command: bash -c "/mongodb/rs_server.sh"
         environment:
             replSet: user_management_replicaSet
@@ -27,7 +25,6 @@ services:
             tlsCAFile: /security/ca.pem
             tlsClusterFile: /security/member.pem
             tlsClusterCAFile: /security/ca.pem
-            localhostUsername: ${LOCALHOST_USERNAME}
         volumes:
             - user_management_replicaSet_p_data:/data/db
             - user_management_replicaSet_p_config_data:/data/configdb
@@ -43,8 +40,6 @@ services:
         environment:
             replSet: user_management_replicaSet
             dbPort: ${DB_SERVER_PORT}
-        ports:
-          - "${DB_SECONDARY_1_CONTAINER_PORT}:${DB_SERVER_PORT}"
         volumes:
             - user_management_replicaSet_s_1_data:/data/db
             - user_management_replicaSet_s_1_config_data:/data/configdb
@@ -60,8 +55,6 @@ services:
         environment:
             replSet: user_management_replicaSet
             dbPort: ${DB_SERVER_PORT}
-        ports:
-          - "${DB_SECONDARY_2_CONTAINER_PORT}:${DB_SERVER_PORT}"
         volumes:
             - user_management_replicaSet_s_2_data:/data/db
             - user_management_replicaSet_s_2_config_data:/data/configdb
