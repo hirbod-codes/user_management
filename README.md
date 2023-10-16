@@ -7,7 +7,7 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.development.yml --env-file ./.env.mongodb.development up -d --build --remove-orphans -V
+    sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.development.yml --env-file ./.env.mongodb.development up --build --remove-orphans -V -d
 ```
 
 ## In Development Environment (Linux/WSL) with sharded mongodb cluster as the database, run
@@ -17,7 +17,7 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.development.yml --env-file ./.env.sharded_mongodb.development up -d --build --remove-orphans -V
+    sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.development.yml --env-file ./.env.sharded_mongodb.development up --build --remove-orphans -V -d
 ```
 
 ## In IntegrationTest Environment (Linux/WSL) with mongodb replica set as the database, run
@@ -25,6 +25,7 @@ cd path-to-project-root-directory/ && \
 ```bash
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
@@ -40,7 +41,7 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
-## In UnitTest Environment (Linux/WSL)
+## For UnitTest (Linux/WSL)
 
 ```bash
 cd path-to-project-root-directory/ && \
@@ -50,27 +51,27 @@ cd path-to-project-root-directory/ && \
     sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
-## for docker compose only with sharded mongodb cluster (so you can run the dotnet application outside docker container)
+## For docker compose only with sharded mongodb cluster (so you can run the dotnet application outside docker container)
 
 ```bash
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.yml --env-file ./.env.sharded_mongodb up -d --build --remove-orphans -V
+    sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.yml --env-file ./.env.sharded_mongodb up --build --remove-orphans -V -d
 ```
 
-## for docker compose only with mongodb replica set (so you can run the dotnet application outside docker container)
+## For docker compose only with mongodb replica set (so you can run the dotnet application outside docker container)
 
 ```bash
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up -d --build --remove-orphans -V
+    sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up --build --remove-orphans -V -d
 ```
 
-## for testing docker swarm with mongodb replica set as the database, run
+## For testing docker swarm with mongodb replica set as the database, run
 
 ```bash
 sudo docker swarm init && \
@@ -81,7 +82,7 @@ sudo docker swarm init && \
     sudo docker stack deploy -c ./docker-compose.swarm.mongodb.base.yml -c ./docker-compose.mongodb.production.yml app
 ```
 
-## for testing docker swarm with sharded mongodb cluster as the database, run
+## For testing docker swarm with sharded mongodb cluster as the database, run
 
 ```bash
 sudo docker swarm init && \
@@ -92,16 +93,16 @@ sudo docker swarm init && \
     sudo docker stack deploy -c ./docker-compose.swarm.sharded_mongodb.base.yml -c ./docker-compose.sharded_mongodb.production.yml app
 ```
 
-## for dotnet application outside container
+## For dotnet application outside container
 
-### for running the application
+### For running the application
 
 if you don't specify a .env file relative path (aka `ENV_FILE_PATH=.env.file dotnet run`) for running a project outside the container,
 it will use the default ".env.mongodb.development" value as the env file path.
 
-### for debugging the application
+### For debugging the application
 
-you can temporarily set the environment in Program.cs like
+Temporarily set the environment in Program.cs like
 
 ```C#
 Environment.SetEnvironmentVariable("ENV_FILE_PATH", ".env.file");
@@ -111,8 +112,14 @@ TO DO:
 
 Change environment values in .env file properly when running outside a docker container.
 
-DB_OPTIONS__Host=localhost
-DB_OPTIONS__Port=the_port_of_db_container
+DB_OPTIONS__Host=localhost\
+DB_OPTIONS__Port=the_port_of_db_container\
 DB_OPTIONS__CertificateP12=security/user_management/app.p12
 
-Copy security/ca/ca.crt to /etc/ssl/certs (so your mongodb c# driver can verify mongodb certificate) or set AllowInsecureTls to true.
+In MongoContext:
+
+Set AllowInsecureTls to true.\
+Set DirectConnection to true.\
+Set host name localhost and port of the primary server in Server property of MongoClient.
+
+**Unset Servers property in MongoClient, because mongodb replica set uses dns names and they are only available in docker compose network.**
