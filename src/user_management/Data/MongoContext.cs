@@ -28,6 +28,7 @@ public class MongoContext
     public string CertificateP12 { get; set; } = null!;
     public string Host { get; set; } = null!;
     public int Port { get; set; }
+    public List<MongoServer> Servers { get; set; } = null!;
 
     public async Task Initialize(MongoCollections mongoCollections, IMongoDatabase mongoDatabase)
     {
@@ -113,7 +114,7 @@ public class MongoContext
     {
         ReplicaSetName = ReplicaSetName,
         Scheme = ConnectionStringScheme.MongoDB,
-        Server = new MongoServerAddress(Host, Port),
+        Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
         Credential = MongoCredential.CreateMongoX509Credential(Username),
         UseTls = true,
         SslSettings = new()

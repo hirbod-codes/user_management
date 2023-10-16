@@ -33,8 +33,12 @@ services:
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
             USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
             USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
-            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
-            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host: "${DB_OPTIONS__Servers__0__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port: "${DB_OPTIONS__Servers__0__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host: "${DB_OPTIONS__Servers__1__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port: "${DB_OPTIONS__Servers__1__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host: "${DB_OPTIONS__Servers__2__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port: "${DB_OPTIONS__Servers__2__Port}"
             USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
         depends_on:
             - user_management_replicaSet_p

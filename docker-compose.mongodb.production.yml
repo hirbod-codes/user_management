@@ -13,11 +13,19 @@ secrets:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__DatabaseName:
         external: true
-    USER_MANAGEMENT_DB_OPTIONS__Host:
-        external: true
-    USER_MANAGEMENT_DB_OPTIONS__Port:
-        external: true
     USER_MANAGEMENT_DB_OPTIONS__Username:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port:
         external: true
     CA:
         external: true
@@ -50,8 +58,12 @@ services:
             - USER_MANAGEMENT_DB_NAME
             - USER_MANAGEMENT_DB_OPTIONS__IsSharded
             - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
-            - USER_MANAGEMENT_DB_OPTIONS__Host
-            - USER_MANAGEMENT_DB_OPTIONS__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port
             - USER_MANAGEMENT_DB_OPTIONS__Username
             - CA
             - AppHttpsCrt
