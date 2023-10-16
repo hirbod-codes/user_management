@@ -1,7 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 
-RUN apt-get update && apt-get install -y unzip curl
-
 WORKDIR /app
 COPY ./tests/user_management_integration_tests/user_management_integration_tests.csproj ./tests/user_management_integration_tests/
 COPY ./src/user_management/user_management.csproj ./src/user_management/
