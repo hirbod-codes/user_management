@@ -71,12 +71,12 @@ if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]];                then echo "USER_MANA
 if [[ -z $USER_MANAGEMENT_DB_NAME ]];                       then echo "USER_MANAGEMENT_DB_NAME                      parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_OPTIONS__IsSharded ]];         then echo "USER_MANAGEMENT_DB_OPTIONS__IsSharded        parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_OPTIONS__DatabaseName ]];      then echo "USER_MANAGEMENT_DB_OPTIONS__DatabaseName     parameter is required."; exit 1; fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host parameter is required."; exit 1;fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port parameter is required."; exit 1;fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host parameter is required."; exit 1;fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port parameter is required."; exit 1;fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host parameter is required."; exit 1;fi
-fi [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port ]];  then echo "USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Username ]];          then echo "USER_MANAGEMENT_DB_OPTIONS__Username         parameter is required."; exit 1; fi
 if [[ -z $DB_SERVER_PORT ]];                                then echo "DB_SERVER_PORT                               parameter is required."; exit 1; fi
 if [[ -z $CA ]];                                            then echo "CA                                           parameter is required."; exit 1; fi
