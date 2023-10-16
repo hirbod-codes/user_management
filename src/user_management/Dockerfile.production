@@ -14,4 +14,4 @@ RUN dotnet publish --no-restore -c Release -o /publish
 WORKDIR /publish
 
 EXPOSE 5001 5000
-CMD cp /run/secrets/CA /etc/ssl/certs/ && openssl pkcs12 -export -password pass: -in /run/secrets/AppCrt -inkey /run/secrets/AppKey -out /run/secrets/AppP12 && openssl pkcs12 -export -password pass: -in /run/secrets/AppHttpsCrt -inkey /run/secrets/AppHttpsKey -out /run/secrets/AppHttpsP12 && dotnet user_management.dll 
+CMD sleep 120s && cp /run/secrets/CA /etc/ssl/certs/ && openssl pkcs12 -export -password pass: -in /run/secrets/AppCrt -inkey /run/secrets/AppKey -out /run/secrets/AppP12 && openssl pkcs12 -export -password pass: -in /run/secrets/AppHttpsCrt -inkey /run/secrets/AppHttpsKey -out /run/secrets/AppHttpsP12 && dotnet user_management.dll 
