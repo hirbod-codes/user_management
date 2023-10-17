@@ -1,10 +1,14 @@
 # Instructions
 
+For development **environments** you can enter your preferred admin credentials in prepare_environment_variables.sh bash script.
+Also for production **environments**, similarly you're free to modify recreate_secrets_mongodb.sh and recreate_secrets_sharded_mongodb.sh.
+
 ## In Development Environment (Linux/WSL) with mongodb replica set as the database, run
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
+    sudo rm -fr src/user_management/bin src/user_management/obj
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.development.yml --env-file ./.env.mongodb.development up --build --remove-orphans -V -d
@@ -14,7 +18,8 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
+    sudo rm -fr src/user_management/bin src/user_management/obj
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.development.yml --env-file ./.env.sharded_mongodb.development up --build --remove-orphans -V -d
@@ -24,7 +29,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     sudo chmod ug+x ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
@@ -35,7 +40,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
@@ -45,7 +50,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
@@ -55,7 +60,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.yml --env-file ./.env.sharded_mongodb up --build --remove-orphans -V -d
@@ -65,7 +70,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 cd path-to-project-root-directory/ && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.yml --env-file ./.env.mongodb up --build --remove-orphans -V -d
@@ -75,7 +80,7 @@ cd path-to-project-root-directory/ && \
 
 ```bash
 sudo docker swarm init && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./generate_certificates.sh --projectRootDirectory . && \
     ./recreate_secrets_mongodb.sh --projectRootDirectory . --useTestValues && \
     sudo docker build --tag ghcr.io/hirbod-codes/user_management:latest -f ./src/user_management/Dockerfile.production ./ && \
@@ -86,7 +91,7 @@ sudo docker swarm init && \
 
 ```bash
 sudo docker swarm init && \
-    sudo chmod ug+x ./*.sh && \
+    sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./generate_certificates.sh --projectRootDirectory . && \
     ./recreate_secrets_sharded_mongodb.sh --projectRootDirectory . --useTestValues && \
     sudo docker build --tag ghcr.io/hirbod-codes/user_management:latest -f ./src/user_management/Dockerfile.production ./ && \
