@@ -5,10 +5,14 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <GenerateProgramFile>false</GenerateProgramFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- To Suppress warning resulting from not adding xml comments to classes or methods -->
+        <NoWarn>1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="DotNetEnv" Version="2.5.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.5.0" />
         <PackageReference Include="System.IO.Abstractions" Version="7.1.1" />
 
         <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
@@ -22,6 +26,8 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.16" />
 
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.0" />
 
         <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
 
