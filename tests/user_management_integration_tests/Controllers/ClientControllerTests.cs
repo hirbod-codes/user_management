@@ -163,7 +163,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);
 
-        ClientPutDto dto = new()
+        ClientPatchDto dto = new()
         {
             Id = client.Id.ToString(),
             Secret = secret,

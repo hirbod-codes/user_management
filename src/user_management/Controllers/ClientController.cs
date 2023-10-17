@@ -84,11 +84,11 @@ public class ClientController : ControllerBase
 
     [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH)]
-    public async Task<ActionResult> Update(ClientPutDto clientPutDto)
+    public async Task<ActionResult> Update([FromBody] ClientPatchDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
-        try { await _clientManagement.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl); }
+        try { await _clientManagement.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl); }
         catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
