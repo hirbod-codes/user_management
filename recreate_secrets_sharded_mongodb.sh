@@ -36,6 +36,10 @@ if [[ $useTestValues == "true" ]]; then
     AppKey="$(cat $projectRootDirectory/security/user_management/app.key)"
     AppCrt="$(cat $projectRootDirectory/security/user_management/app.crt)"
     USER_MANAGEMENT_Jwt__SecretKey="123abc123abc"
+    USER_MANAGEMENT_ADMIN_USERNAME=hirbod
+    USER_MANAGEMENT_ADMIN_PASSWORD="Pass%w0rd!99"
+    USER_MANAGEMENT_ADMIN_EMAIL="your_functional_email@email.com"
+    USER_MANAGEMENT_ADMIN_PHONE_NUMBER=
     USER_MANAGEMENT_DB_NAME="mongodb"
     USER_MANAGEMENT_DB_OPTIONS__IsSharded="true"
     USER_MANAGEMENT_DB_OPTIONS__DatabaseName="user_management_db"
@@ -66,45 +70,55 @@ fi
 
 sudo docker secret rm $(sudo docker secret ls -q)
 
-if [[ -z $AppHttpsKey ]]; then                              echo "AppHttpsKey                              parameter is required."; exit 1;fi
-if [[ -z $AppHttpsCrt ]]; then                              echo "AppHttpsCrt                              parameter is required."; exit 1;fi
-if [[ -z $AppKey ]]; then                                   echo "AppKey                                   parameter is required."; exit 1;fi
-if [[ -z $AppCrt ]]; then                                   echo "AppCrt                                   parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]]; then           echo "USER_MANAGEMENT_Jwt__SecretKey           parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_NAME ]]; then                  echo "USER_MANAGEMENT_DB_NAME                  parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_OPTIONS__IsSharded ]]; then    echo "USER_MANAGEMENT_DB_OPTIONS__IsSharded    parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_OPTIONS__DatabaseName ]]; then echo "USER_MANAGEMENT_DB_OPTIONS__DatabaseName parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Host ]]; then         echo "USER_MANAGEMENT_DB_OPTIONS__Host         parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Port ]]; then         echo "USER_MANAGEMENT_DB_OPTIONS__Port         parameter is required."; exit 1;fi
-if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Username ]]; then     echo "USER_MANAGEMENT_DB_OPTIONS__Username     parameter is required."; exit 1;fi
+if [[ -z $AppHttpsKey ]]; then                                  echo "AppHttpsKey                               parameter is required."; exit 1;fi
+if [[ -z $AppHttpsCrt ]]; then                                  echo "AppHttpsCrt                               parameter is required."; exit 1;fi
+if [[ -z $AppKey ]]; then                                       echo "AppKey                                    parameter is required."; exit 1;fi
+if [[ -z $AppCrt ]]; then                                       echo "AppCrt                                    parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]]; then               echo "USER_MANAGEMENT_Jwt__SecretKey            parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]]; then               echo "USER_MANAGEMENT_Jwt__SecretKey            parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_ADMIN_USERNAME ]]; then               echo "USER_MANAGEMENT_ADMIN_USERNAME            parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_ADMIN_PASSWORD ]]; then               echo "USER_MANAGEMENT_ADMIN_PASSWORD            parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_ADMIN_EMAIL ]]; then                  echo "USER_MANAGEMENT_ADMIN_EMAIL               parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_ADMIN_PHONE_NUMBER ]]; then           echo "USER_MANAGEMENT_ADMIN_PHONE_NUMBER        parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_NAME ]]; then                      echo "USER_MANAGEMENT_DB_NAME                   parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__IsSharded ]]; then        echo "USER_MANAGEMENT_DB_OPTIONS__IsSharded     parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__DatabaseName ]]; then     echo "USER_MANAGEMENT_DB_OPTIONS__DatabaseName  parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Host ]]; then             echo "USER_MANAGEMENT_DB_OPTIONS__Host          parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Port ]]; then             echo "USER_MANAGEMENT_DB_OPTIONS__Port          parameter is required."; exit 1;fi
+if [[ -z $USER_MANAGEMENT_DB_OPTIONS__Username ]]; then         echo "USER_MANAGEMENT_DB_OPTIONS__Username      parameter is required."; exit 1;fi
 
-if [[ -z $DB_USERNAME ]]; then                              echo "DB_USERNAME                              parameter is required."; exit 1;fi
-if [[ -z $DB_ADMIN_USERNAME ]]; then                        echo "DB_ADMIN_USERNAME                        parameter is required."; exit 1;fi
-if [[ -z $DB_PASSWORD ]]; then                              echo "DB_PASSWORD                              parameter is required."; exit 1;fi
-if [[ -z $DB_DATABASE_NAME ]]; then                         echo "DB_DATABASE_NAME                         parameter is required."; exit 1;fi
-if [[ -z $DB_SERVER_PORT ]]; then                           echo "DB_SERVER_PORT                           parameter is required."; exit 1;fi
-if [[ -z $CA ]]; then                                       echo "CA                                       parameter is required."; exit 1;fi
+if [[ -z $DB_USERNAME ]]; then                                  echo "DB_USERNAME                               parameter is required."; exit 1;fi
+if [[ -z $DB_ADMIN_USERNAME ]]; then                            echo "DB_ADMIN_USERNAME                         parameter is required."; exit 1;fi
+if [[ -z $DB_PASSWORD ]]; then                                  echo "DB_PASSWORD                               parameter is required."; exit 1;fi
+if [[ -z $DB_DATABASE_NAME ]]; then                             echo "DB_DATABASE_NAME                          parameter is required."; exit 1;fi
+if [[ -z $DB_SERVER_PORT ]]; then                               echo "DB_SERVER_PORT                            parameter is required."; exit 1;fi
+if [[ -z $CA ]]; then                                           echo "CA                                        parameter is required."; exit 1;fi
 
-if [[ -z $MONGODB_TLS_CLUSTER_FILE ]]; then                 echo "MONGODB_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
-if [[ -z $MONGODB_TLS_CERTIFICATE_KEY_FILE ]]; then         echo "MONGODB_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
-if [[ -z $CONFIG_1_TLS_CLUSTER_FILE ]]; then                echo "CONFIG_1_TLS_CLUSTER_FILE                parameter is required."; exit 1;fi
-if [[ -z $CONFIG_1_TLS_CERTIFICATE_KEY_FILE ]]; then        echo "CONFIG_1_TLS_CERTIFICATE_KEY_FILE        parameter is required."; exit 1;fi
-if [[ -z $CONFIG_2_TLS_CLUSTER_FILE ]]; then                echo "CONFIG_2_TLS_CLUSTER_FILE                parameter is required."; exit 1;fi
-if [[ -z $CONFIG_2_TLS_CERTIFICATE_KEY_FILE ]]; then        echo "CONFIG_2_TLS_CERTIFICATE_KEY_FILE        parameter is required."; exit 1;fi
-if [[ -z $CONFIG_3_TLS_CLUSTER_FILE ]]; then                echo "CONFIG_3_TLS_CLUSTER_FILE                parameter is required."; exit 1;fi
-if [[ -z $CONFIG_3_TLS_CERTIFICATE_KEY_FILE ]]; then        echo "CONFIG_3_TLS_CERTIFICATE_KEY_FILE        parameter is required."; exit 1;fi
-if [[ -z $SHARD_1_TLS_CLUSTER_FILE ]]; then                 echo "SHARD_1_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
-if [[ -z $SHARD_1_TLS_CERTIFICATE_KEY_FILE ]]; then         echo "SHARD_1_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
-if [[ -z $SHARD_2_TLS_CLUSTER_FILE ]]; then                 echo "SHARD_2_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
-if [[ -z $SHARD_2_TLS_CERTIFICATE_KEY_FILE ]]; then         echo "SHARD_2_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
-if [[ -z $SHARD_3_TLS_CLUSTER_FILE ]]; then                 echo "SHARD_3_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
-if [[ -z $SHARD_3_TLS_CERTIFICATE_KEY_FILE ]]; then         echo "SHARD_3_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
+if [[ -z $MONGODB_TLS_CLUSTER_FILE ]]; then                     echo "MONGODB_TLS_CLUSTER_FILE                  parameter is required."; exit 1;fi
+if [[ -z $MONGODB_TLS_CERTIFICATE_KEY_FILE ]]; then             echo "MONGODB_TLS_CERTIFICATE_KEY_FILE          parameter is required."; exit 1;fi
+if [[ -z $CONFIG_1_TLS_CLUSTER_FILE ]]; then                    echo "CONFIG_1_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
+if [[ -z $CONFIG_1_TLS_CERTIFICATE_KEY_FILE ]]; then            echo "CONFIG_1_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
+if [[ -z $CONFIG_2_TLS_CLUSTER_FILE ]]; then                    echo "CONFIG_2_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
+if [[ -z $CONFIG_2_TLS_CERTIFICATE_KEY_FILE ]]; then            echo "CONFIG_2_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
+if [[ -z $CONFIG_3_TLS_CLUSTER_FILE ]]; then                    echo "CONFIG_3_TLS_CLUSTER_FILE                 parameter is required."; exit 1;fi
+if [[ -z $CONFIG_3_TLS_CERTIFICATE_KEY_FILE ]]; then            echo "CONFIG_3_TLS_CERTIFICATE_KEY_FILE         parameter is required."; exit 1;fi
+if [[ -z $SHARD_1_TLS_CLUSTER_FILE ]]; then                     echo "SHARD_1_TLS_CLUSTER_FILE                  parameter is required."; exit 1;fi
+if [[ -z $SHARD_1_TLS_CERTIFICATE_KEY_FILE ]]; then             echo "SHARD_1_TLS_CERTIFICATE_KEY_FILE          parameter is required."; exit 1;fi
+if [[ -z $SHARD_2_TLS_CLUSTER_FILE ]]; then                     echo "SHARD_2_TLS_CLUSTER_FILE                  parameter is required."; exit 1;fi
+if [[ -z $SHARD_2_TLS_CERTIFICATE_KEY_FILE ]]; then             echo "SHARD_2_TLS_CERTIFICATE_KEY_FILE          parameter is required."; exit 1;fi
+if [[ -z $SHARD_3_TLS_CLUSTER_FILE ]]; then                     echo "SHARD_3_TLS_CLUSTER_FILE                  parameter is required."; exit 1;fi
+if [[ -z $SHARD_3_TLS_CERTIFICATE_KEY_FILE ]]; then             echo "SHARD_3_TLS_CERTIFICATE_KEY_FILE          parameter is required."; exit 1;fi
 
 echo "$AppHttpsKey"                               | sudo docker secret create AppHttpsKey -
 echo "$AppHttpsCrt"                               | sudo docker secret create AppHttpsCrt -
 echo "$AppKey"                                    | sudo docker secret create AppKey -
 echo "$AppCrt"                                    | sudo docker secret create AppCrt -
 echo "$USER_MANAGEMENT_Jwt__SecretKey"            | sudo docker secret create USER_MANAGEMENT_Jwt__SecretKey -
+echo "$USER_MANAGEMENT_Jwt__SecretKey"            | sudo docker secret create USER_MANAGEMENT_Jwt__SecretKey -
+echo "$USER_MANAGEMENT_ADMIN_USERNAME"            | sudo docker secret create USER_MANAGEMENT_ADMIN_USERNAME -
+echo "$USER_MANAGEMENT_ADMIN_PASSWORD"            | sudo docker secret create USER_MANAGEMENT_ADMIN_PASSWORD -
+echo "$USER_MANAGEMENT_ADMIN_EMAIL"               | sudo docker secret create USER_MANAGEMENT_ADMIN_EMAIL -
+echo "$USER_MANAGEMENT_ADMIN_PHONE_NUMBER"        | sudo docker secret create USER_MANAGEMENT_ADMIN_PHONE_NUMBER -
 echo "$USER_MANAGEMENT_DB_NAME"                   | sudo docker secret create USER_MANAGEMENT_DB_NAME -
 echo "$USER_MANAGEMENT_DB_OPTIONS__IsSharded"     | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__IsSharded - 
 echo "$USER_MANAGEMENT_DB_OPTIONS__DatabaseName"  | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__DatabaseName -

@@ -22,4 +22,13 @@ public class MongoSeeder
 
         System.Console.WriteLine("Seeded...\n");
     }
+
+    public async  Task SeedAdmin(string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
+    {
+        System.Console.WriteLine("\nSeeding Admin...");
+
+        await UserSeeder.SeedAdmin(_mongoCollections, _rootPath, adminUsername, adminPassword, adminEmail, adminPhoneNumber);
+
+        System.Console.WriteLine("Seeded Admin...\n");
+    }
 }

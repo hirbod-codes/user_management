@@ -29,7 +29,7 @@ public static class DatabaseManagement
             await app.Services.GetService<MongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
     }
 
-    public static async Task SeedDatabase(IMongoClient client, MongoCollections mongoCollections, string environment, string dbName, string dbOptionsDatabaseName)
+    public static async Task SeedDatabase(IMongoClient client, MongoCollections mongoCollections, string environment, string dbName, string dbOptionsDatabaseName, string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
     {
         if (
             environment == "Development"
@@ -42,6 +42,9 @@ public static class DatabaseManagement
         {
             await mongoCollections.ClearCollections(client.GetDatabase(dbOptionsDatabaseName));
             await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+
+            // Add admin user
+            await new MongoSeeder(mongoCollections, Program.RootPath).SeedAdmin(adminUsername, adminPassword, adminEmail, adminPhoneNumber);
         }
         else if (
             environment == "IntegrationTest"

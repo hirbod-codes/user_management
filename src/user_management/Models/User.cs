@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 namespace user_management.Models;
 
 using System;
@@ -261,9 +262,9 @@ public class User : IEquatable<User>
 
     public static User FakeUser(IEnumerable<User>? users = null, IEnumerable<Client>? clients = null, FakeUserOptions? fakeUserOptions = null, bool UseSeederPassword = true)
     {
-        if (users == null) users = new User[] { };
-        if (clients == null) clients = new Client[] { };
-        if (fakeUserOptions == null) fakeUserOptions = new();
+        users ??= Array.Empty<User>();
+        clients ??= Array.Empty<Client>();
+        fakeUserOptions ??= new();
 
         List<Privilege> privileges = StaticData.Privileges;
 
@@ -413,6 +414,35 @@ public class User : IEquatable<User>
         }
 
         return user;
+    }
+
+    public static User GetAdminUser(string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
+    {
+        ObjectId adminId = ObjectId.GenerateNewId();
+        Faker faker = new();
+
+        return new()
+        {
+            Id = adminId,
+            Privileges = StaticData.Privileges.ToArray(),
+            UserPrivileges = new UserPrivileges()
+            {
+                AllReaders = new() { ArePermitted = false, Fields = Array.Empty<Field>() },
+                AllUpdaters = new() { ArePermitted = false, Fields = Array.Empty<Field>() },
+                Readers = new Reader[] { new() { Author = Reader.USER, AuthorId = adminId, IsPermitted = true, Fields = User.GetFields().ToArray() } },
+                Updaters = new Updater[] { new() { Author = Updater.USER, AuthorId = adminId, IsPermitted = true, Fields = User.GetFields().ToArray() } },
+                Deleters = new Deleter[] { new() { Author = Deleter.USER, AuthorId = adminId, IsPermitted = true } },
+            },
+            Username = adminUsername,
+            Email = adminEmail,
+            PhoneNumber = adminPhoneNumber,
+            Password = new StringHelper().Hash(adminPassword),
+            IsVerified = true,
+            VerificationSecret = faker.Random.String2(128),
+            VerificationSecretUpdatedAt = DateTime.UtcNow.AddDays(-2),
+            UpdatedAt = DateTime.UtcNow.AddDays(-2),
+            CreatedAt = DateTime.UtcNow.AddDays(-3)
+        };
     }
 
     public override bool Equals(object? obj) => obj != null && Equals(obj as User);

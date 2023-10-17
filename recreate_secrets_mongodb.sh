@@ -36,6 +36,10 @@ if [[ $useTestValues == "true" ]]; then
     AppKey="$(cat $projectRootDirectory/security/user_management/app.key)"
     AppCrt="$(cat $projectRootDirectory/security/user_management/app.crt)"
     USER_MANAGEMENT_Jwt__SecretKey="123abc123abc"
+    USER_MANAGEMENT_ADMIN_USERNAME=hirbod
+    USER_MANAGEMENT_ADMIN_PASSWORD="Pass%w0rd!99"
+    USER_MANAGEMENT_ADMIN_EMAIL="your_functional_email@email.com"
+    USER_MANAGEMENT_ADMIN_PHONE_NUMBER=
     USER_MANAGEMENT_DB_NAME=mongodb
     USER_MANAGEMENT_DB_OPTIONS__IsSharded="false"
     USER_MANAGEMENT_DB_OPTIONS__DatabaseName=user_management_db
@@ -68,6 +72,10 @@ if [[ -z $AppHttpsCrt ]];                                   then echo "AppHttpsC
 if [[ -z $AppKey ]];                                        then echo "AppKey                                       parameter is required."; exit 1; fi
 if [[ -z $AppCrt ]];                                        then echo "AppCrt                                       parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]];                then echo "USER_MANAGEMENT_Jwt__SecretKey               parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_ADMIN_USERNAME ]];                then echo "USER_MANAGEMENT_ADMIN_USERNAME               parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_ADMIN_PASSWORD ]];                then echo "USER_MANAGEMENT_ADMIN_PASSWORD               parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_ADMIN_EMAIL ]];                   then echo "USER_MANAGEMENT_ADMIN_EMAIL                  parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_ADMIN_PHONE_NUMBER ]];            then echo "USER_MANAGEMENT_ADMIN_PHONE_NUMBER           parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_NAME ]];                       then echo "USER_MANAGEMENT_DB_NAME                      parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_OPTIONS__IsSharded ]];         then echo "USER_MANAGEMENT_DB_OPTIONS__IsSharded        parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_DB_OPTIONS__DatabaseName ]];      then echo "USER_MANAGEMENT_DB_OPTIONS__DatabaseName     parameter is required."; exit 1; fi
@@ -98,6 +106,10 @@ echo "$AppKey"                                          | sudo docker secret cre
 echo "$AppCrt"                                          | sudo docker secret create AppCrt -
 echo "$HttpsCertificatePassword"                        | sudo docker secret create HttpsCertificatePassword -
 echo "$USER_MANAGEMENT_Jwt__SecretKey"                  | sudo docker secret create USER_MANAGEMENT_Jwt__SecretKey -
+echo "$USER_MANAGEMENT_ADMIN_USERNAME"                  | sudo docker secret create USER_MANAGEMENT_ADMIN_USERNAME -
+echo "$USER_MANAGEMENT_ADMIN_PASSWORD"                  | sudo docker secret create USER_MANAGEMENT_ADMIN_PASSWORD -
+echo "$USER_MANAGEMENT_ADMIN_EMAIL"                     | sudo docker secret create USER_MANAGEMENT_ADMIN_EMAIL -
+echo "$USER_MANAGEMENT_ADMIN_PHONE_NUMBER"              | sudo docker secret create USER_MANAGEMENT_ADMIN_PHONE_NUMBER -
 echo "$USER_MANAGEMENT_DB_NAME"                         | sudo docker secret create USER_MANAGEMENT_DB_NAME -
 echo "$USER_MANAGEMENT_DB_OPTIONS__IsSharded"           | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__IsSharded -
 echo "$USER_MANAGEMENT_DB_OPTIONS__DatabaseName"        | sudo docker secret create USER_MANAGEMENT_DB_OPTIONS__DatabaseName -

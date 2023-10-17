@@ -44,6 +44,11 @@ APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
+ADMIN_USERNAME=hirbod
+ADMIN_PASSWORD="Pass%w0rd!99"
+ADMIN_EMAIL="your_functional_email@email.com"
+ADMIN_PHONE_NUMBER=
+
 DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
@@ -114,6 +119,11 @@ APP_HTTP_PORT=5000
 APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
+
+ADMIN_USERNAME=hirbod
+ADMIN_PASSWORD="Pass%w0rd!99"
+ADMIN_EMAIL="your_functional_email@email.com"
+ADMIN_PHONE_NUMBER=
 
 DB_NAME=mongodb
 
