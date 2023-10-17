@@ -13,7 +13,6 @@ using user_management.Models;
 using user_management.Services;
 using user_management.Services.Client;
 using user_management.Services.Data;
-using user_management.Validation.Attributes;
 
 [ApiController]
 [Route("api")]
@@ -36,8 +35,8 @@ public class ClientController : ControllerBase
     /// <param name="clientCreateDto">The registering client's information.</param>
     [Permissions(Permissions = new string[] { StaticData.REGISTER_CLIENT })]
     [HttpPost(PATH_POST_REGISTER)]
-    [SwaggerResponse(200, "", typeof(ClientRetrieveDto))]
-    public async Task<ActionResult> Register([FromBody] ClientCreateDto clientCreateDto)
+    [SwaggerResponse(statusCode: 200, type: typeof(ClientRetrieveDto))]
+    public async Task<IActionResult> Register([FromBody] ClientCreateDto clientCreateDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -59,10 +58,10 @@ public class ClientController : ControllerBase
     /// </summary>
     [Permissions(Permissions = new string[] { StaticData.READ_CLIENT })]
     [HttpGet(PATH_GET_PUBLIC_INFO)]
-    [SwaggerResponse(200, "", typeof(ClientPublicInfoRetrieveDto))]
-    [SwaggerResponse(400, "", typeof(string))]
-    [SwaggerResponse(404, "", typeof(string))]
-    public async Task<ActionResult> RetrieveClientPublicInfo([FromRoute] string id)
+    [SwaggerResponse(statusCode: 200, type: typeof(ClientPublicInfoRetrieveDto))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> RetrieveClientPublicInfo([FromRoute] string id)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -81,10 +80,10 @@ public class ClientController : ControllerBase
     /// </summary>
     [Permissions(Permissions = new string[] { StaticData.READ_CLIENT })]
     [HttpGet(PATH_GET_RETRIEVE)]
-    [SwaggerResponse(200, "", typeof(ClientRetrieveDto))]
-    [SwaggerResponse(400, "", typeof(string))]
-    [SwaggerResponse(404, "", typeof(string))]
-    public async Task<ActionResult> Retrieve([FromRoute] string secret)
+    [SwaggerResponse(statusCode: 200, type: typeof(ClientRetrieveDto))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Retrieve([FromRoute] string secret)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -104,9 +103,9 @@ public class ClientController : ControllerBase
     /// <remarks>To Update client's redirect url, server needs client's secret.</remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH)]
-    [SwaggerResponse(200, "", typeof(string))]
-    [SwaggerResponse(400, "", typeof(string))]
-    public async Task<ActionResult> Update([FromBody] ClientPatchDto dto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    public async Task<IActionResult> Update([FromBody] ClientPatchDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -124,10 +123,10 @@ public class ClientController : ControllerBase
     /// </summary>
     [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENT })]
     [HttpDelete(PATH_DELETE)]
-    [SwaggerResponse(200, "", typeof(string))]
-    [SwaggerResponse(400, "", typeof(string))]
-    [SwaggerResponse(404, "", typeof(string))]
-    public async Task<ActionResult> Delete(string secret)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Delete(string secret)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -150,8 +149,8 @@ public class ClientController : ControllerBase
     /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH_EXPOSURE)]
-    [SwaggerResponse(200, "", typeof(string))]
-    [SwaggerResponse(400, "", typeof(string))]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
     public async Task<IActionResult> UpdateExposedClient(ClientExposedDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
