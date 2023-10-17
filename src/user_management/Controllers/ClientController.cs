@@ -3,7 +3,7 @@ namespace user_management.Controllers;
 using System.Security.Authentication;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
+using Swashbuckle.AspNetCore.Annotations;
 using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
@@ -17,7 +17,6 @@ using user_management.Validation.Attributes;
 
 [ApiController]
 [Route("api")]
-[Produces("application/json")]
 public class ClientController : ControllerBase
 {
     private readonly IMapper _mapper;
@@ -31,9 +30,14 @@ public class ClientController : ControllerBase
         _authenticatedByJwt = authenticatedByJwt;
     }
 
+    /// <summary>
+    /// Register a new client.
+    /// </summary>
+    /// <param name="clientCreateDto">The registering client's information.</param>
     [Permissions(Permissions = new string[] { StaticData.REGISTER_CLIENT })]
     [HttpPost(PATH_POST_REGISTER)]
-    public async Task<ActionResult> Register(ClientCreateDto clientCreateDto)
+    [SwaggerResponse(200, "", typeof(ClientRetrieveDto))]
+    public async Task<ActionResult> Register([FromBody] ClientCreateDto clientCreateDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -50,9 +54,15 @@ public class ClientController : ControllerBase
         return Ok(clientRetrieveDto);
     }
 
+    /// <summary>
+    /// Retrieve client's public information.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.READ_CLIENT })]
     [HttpGet(PATH_GET_PUBLIC_INFO)]
-    public async Task<ActionResult> RetrieveClientPublicInfo(string id)
+    [SwaggerResponse(200, "", typeof(ClientPublicInfoRetrieveDto))]
+    [SwaggerResponse(400, "", typeof(string))]
+    [SwaggerResponse(404, "", typeof(string))]
+    public async Task<ActionResult> RetrieveClientPublicInfo([FromRoute] string id)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -66,9 +76,15 @@ public class ClientController : ControllerBase
         return Ok(_mapper.Map<ClientPublicInfoRetrieveDto>(client));
     }
 
+    /// <summary>
+    /// Retrieve a client's information.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.READ_CLIENT })]
     [HttpGet(PATH_GET_RETRIEVE)]
-    public async Task<ActionResult> Retrieve(string secret)
+    [SwaggerResponse(200, "", typeof(ClientRetrieveDto))]
+    [SwaggerResponse(400, "", typeof(string))]
+    [SwaggerResponse(404, "", typeof(string))]
+    public async Task<ActionResult> Retrieve([FromRoute] string secret)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -82,8 +98,14 @@ public class ClientController : ControllerBase
         return Ok(_mapper.Map<ClientRetrieveDto>(client));
     }
 
+    /// <summary>
+    /// Update a client.
+    /// </summary>
+    /// <remarks>To Update client's redirect url, server needs client's secret.</remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH)]
+    [SwaggerResponse(200, "", typeof(string))]
+    [SwaggerResponse(400, "", typeof(string))]
     public async Task<ActionResult> Update([FromBody] ClientPatchDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
@@ -97,8 +119,14 @@ public class ClientController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Delete a client.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENT })]
     [HttpDelete(PATH_DELETE)]
+    [SwaggerResponse(200, "", typeof(string))]
+    [SwaggerResponse(400, "", typeof(string))]
+    [SwaggerResponse(404, "", typeof(string))]
     public async Task<ActionResult> Delete(string secret)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
@@ -110,8 +138,20 @@ public class ClientController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Token exposure. 
+    /// </summary>
+    /// <remarks>If a token or secret is exposed to unauthorized parties, this endpoint must be called.
+    /// Following actions will be taken:<br/>
+    /// 1. The client's current secret will be replaced with a new one.<br/>
+    /// 2. The client's current ID will be replaced with a new one, therefor all the users that has previously authorized this client, must authorized it again.
+    /// 
+    /// Note: if a client is exposed more than 2 times, it will be banned from asking users' authorization and token generation.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH_EXPOSURE)]
+    [SwaggerResponse(200, "", typeof(string))]
+    [SwaggerResponse(400, "", typeof(string))]
     public async Task<IActionResult> UpdateExposedClient(ClientExposedDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
