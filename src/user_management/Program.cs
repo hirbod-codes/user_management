@@ -15,6 +15,10 @@ using user_management.Authentication;
 using DotNetEnv.Configuration;
 using MongoDB.Driver;
 using user_management.Configuration.Providers.DockerSecrets;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using Swashbuckle.AspNetCore.Filters;
+using user_management.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +34,37 @@ else if (builder.Configuration["MUST_NOT_USE_ENV_FILE"] != "true" && builder.Con
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "User Management API", Version = "v1", Contact = new() { Name = "hirbod", Email = "hirbod.khatami.word@gmail.com" }, Description = "An application to manage user accounts' authentication and authorization." });
+    c.ExampleFilters();
+    c.IncludeXmlComments(Path.Combine(System.AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"), true);
+
+    c.AddSecurityDefinition("user-auth", new OpenApiSecurityScheme
+    {
+        Name = "user-auth",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        Description = "A jwt token for user authentication"
+    });
+
+    c.AddSecurityDefinition("client-auth", new OpenApiSecurityScheme
+    {
+        Name = "client-auth",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        Description = "A token for client authentication"
+    });
+
+    c.OperationFilter<SecurityRequirementsFilter>();
+    c.OperationFilter<GlobalResponsesFilter>();
+});
+
+builder.Services.AddSwaggerGenNewtonsoftSupport();
+builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 
 builder.Services.AddSingleton<IStringHelper, StringHelper>();
 builder.Services.AddSingleton<IAuthHelper, AuthHelper>();
@@ -73,11 +107,15 @@ builder.Services.AddScoped<IAuthorizationHandler, ScopesAuthorizationHandler>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.DocumentTitle = "User Management - docs";
+    c.RoutePrefix = "swagger";
+    c.SwaggerEndpoint("v1/swagger.json", "API v1");
+    c.EnableDeepLinking();
+    c.DefaultModelsExpandDepth(0);
+});
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
@@ -100,7 +138,11 @@ await DatabaseManagement.SeedDatabase(
     app.Services.GetService<MongoCollections>()!,
     app.Configuration["ENVIRONMENT"]!,
     app.Configuration["DB_NAME"]!,
-    app.Configuration["DB_OPTIONS:DatabaseName"]!
+    app.Configuration["DB_OPTIONS:DatabaseName"]!,
+    app.Configuration["ADMIN_USERNAME"]!,
+    app.Configuration["ADMIN_PASSWORD"]!,
+    app.Configuration["ADMIN_EMAIL"]!,
+    app.Configuration["ADMIN_PHONE_NUMBER"]
     );
 
 if (!app.Environment.IsDevelopment())
