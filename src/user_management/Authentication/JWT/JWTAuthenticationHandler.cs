@@ -41,7 +41,7 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
 
         string token = authenticationHeaderParts[1];
 
-        if (authenticationHeaderParts[0] != "JWT") return AuthenticateResult.Fail("No JWT token provided.");
+        if (authenticationHeaderParts[0] != "Bearer") return AuthenticateResult.Fail("No JWT token provided.");
 
         if (!ValidateJwt(token, out SecurityToken validatedToken)) return AuthenticateResult.Fail(Error!);
 
