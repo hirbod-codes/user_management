@@ -25,10 +25,7 @@ public static class ClientSeeder
         _filePath = Path.Combine(directoryPath, "seeded_users.json");
     }
 
-    public static void SetClientsCollection(MongoCollections mongoCollections)
-    {
-        _clientCollection = mongoCollections.Clients;
-    }
+    public static void SetClientsCollection(MongoCollections mongoCollections) => _clientCollection = mongoCollections.Clients;
 
     public static async Task Seed(MongoCollections mongoCollections, string? rootPath, int count = 2)
     {
@@ -36,7 +33,7 @@ public static class ClientSeeder
 
         System.Console.WriteLine("\nSeeding Clients...");
 
-        IEnumerable<Client> clients = GenerateClients(count);
+        IEnumerable<Client> clients = GenerateClients(count, clients: (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
 
         if (_filePath != null) await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(clients));
 
