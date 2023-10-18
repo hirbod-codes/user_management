@@ -277,7 +277,7 @@ public class UserController : ControllerBase
 
         try { await _userManagement.RemoveClient(clientId, userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
         catch (AuthenticationException) { return Unauthorized(); }
-        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
+        catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the client."); }
 
@@ -298,7 +298,7 @@ public class UserController : ControllerBase
 
         try { await _userManagement.RemoveClients(userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
         catch (AuthenticationException) { return Unauthorized(); }
-        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
+        catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the clients."); }
 
