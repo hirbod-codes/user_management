@@ -15,6 +15,7 @@ using user_management.Services.Data;
 using user_management.Controllers.Services;
 using System.Security.Authentication;
 using user_management.Data;
+using Swashbuckle.AspNetCore.Annotations;
 
 [ApiController]
 [Route("api")]
@@ -29,24 +30,64 @@ public class UserController : ControllerBase
         _authenticated = authenticated;
     }
 
+    /// <summary>
+    /// Full name existence
+    /// </summary>
+    /// <remarks>
+    /// It's used for registering a user.
+    /// </remarks>
     [HttpGet(PATH_GET_FULL_NAME_EXISTENCE_CHECK)]
+    [SwaggerResponse(statusCode: 200, type: typeof(string), description: "This full name already exists, therefor not available.")]
+    [SwaggerResponse(statusCode: 404, type: typeof(string), description: "This full name does not exist, therefor available.")]
     public async Task<IActionResult> FullNameExistenceCheck([FromQuery] string? firstName, [FromQuery] string? middleName, [FromQuery] string? lastName)
     {
         try { return (await _userManagement.FullNameExistenceCheck(firstName, middleName, lastName)) ? Ok() : NotFound(); }
         catch (ArgumentException) { return BadRequest("At least one of the following variables must be provided: firstName, middleName and lastName."); }
     }
 
+    /// <summary>
+    /// Username existence
+    /// </summary>
+    /// <remarks>
+    /// It's used for registering a user.
+    /// </remarks>
     [HttpGet(PATH_GET_USERNAME_EXISTENCE_CHECK)]
-    public async Task<IActionResult> UsernameExistenceCheck(string username) => (await _userManagement.UsernameExistenceCheck(username)) ? Ok() : NotFound();
+    [SwaggerResponse(statusCode: 200, type: typeof(string), description: "This username already exists, therefor not available.")]
+    [SwaggerResponse(statusCode: 404, type: typeof(string), description: "This username does not exist, therefor available.")]
+    public async Task<IActionResult> UsernameExistenceCheck([FromRoute] string username) => (await _userManagement.UsernameExistenceCheck(username)) ? Ok() : NotFound();
 
+    /// <summary>
+    /// Email existence
+    /// </summary>
+    /// <remarks>
+    /// It's used for registering a user.
+    /// </remarks>
     [HttpGet(PATH_GET_EMAIL_EXISTENCE_CHECK)]
-    public async Task<IActionResult> EmailExistenceCheck([EmailAddress] string email) => (await _userManagement.EmailExistenceCheck(email)) ? Ok() : NotFound();
+    [SwaggerResponse(statusCode: 200, type: typeof(string), description: "This email already exists, therefor not available.")]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string), description: "This email does not exist, therefor available.")]
+    public async Task<IActionResult> EmailExistenceCheck([FromRoute][EmailAddress] string email) => (await _userManagement.EmailExistenceCheck(email)) ? Ok() : NotFound();
 
+    /// <summary>
+    /// Phone number existence
+    /// </summary>
+    /// <remarks>
+    /// It's used for registering a user.
+    /// </remarks>
     [HttpGet(PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK)]
-    public async Task<IActionResult> PhoneNumberExistenceCheck([RegEx(Models.User.PHONE_NUMBER_REGEX)] string phoneNumber) => (await _userManagement.PhoneNumberExistenceCheck(phoneNumber)) ? Ok() : NotFound();
+    [SwaggerResponse(statusCode: 200, type: typeof(string), description: "This phone number already exists, therefor not available.")]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string), description: "This phone number does not exist, therefor available.")]
+    public async Task<IActionResult> PhoneNumberExistenceCheck([FromRoute][RegEx(Models.User.PHONE_NUMBER_REGEX)] string phoneNumber) => (await _userManagement.PhoneNumberExistenceCheck(phoneNumber)) ? Ok() : NotFound();
 
+    /// <summary>
+    /// Register a user.
+    /// </summary>
     [HttpPost(PATH_POST_REGISTER)]
-    public async Task<IActionResult> Register(UserCreateDto userDto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string), description: "Registered user id in text/plain")]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Register([FromBody] UserCreateDto userDto)
     {
         User? unverifiedUser = null;
         try { unverifiedUser = await _userManagement.Register(userDto); }
@@ -59,8 +100,14 @@ public class UserController : ControllerBase
         return Ok(unverifiedUser.Id.ToString());
     }
 
+    /// <summary>
+    /// Send a verification code to the registered user's email.
+    /// </summary>
     [HttpPost(PATH_POST_SEND_VERIFICATION_EMAIL)]
-    public async Task<IActionResult> SendVerificationEmail([EmailAddress][FromQuery] string email)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> SendVerificationEmail([FromQuery][EmailAddress] string email)
     {
         try { await _userManagement.SendVerificationEmail(email); }
         catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
@@ -71,8 +118,17 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Activate a user account.
+    /// </summary>
+    /// <remarks>
+    /// A verification code must have sent to user's email from our servers within last 6 minutes.  
+    /// </remarks>
     [HttpPost(PATH_POST_ACTIVATE)]
-    public async Task<IActionResult> Activate(Activation activatingUser)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Activate([FromBody] Activation activatingUser)
     {
         try { await _userManagement.Activate(activatingUser); }
         catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
@@ -84,8 +140,17 @@ public class UserController : ControllerBase
         return Ok("Your account has been registered successfully.");
     }
 
+    /// <summary>
+    /// Change a registered user's password.
+    /// </summary>
+    /// <remarks>
+    /// A verification code must have sent to user's email from our servers within last 6 minutes.  
+    /// </remarks>
     [HttpPost(PATH_POST_CHANGE_PASSWORD)]
-    public async Task<IActionResult> ChangePassword(ChangePassword dto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePassword dto)
     {
         try { await _userManagement.ChangePassword(dto); }
         catch (PasswordConfirmationMismatchException) { return BadRequest("Password confirmation doesn't match with password."); }
@@ -98,7 +163,11 @@ public class UserController : ControllerBase
     }
 
     [HttpPost(PATH_POST_LOGIN)]
-    public async Task<IActionResult> Login(Login loggingInUser)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 403, type: typeof(string), description: "Unverified accounts won't be able to login.")]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Login([FromBody] Login loggingInUser)
     {
         try
         {
@@ -113,6 +182,9 @@ public class UserController : ControllerBase
 
     [Authorize]
     [HttpPost(PATH_POST_LOGOUT)]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string), description: "Invalid credentials.")]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> Logout()
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -126,9 +198,18 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Change a registered user's username.
+    /// </summary>
+    /// <remarks>
+    /// A verification code must have sent to user's email from our servers within last 6 minutes.  
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_USERNAME)]
-    public async Task<IActionResult> ChangeUsername(ChangeUsername dto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ChangeUsername([FromBody] ChangeUsername dto)
     {
         try { await _userManagement.ChangeUsername(dto); }
         catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
@@ -139,9 +220,18 @@ public class UserController : ControllerBase
         return Ok("The username changed successfully.");
     }
 
+    /// <summary>
+    /// Change a registered user's email.
+    /// </summary>
+    /// <remarks>
+    /// A verification code must have sent to user's email from our servers within last 6 minutes.  
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_EMAIL)]
-    public async Task<IActionResult> ChangeEmail(ChangeEmail dto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmail dto)
     {
         try { await _userManagement.ChangeEmail(dto); }
         catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
@@ -152,9 +242,18 @@ public class UserController : ControllerBase
         return Ok("The email changed successfully.");
     }
 
+    /// <summary>
+    /// Change a registered user's phone number.
+    /// </summary>
+    /// <remarks>
+    /// A verification code must have sent to user's email from our servers within last 3 minutes.  
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [HttpPost(PATH_POST_CHANGE_PHONE_NUMBER)]
-    public async Task<IActionResult> ChangePhoneNumber(ChangePhoneNumber dto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ChangePhoneNumber([FromBody] ChangePhoneNumber dto)
     {
         try { await _userManagement.ChangePhoneNumber(dto); }
         catch (DataNotFoundException) { return NotFound("We couldn't find a user with this email."); }
@@ -165,8 +264,14 @@ public class UserController : ControllerBase
         return Ok("The phone number changed successfully.");
     }
 
+    /// <summary>
+    /// Remove an authorized client from list of user's authorized clients.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENT })]
     [HttpPost(PATH_POST_REMOVE_CLIENT)]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> RemoveClient([FromQuery] string clientId, [FromQuery] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -180,8 +285,14 @@ public class UserController : ControllerBase
         return Ok("The client removed successfully.");
     }
 
+    /// <summary>
+    /// Remove all the user's authorized clients.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.DELETE_CLIENTS })]
     [HttpPost(PATH_POST_REMOVE_CLIENTS)]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> RemoveClients([FromQuery] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -195,8 +306,14 @@ public class UserController : ControllerBase
         return Ok("All of the clients removed successfully.");
     }
 
+    /// <summary>
+    /// Retrieve user's data by its ID.
+    /// </summary>
     [HttpGet(PATH_GET_USER)]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> RetrieveById([ObjectId] string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -210,8 +327,13 @@ public class UserController : ControllerBase
         return Ok(user.GetReadable());
     }
 
+    /// <summary>
+    /// Retrieve user's authorized clients
+    /// </summary>
     [HttpGet(PATH_GET_USER_AUTHORIZED_CLIENTS)]
     [Permissions(Permissions = new string[] { StaticData.READ_CLIENTS })]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> RetrieveClients()
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
@@ -223,10 +345,26 @@ public class UserController : ControllerBase
         catch (UnauthorizedAccessException) { return StatusCode(403); }
     }
 
+    /// <summary>
+    /// Retrieve list of users.
+    /// </summary>
+    /// <remarks>
+    /// Retrieve list of users with filters and pagination
+    /// </remarks> 
+    /// <param name="logicsString">
+    ///     <include file='./docs/xml.xml' path='user_management/Data/Logics/Filter/FilterLogicsGeneric/BuildILogic/logicsString' />
+    /// </param>
+    /// <param name="limit">The number of users per page.</param>
+    /// <param name="iteration">Page number starting from 0.</param>
+    /// <param name="sortBy">Name of the field to sort users based of.</param>
+    /// <param name="ascending">The sort direction.</param>
     [HttpGet(PATH_GET_USERS)]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNTS })]
-    public async Task<IActionResult> Retrieve(string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Retrieve([FromRoute] string logicsString, [FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
@@ -237,12 +375,18 @@ public class UserController : ControllerBase
         return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
     }
 
+    /// <summary>
+    /// Update multiple users.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNTS })]
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNT })]
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ACCOUNTS })]
     [HttpPatch(PATH_PATCH_USERS)]
-    public async Task<IActionResult> Update(UserPatchDto userPatchDto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Update([FromBody] UserPatchDto userPatchDto)
     {
         if (String.IsNullOrWhiteSpace(userPatchDto.UpdatesString) || String.IsNullOrWhiteSpace(userPatchDto.FiltersString) || userPatchDto.FiltersString == "empty") return BadRequest();
 
@@ -256,17 +400,32 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    /// <summary>
+    /// Retrieve valid fields when updating multiple users. 
+    /// </summary>
     [HttpGet(PATH_GET_USER_MASS_UPDATABLE_PROPERTIES)]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
+    [SwaggerResponse(statusCode: 200, type: typeof(List<Field>))]
     public IActionResult RetrieveMassUpdatableProperties() => Ok(Models.User.GetMassUpdatableFields());
 
+    /// <summary>
+    /// Retrieve invalid fields when updating multiple users. 
+    /// </summary>
     [HttpGet(PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES)]
     [Permissions(Permissions = new string[] { StaticData.READ_ACCOUNT })]
+    [SwaggerResponse(statusCode: 200, type: typeof(List<Field>))]
     public IActionResult RetrieveMassUpdateProtectedProperties() => Ok(Models.User.GetProtectedFieldsAgainstMassUpdating());
 
+    /// <summary>
+    /// Delete a user.
+    /// </summary>
+    /// <param name="id">The user's id</param>
     [Permissions(Permissions = new string[] { StaticData.DELETE_ACCOUNT })]
     [HttpDelete(PATH_DELETE_USER)]
-    public async Task<IActionResult> Delete([ObjectId][FromQuery] string id)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> Delete([FromQuery][ObjectId] string id)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
