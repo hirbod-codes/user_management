@@ -11,9 +11,12 @@ public class UserCreateDto : IExamplesProvider<UserCreateDto>
     public string? MiddleName { get; set; }
     public string? LastName { get; set; }
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
     [RegEx(Models.User.PHONE_NUMBER_REGEX)]
+    [MaxLength(100)]
     public string? PhoneNumber { get; set; }
+    [MinLength(3)]
     public string Username { get; set; } = null!;
     [Password]
     public string Password { get; set; } = null!;

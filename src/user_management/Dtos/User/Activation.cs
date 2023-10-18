@@ -8,6 +8,7 @@ namespace user_management.Dtos.User;
 public class Activation : IExamplesProvider<Activation>
 {
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
     [Password]
     public string Password { get; set; } = null!;

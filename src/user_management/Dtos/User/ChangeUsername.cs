@@ -7,7 +7,9 @@ namespace user_management.Dtos.User;
 public class ChangeUsername : IExamplesProvider<ChangeUsername>
 {
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
+    [MaxLength(300)]
     public string Username { get; set; } = null!;
     [MinLength(6)]
     public string VerificationSecret { get; set; } = null!;

@@ -7,8 +7,10 @@ namespace user_management.Dtos.User;
 public class ChangeEmail : IExamplesProvider<ChangeEmail>
 {
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
     [EmailAddress]
+    [MaxLength(300)]
     public string NewEmail { get; set; } = null!;
     [MinLength(6)]
     public string VerificationSecret { get; set; } = null!;

@@ -2,12 +2,14 @@ using user_management.Models;
 using user_management.Validation.Attributes;
 using Bogus;
 using Swashbuckle.AspNetCore.Filters;
+using System.ComponentModel.DataAnnotations;
 
 namespace user_management.Dtos.User;
 
 public class UpdaterRetrieveDto : IExamplesProvider<UpdaterRetrieveDto>
 {
     [ObjectId]
+    [MaxLength(25)]
     public string? AuthorId { get; set; }
     [UpdaterAuthor]
     public string? Author { get; set; }

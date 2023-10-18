@@ -1,4 +1,6 @@
 namespace user_management.Dtos.Token;
+
+using System.ComponentModel.DataAnnotations;
 using Bogus;
 using Swashbuckle.AspNetCore.Filters;
 using user_management.Data;

@@ -8,14 +8,18 @@ namespace user_management.Dtos.Token;
 public class TokenAuthDto : IExamplesProvider<TokenAuthDto>
 {
     [ObjectId]
+    [MaxLength(25)]
     public string ClientId { get; set; } = null!;
+    [MaxLength(250)]
     public string RedirectUrl { get; set; } = null!;
     /// <summary>
     /// A string provided by third party client.
     /// </summary>
     /// <value></value>
     [MinLength(40)]
+    [MaxLength(1000)]
     public string State { get; set; } = null!;
+    [MaxLength(1000)]
     public string CodeChallenge { get; set; } = null!;
     /// <summary>
     /// The hash method that has been used to hash the code verifier.
