@@ -32,7 +32,7 @@ public class UserManagement : IUserManagement
 
     public async Task<bool> FullNameExistenceCheck(string? firstName, string? middleName, string? lastName)
     {
-        if (firstName == null && middleName == null && lastName == null) throw new ArgumentException();
+        if (firstName == null && middleName == null && lastName == null) throw new ArgumentException("At least one of the parameter must not be null.");
 
         return (await _userRepository.RetrieveByFullNameForExistenceCheck(firstName, middleName, lastName)) != null;
     }
@@ -91,8 +91,7 @@ public class UserManagement : IUserManagement
 
         if (!_stringHelper.DoesHashMatch(user.Password, activatingUser.Password)) throw new InvalidPasswordException();
 
-        bool? r = await _userRepository.Verify((ObjectId)user.Id);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.Verify((ObjectId)user.Id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -100,8 +99,7 @@ public class UserManagement : IUserManagement
     {
         if (dto.Password != dto.PasswordConfirmation) throw new PasswordConfirmationMismatchException();
 
-        User? user = await _userRepository.RetrieveUserForPasswordChange(dto.Email);
-        if (user == null) throw new DataNotFoundException();
+        User user = await _userRepository.RetrieveUserForPasswordChange(dto.Email) ?? throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -109,8 +107,7 @@ public class UserManagement : IUserManagement
 
         if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
-        bool? r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password));
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.ChangePassword(dto.Email, _stringHelper.Hash(dto.Password)) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -118,14 +115,13 @@ public class UserManagement : IUserManagement
     {
         if (loggingInUser.Username == null && loggingInUser.Email == null) throw new MissingCredentialException();
 
-        User? user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username);
-        if (user == null) throw new DataNotFoundException();
+        User user = await _userRepository.RetrieveUserByLoginCredentials(loggingInUser.Email, loggingInUser.Username) ?? throw new DataNotFoundException();
+
         if (!_stringHelper.DoesHashMatch(user.Password, loggingInUser.Password)) throw new InvalidPasswordException();
 
         if (user.IsVerified == false) throw new UnverifiedUserException();
 
-        bool? r = await _userRepository.Login(user.Id);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.Login(user.Id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
 
         string jwt = _authHelper.GenerateAuthenticationJWT(user.Id.ToString()!);
@@ -137,15 +133,13 @@ public class UserManagement : IUserManagement
     {
         if (!ObjectId.TryParse(identifier, out ObjectId id)) throw new ArgumentException();
 
-        bool? r = await _userRepository.Logout(id);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.Logout(id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task ChangeUsername(ChangeUsername dto)
     {
-        User? user = await _userRepository.RetrieveUserForUsernameChange(dto.Email);
-        if (user == null) throw new DataNotFoundException();
+        User user = await _userRepository.RetrieveUserForUsernameChange(dto.Email) ?? throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -153,15 +147,13 @@ public class UserManagement : IUserManagement
 
         if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
-        bool? r = await _userRepository.ChangeUsername(dto.Email, dto.Username);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.ChangeUsername(dto.Email, dto.Username) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task ChangeEmail(ChangeEmail dto)
     {
-        User? user = await _userRepository.RetrieveUserForEmailChange(dto.Email);
-        if (user == null) throw new DataNotFoundException();
+        User user = await _userRepository.RetrieveUserForEmailChange(dto.Email) ?? throw new DataNotFoundException();
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -169,56 +161,48 @@ public class UserManagement : IUserManagement
 
         if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
-        bool? r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task ChangePhoneNumber(ChangePhoneNumber dto)
     {
-        User? user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email);
-        if (user == null) throw new DataNotFoundException();
-
+        User user = await _userRepository.RetrieveUserForPhoneNumberChange(dto.Email) ?? throw new DataNotFoundException();
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
         if (_dateTimeProvider.ProvideUtcNow() > expirationDateTime) throw new VerificationCodeExpiredException();
 
         if (dto.VerificationSecret != user.VerificationSecret) throw new InvalidVerificationCodeException();
 
-        bool? r = await _userRepository.ChangePhoneNumber(dto.Email, dto.PhoneNumber);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.ChangePhoneNumber(dto.Email, dto.PhoneNumber) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task RemoveClient(string clientId, string userId, string authorId, bool forClients)
     {
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException("userId");
-        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException("authorId");
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
+        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException(null, nameof(userId));
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException(null, nameof(authorId));
+        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
 
-        bool? r = await _userRepository.RemoveClient(userObjectId, clientObjectId, authorObjectId, forClients);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.RemoveClient(userObjectId, clientObjectId, authorObjectId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task RemoveClients(string userId, string authorId, bool forClients)
     {
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException("userId");
-        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException("authorId");
+        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException(null, nameof(userId));
+        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException(null, nameof(authorId));
 
-        bool? r = await _userRepository.RemoveAllClients(userObjectId, authorObjectId, forClients);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.RemoveAllClients(userObjectId, authorObjectId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task<PartialUser> RetrieveById(string actorId, string userId, bool forClients)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
-        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException("userId");
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
+        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
 
-        PartialUser? user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients);
-        if (user == null) throw new DataNotFoundException();
-
+        PartialUser user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
         return user;
     }
 
@@ -236,29 +220,27 @@ public class UserManagement : IUserManagement
 
     public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException();
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
 
         return await _userRepository.Retrieve(actorObjectId, logicsString, limit, iteration, sortBy, ascending, forClients);
     }
 
     public async Task Update(string actorId, UserPatchDto userPatchDto, bool forClients)
     {
-        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") throw new ArgumentException("userPatchDto");
+        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") throw new ArgumentException(null, nameof(userPatchDto));
 
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
 
-        bool? r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, forClients);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task Delete(string actorId, string userId, bool forClients)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException("actorId");
-        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException("userId");
+        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
+        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
 
-        bool? r = await _userRepository.Delete(actorObjectId, objectId, forClients);
-        if (r == null) throw new DataNotFoundException();
+        bool r = await _userRepository.Delete(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 }
