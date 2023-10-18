@@ -7,6 +7,14 @@ networks:
 secrets:
     USER_MANAGEMENT_Jwt__SecretKey:
         external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailAddress:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpHostAddress:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailPassword:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpPort:
+        external: true
     USER_MANAGEMENT_DB_NAME:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__IsSharded:
@@ -55,6 +63,10 @@ services:
             USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
         secrets:
             - USER_MANAGEMENT_Jwt__SecretKey
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailAddress
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpHostAddress
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailPassword
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpPort
             - USER_MANAGEMENT_DB_NAME
             - USER_MANAGEMENT_DB_OPTIONS__IsSharded
             - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
