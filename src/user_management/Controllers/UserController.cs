@@ -19,7 +19,6 @@ using Swashbuckle.AspNetCore.Annotations;
 
 [ApiController]
 [Route("api")]
-[Produces("application/json")]
 public class UserController : ControllerBase
 {
     private readonly IUserManagement _userManagement;
