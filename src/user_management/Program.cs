@@ -19,6 +19,7 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using Swashbuckle.AspNetCore.Filters;
 using user_management.Filters;
+using user_management.Notification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,9 +63,13 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<SecurityRequirementsFilter>();
     c.OperationFilter<GlobalResponsesFilter>();
 });
-
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
+
+NotificationOptions notificationOptions = new();
+builder.Configuration.GetSection("NOTIFICATION_OPTIONS").Bind(notificationOptions);
+builder.Services.AddSingleton(notificationOptions);
+builder.Services.AddSingleton<INotificationProvider, NotificationProvider>();
 
 builder.Services.AddSingleton<IStringHelper, StringHelper>();
 builder.Services.AddSingleton<IAuthHelper, AuthHelper>();

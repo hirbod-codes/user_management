@@ -49,6 +49,11 @@ ADMIN_PASSWORD="Pass%w0rd!99"
 ADMIN_EMAIL="your_functional_email@email.com"
 ADMIN_PHONE_NUMBER=
 
+ServerEmailAddress=example@email.com
+ServerSmtpHostAddress=smtp.gmail.com
+ServerEmailPassword=password
+ServerSmtpPort=587
+
 DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
@@ -124,6 +129,11 @@ ADMIN_USERNAME=hirbod
 ADMIN_PASSWORD="Pass%w0rd!99"
 ADMIN_EMAIL="your_functional_email@email.com"
 ADMIN_PHONE_NUMBER=
+
+ServerEmailAddress=example@email.com
+ServerSmtpHostAddress=smtp.gmail.com
+ServerEmailPassword=password
+ServerSmtpPort=587
 
 DB_NAME=mongodb
 
