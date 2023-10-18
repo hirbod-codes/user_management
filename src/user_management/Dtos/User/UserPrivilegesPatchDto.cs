@@ -6,6 +6,10 @@ namespace user_management.Dtos.User;
 
 public class UserPrivilegesPatchDto : IExamplesProvider<UserPrivilegesPatchDto>
 {
+    /// <summary>
+    /// ID of the user that is going to be updated.
+    /// </summary>
+    public string UserId { get; set; } = null!;
     public ReaderPatchDto[]? Readers { get; set; } = null;
     public AllReaders? AllReaders { get; set; } = null;
     public UpdaterPatchDto[]? Updaters { get; set; } = null;
@@ -14,6 +18,7 @@ public class UserPrivilegesPatchDto : IExamplesProvider<UserPrivilegesPatchDto>
 
     public UserPrivilegesPatchDto GetExamples() => new()
     {
+        UserId = new Faker().Random.String2(24, "0123456789"),
         Readers = new ReaderPatchDto[] { new ReaderPatchDto().GetExamples(), new ReaderPatchDto().GetExamples() },
         AllReaders = new()
         {
