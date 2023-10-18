@@ -1,0 +1,87 @@
+<user_management>
+    <Data>
+        <Logics>
+            <Filter>
+                <FilterLogicsGeneric>
+                    <BuildILogic>
+                        <test>
+                            ccc
+                        </test>
+                        <logicsString>
+                            The filter string.<br/>
+                            SYNTAX:<br/>
+                            - logic syntax: {FieldName}::{Operator}::{value}::{ValueType}.<br/>
+                            - logic strings can be grouped together with "||" or "&amp;&amp;" and parentheses.<br/>
+
+                            Valid Operators:
+                            - All
+                            - In
+                            - Regex
+                            - Exists
+                            - Eq
+                            - Ne
+                            - Gt
+                            - Lt
+                            - Gte
+                            - Lte
+                            - AnyEq
+                            - AnyNe
+                            - AnyGt
+                            - AnyLt
+                            - AnyGte
+                            - AnyLte
+                            - SizeEq
+                            - SizeGt
+                            - SizeLt
+                            - SizeGte
+                            - SizeLte
+
+                            Examples:
+                            - Username::Ne::mike::string
+                            - Name::Eq::name::string||(Price::Gt::100::int&amp;&amp;CreatedAt::Gt::2023-04-29T09:07:07.250Z::datetime)
+                        </logicsString>
+                    </BuildILogic>
+                </FilterLogicsGeneric>
+            </Filter>
+            <Update>
+                <UpdateLogicsGeneric>
+                    <BuildILogic>
+                        <updatesString id="updatesString">
+                            The update string.<br/>
+                            SYNTAX:<br/>
+                            - update syntax: {FieldName}::{Operator}::{value}::{ValueType}.<br/>
+                            - updates can be chained with "|||" as the separator.<br/>
+
+                            Valid Operators:
+                            - All
+                            - In
+                            - Regex
+                            - Exists
+                            - Eq
+                            - Ne
+                            - Gt
+                            - Lt
+                            - Gte
+                            - Lte
+                            - AnyEq
+                            - AnyNe
+                            - AnyGt
+                            - AnyLt
+                            - AnyGte
+                            - AnyLte
+                            - SizeEq
+                            - SizeGt
+                            - SizeLt
+                            - SizeGte
+                            - SizeLte
+
+                            Examples:
+                            - Username::Set::mike::string
+                            - Username::Set::mike::string|||FirstName::Set::joe::string
+                        </updatesString>
+                    </BuildILogic>
+                </UpdateLogicsGeneric>
+            </Update>
+        </Logics>
+    </Data>
+</user_management>
