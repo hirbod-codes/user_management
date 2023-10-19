@@ -136,6 +136,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseHsts();
+
 await DatabaseManagement.InitializeDatabase(app);
 
 await DatabaseManagement.SeedDatabase(
