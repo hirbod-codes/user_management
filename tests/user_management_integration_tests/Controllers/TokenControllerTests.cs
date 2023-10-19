@@ -46,7 +46,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         User u = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
         u.VerificationSecret = _faker.Random.String2(40);
         u.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.AUTHORIZE_CLIENT).Append(new() { Name = StaticData.AUTHORIZE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -157,7 +157,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             fbu.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, hashedRefreshTokenValue))
         )).FirstOrDefault() != null);
 
-        User user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.IS_VERIFIED, true))).First();
+        User user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, true))).First();
         AuthorizedClient authorizedClient = new()
         {
             ClientId = client.Id,

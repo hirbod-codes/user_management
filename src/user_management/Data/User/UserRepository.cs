@@ -120,7 +120,7 @@ public class UserRepository : IUserRepository
         .ToListAsync();
     }
 
-    public async Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByIdForAuthorizationHandling(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
 
@@ -130,7 +130,7 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveUserForUnverifiedEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.IS_VERIFIED, false)))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveUserForUnverifiedEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, false)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveUserForEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
@@ -167,7 +167,7 @@ public class UserRepository : IUserRepository
     public async Task<bool?> UpdateVerificationSecretForActivation(string VerificationSecret, string email)
     {
         UpdateResult result;
-        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow)); }
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, false), Builders<User>.Filter.Eq(User.EMAIL, email)), Builders<User>.Update.Set(User.VERIFICATION_SECRET, VerificationSecret).Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
@@ -189,7 +189,7 @@ public class UserRepository : IUserRepository
     public async Task<bool?> Verify(ObjectId id)
     {
         UpdateResult result;
-        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_VERIFIED, true)); }
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_EMAIL_VERIFIED, true)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;

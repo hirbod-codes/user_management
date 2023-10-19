@@ -83,10 +83,10 @@ public class User : IEquatable<User>
     public DateTime? VerificationSecretUpdatedAt { get; set; }
     public const string VERIFICATION_SECRET_UPDATED_AT = "verification_secret_updated_at";
 
-    [BsonElement(IS_VERIFIED)]
+    [BsonElement(IS_EMAIL_VERIFIED)]
     [BsonRequired]
-    public bool? IsVerified { get; set; } = false;
-    public const string IS_VERIFIED = "is_verified";
+    public bool? IsEmailVerified { get; set; } = false;
+    public const string IS_EMAIL_VERIFIED = "is_email_verified";
 
     [BsonElement(LOGGED_OUT_AT)]
     public DateTime? LoggedOutAt { get; set; }
@@ -166,7 +166,7 @@ public class User : IEquatable<User>
     public static List<Field> GetHiddenFields() => GetFields().Where(f => f.Name == PASSWORD || f.Name == AUTHORIZING_CLIENT || f.Name == VERIFICATION_SECRET || f.Name == VERIFICATION_SECRET_UPDATED_AT || f.Name == LOGGED_OUT_AT).ToList();
     public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetReadableFields() => GetUnHiddenFields().ToList();
-    public static List<Field> GetUpdatableFields() => GetReadableFields().Where(f => f.Name != PASSWORD || f.Name != IS_VERIFIED || f.Name != CREATED_AT || f.Name != UPDATED_AT || f.Name != "_id").ToList();
+    public static List<Field> GetUpdatableFields() => GetReadableFields().Where(f => f.Name != PASSWORD || f.Name != IS_EMAIL_VERIFIED || f.Name != CREATED_AT || f.Name != UPDATED_AT || f.Name != "_id").ToList();
     public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == AUTHORIZED_CLIENTS || f.Name == USER_PERMISSIONS).ToList();
     public static List<Field> GetMassUpdatableFields() => GetUpdatableFields().Where(f => GetProtectedFieldsAgainstMassUpdating().FirstOrDefault<Field?>(ff => ff != null && ff.Name == f.Name) == null).ToList();
     public static List<Field> GetFields() => new List<Field>()
@@ -184,7 +184,7 @@ public class User : IEquatable<User>
             new Field() { Name = PASSWORD, IsPermitted = true },
             new Field() { Name = VERIFICATION_SECRET, IsPermitted = true },
             new Field() { Name = VERIFICATION_SECRET_UPDATED_AT, IsPermitted = true },
-            new Field() { Name = IS_VERIFIED, IsPermitted = true },
+            new Field() { Name = IS_EMAIL_VERIFIED, IsPermitted = true },
             new Field() { Name = LOGGED_OUT_AT, IsPermitted = true },
             new Field() { Name = UPDATED_AT, IsPermitted = true },
             new Field() { Name = CREATED_AT, IsPermitted = true }
@@ -280,7 +280,7 @@ public class User : IEquatable<User>
             Username = faker.Internet.UserName(),
             Password = UseSeederPassword ? new StringHelper().Hash(UserSeeder.USERS_PASSWORDS) : new StringHelper().Hash(faker.Internet.Password()),
             PhoneNumber = faker.Random.Bool(0.4f) ? faker.Phone.PhoneNumber() : null,
-            IsVerified = faker.Random.Bool(0.7f),
+            IsEmailVerified = faker.Random.Bool(0.7f),
             VerificationSecret = faker.Random.Bool(0.7f) ? faker.Random.String2(100) : null,
             CreatedAt = faker.Date.Between(DateTime.UtcNow.AddDays(-15), DateTime.UtcNow.AddDays(-1))
         };
@@ -437,7 +437,7 @@ public class User : IEquatable<User>
             Email = adminEmail,
             PhoneNumber = adminPhoneNumber,
             Password = new StringHelper().Hash(adminPassword),
-            IsVerified = true,
+            IsEmailVerified = true,
             VerificationSecret = faker.Random.String2(128),
             VerificationSecretUpdatedAt = DateTime.UtcNow.AddDays(-2),
             UpdatedAt = DateTime.UtcNow.AddDays(-2),

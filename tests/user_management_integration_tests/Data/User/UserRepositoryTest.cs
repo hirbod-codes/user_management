@@ -462,7 +462,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     public async void RetrieveByIdForAuthenticationHandling(user_management.Models.User user)
     {
         // Success
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         user.LoggedOutAt = null;
 
         await _userCollection.InsertOneAsync(user);
@@ -474,7 +474,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             Assert.Null(user.LoggedOutAt);
-            Assert.True(user.IsVerified);
+            Assert.True(user.IsEmailVerified);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
@@ -482,7 +482,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         user.LoggedOutAt = DateTime.UtcNow.AddMinutes(-7);
 
         await _userCollection.InsertOneAsync(user);
@@ -497,7 +497,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         user.LoggedOutAt = null;
 
         await _userCollection.InsertOneAsync(user);
@@ -741,11 +741,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void UpdateVerificationSecretForActivation(user_management.Models.User user)
     {
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         string VerificationSecret = "VerificationSecret";
 
         // Success
-        Assert.False(user.IsVerified);
+        Assert.False(user.IsEmailVerified);
 
         await _userCollection.InsertOneAsync(user);
 
@@ -762,9 +762,9 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
 
-        Assert.True(user.IsVerified);
+        Assert.True(user.IsEmailVerified);
 
         await _userCollection.InsertOneAsync(user);
 
@@ -806,9 +806,9 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void Verify(user_management.Models.User user)
     {
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         // Success
-        Assert.False(user.IsVerified);
+        Assert.False(user.IsEmailVerified);
         await _userCollection.InsertOneAsync(user);
 
         try
@@ -816,7 +816,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Verify(user.Id);
 
             Assert.True(result);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.IS_VERIFIED, true } });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.IS_EMAIL_VERIFIED, true } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 

@@ -91,7 +91,7 @@ public class UserManagementTests
         unverifiedUser.Password = hashedPassword;
         unverifiedUser.VerificationSecret = code;
         unverifiedUser.VerificationSecretUpdatedAt = dateTime;
-        unverifiedUser.IsVerified = false;
+        unverifiedUser.IsEmailVerified = false;
 
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.Create(unverifiedUser)).Returns(Task.FromResult<User?>(unverifiedUser));
 
@@ -119,7 +119,7 @@ public class UserManagementTests
         unverifiedUser.Password = hashedPassword;
         unverifiedUser.VerificationSecret = code;
         unverifiedUser.VerificationSecretUpdatedAt = dateTime;
-        unverifiedUser.IsVerified = false;
+        unverifiedUser.IsEmailVerified = false;
 
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.Create(unverifiedUser)).Returns(Task.FromResult<User?>(null));
         await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Register(dto));
@@ -136,7 +136,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -150,9 +150,9 @@ public class UserManagementTests
     {
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
 
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         await InstantiateService().Activate(dto);
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
 
         Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
 
@@ -181,7 +181,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -196,7 +196,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -211,7 +211,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -330,7 +330,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -346,7 +346,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -362,7 +362,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -420,7 +420,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = true,
+                    IsEmailVerified = true,
                     Password = "hashedPassword"
                 }
             }
@@ -472,7 +472,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Password = "password",
-                    IsVerified = false,
+                    IsEmailVerified = false,
                 }
             },
             new object?[] {
@@ -482,7 +482,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Password = "password",
-                    IsVerified = true,
+                    IsEmailVerified = true,
                 }
             },
         };
@@ -504,7 +504,7 @@ public class UserManagementTests
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(false);
             await Assert.ThrowsAsync<InvalidPasswordException>(async () => await InstantiateService().Login(dto));
         }
-        else if (user.IsVerified == false)
+        else if (user.IsEmailVerified == false)
         {
             Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);

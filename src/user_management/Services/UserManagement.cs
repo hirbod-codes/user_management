@@ -51,7 +51,7 @@ public class UserManagement : IUserManagement
         unverifiedUser.Password = _stringHelper.Hash(userDto.Password);
         unverifiedUser.VerificationSecret = verificationMessage;
         unverifiedUser.VerificationSecretUpdatedAt = _dateTimeProvider.ProvideUtcNow();
-        unverifiedUser.IsVerified = false;
+        unverifiedUser.IsEmailVerified = false;
 
         unverifiedUser = await _userRepository.Create(unverifiedUser);
 
@@ -81,7 +81,7 @@ public class UserManagement : IUserManagement
         User? user = await _userRepository.RetrieveUserByLoginCredentials(activatingUser.Email, null);
         if (user == null) throw new DataNotFoundException();
 
-        if ((bool)user.IsVerified!) return;
+        if ((bool)user.IsEmailVerified!) return;
 
         DateTime expirationDateTime = (DateTime)user.VerificationSecretUpdatedAt!;
         expirationDateTime = expirationDateTime.AddMinutes(EXPIRATION_MINUTES);
@@ -119,7 +119,7 @@ public class UserManagement : IUserManagement
 
         if (!_stringHelper.DoesHashMatch(user.Password, loggingInUser.Password)) throw new InvalidPasswordException();
 
-        if (user.IsVerified == false) throw new UnverifiedUserException();
+        if (user.IsEmailVerified == false) throw new UnverifiedUserException();
 
         bool r = await _userRepository.Login(user.Id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
