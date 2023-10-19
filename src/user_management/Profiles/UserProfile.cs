@@ -22,7 +22,7 @@ class UserProfile : Profile
 
     private void MapUserRetrieveDto()
     {
-        CreateMap<UserClient, UserClientRetrieveDto>();
+        CreateMap<AuthorizedClient, AuthorizedClientRetrieveDto>();
     }
 
     private void MapUserPrivilegesRetrieveDto()

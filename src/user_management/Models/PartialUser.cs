@@ -35,9 +35,9 @@ public class PartialUser
     public bool IsAuthorizingClientTouched() => _isAuthorizingClientTouched;
 
     [BsonElement(CLIENTS)]
-    public UserClient[]? Clients { get { return _clients; } set { _clients = value; _isClientsTouched = true; } }
+    public AuthorizedClient[]? Clients { get { return _clients; } set { _clients = value; _isClientsTouched = true; } }
     public const string CLIENTS = "clients";
-    public UserClient[]? _clients = null;
+    public AuthorizedClient[]? _clients = null;
     private bool _isClientsTouched = false;
     public bool IsClientsTouched() => _isClientsTouched;
 

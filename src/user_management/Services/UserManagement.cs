@@ -216,7 +216,7 @@ public class UserManagement : IUserManagement
         return user;
     }
 
-    public async Task<IEnumerable<UserClientRetrieveDto>> RetrieveClientsById(string actorId, string userId, bool forClients)
+    public async Task<IEnumerable<AuthorizedClientRetrieveDto>> RetrieveClientsById(string actorId, string userId, bool forClients)
     {
         if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
         if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
@@ -225,7 +225,7 @@ public class UserManagement : IUserManagement
 
         if (!user.IsClientsTouched()) throw new UnauthorizedAccessException();
 
-        return user.Clients == null ? Array.Empty<UserClientRetrieveDto>() : user.Clients.ToList().ConvertAll<UserClientRetrieveDto>(c => _mapper.Map<UserClientRetrieveDto>(c));
+        return user.Clients == null ? Array.Empty<AuthorizedClientRetrieveDto>() : user.Clients.ToList().ConvertAll<AuthorizedClientRetrieveDto>(c => _mapper.Map<AuthorizedClientRetrieveDto>(c));
     }
 
     public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)

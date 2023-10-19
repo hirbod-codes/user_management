@@ -130,7 +130,7 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveUserForUnverifiedEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.EMAIL, email),Builders<User>.Filter.Eq(User.IS_VERIFIED, false)))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveUserForUnverifiedEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.IS_VERIFIED, false)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveUserForEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
@@ -138,9 +138,9 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CLIENT_ID, clientId), Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CODE, code)))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
 
     public async Task<bool?> Login(ObjectId userId)
     {
@@ -265,13 +265,13 @@ public class UserRepository : IUserRepository
     public async Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(
-            GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
-            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
+            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
             Builders<User>.Filter.Eq("_id", userId)
         );
 
         UpdateDefinition<User> update = Builders<User>.Update
-            .PullFilter(x => x.Clients, x => x.ClientId == clientId)
+            .PullFilter(x => x.AuthorizedClients, x => x.ClientId == clientId)
             .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
 
         UpdateResult result;
@@ -287,12 +287,12 @@ public class UserRepository : IUserRepository
     public async Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(
-            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.CLIENTS } }),
+            GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
             Builders<User>.Filter.Eq("_id", userId)
         );
 
         UpdateDefinition<User> update = Builders<User>.Update
-            .Set<UserClient[]>(User.CLIENTS, new UserClient[] { })
+            .Set<AuthorizedClient[]>(User.AUTHORIZED_CLIENTS, new AuthorizedClient[] { })
             .Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
 
         UpdateResult result;
@@ -473,14 +473,14 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
     }
 
-    public async Task<bool?> AddAuthorizedClient(ObjectId userId, UserClient authorizedClient, IClientSessionHandle? session = null)
+    public async Task<bool?> AddAuthorizedClient(ObjectId userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null)
     {
         UpdateResult r;
         try
         {
             r = await (session == null
-                ? _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<UserClient>(User.CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
-                : _userCollection.UpdateOneAsync(session, Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<UserClient>(User.CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+                ? _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+                : _userCollection.UpdateOneAsync(session, Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
             );
         }
         catch (Exception) { throw new DatabaseServerException(); }
@@ -494,10 +494,10 @@ public class UserRepository : IUserRepository
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(new FilterDefinition<User>[] {
             Builders<User>.Filter.Eq("_id", userId),
-            Builders<User>.Filter.Eq(User.CLIENTS + "."+UserClient.CLIENT_ID, clientObjectId)
+            Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "."+AuthorizedClient.CLIENT_ID, clientObjectId)
         });
 
-        UpdateDefinition<User> update = Builders<User>.Update.Set<Token>(x => x.Clients.FirstMatchingElement().Token, token).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
+        UpdateDefinition<User> update = Builders<User>.Update.Set<Token>(x => x.AuthorizedClients.FirstMatchingElement().Token, token).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
 
         UpdateResult r;
         try { r = await _userCollection.UpdateOneAsync(filter, update); }

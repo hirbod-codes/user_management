@@ -880,18 +880,18 @@ public class UserControllerTests
     [Fact]
     public async void RetrieveClients_Ok()
     {
-        UserClient[] clients = new UserClient[] { };
+        AuthorizedClient[] clients = new AuthorizedClient[] { };
         PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), Clients = clients };
         string userId = "userId";
         bool forClients = false;
-        IEnumerable<UserClientRetrieveDto> authorizedClients = Array.Empty<UserClientRetrieveDto>();
+        IEnumerable<AuthorizedClientRetrieveDto> authorizedClients = Array.Empty<AuthorizedClientRetrieveDto>();
 
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
         Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Returns(Task.FromResult(authorizedClients));
-        HttpAsserts<IEnumerable<UserClientRetrieveDto>>.IsOk(await InstantiateController().RetrieveClients(), authorizedClients);
+        HttpAsserts<IEnumerable<AuthorizedClientRetrieveDto>>.IsOk(await InstantiateController().RetrieveClients(), authorizedClients);
     }
 
     [Fact]
@@ -931,7 +931,7 @@ public class UserControllerTests
     [Fact]
     public async void RetrieveClients_Unauthorized()
     {
-        UserClient[] clients = new UserClient[] { };
+        AuthorizedClient[] clients = new AuthorizedClient[] { };
         PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId() };
         string userId = "userId";
         bool forClients = false;

@@ -45,7 +45,7 @@ public class BearerAuthenticationHandler : AuthenticationHandler<BearerAuthentic
         if (user == null)
             return AuthenticateResult.Fail("The authorization token not found.");
 
-        UserClient? userClient = user.Clients.ToList().FirstOrDefault<UserClient?>(uc => uc != null && uc.Token != null && uc.Token.Value == hashedToken, null);
+        AuthorizedClient? userClient = user.AuthorizedClients.ToList().FirstOrDefault<AuthorizedClient?>(uc => uc != null && uc.Token != null && uc.Token.Value == hashedToken, null);
         if (userClient == null)
             return AuthenticateResult.Fail("The authorization token not found.");
 

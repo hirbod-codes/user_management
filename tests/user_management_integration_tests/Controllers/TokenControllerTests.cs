@@ -94,7 +94,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.EXPOSED_COUNT, 0))).ToList();
 
         User user = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        user.Clients = user.Clients.Where(ac => ac.ClientId.ToString() != clients[0].Id.ToString()).ToArray();
+        user.AuthorizedClients = user.AuthorizedClients.Where(ac => ac.ClientId.ToString() != clients[0].Id.ToString()).ToArray();
         user.AuthorizingClient = new()
         {
             ClientId = clients[0].Id,
@@ -127,7 +127,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         Assert.NotNull(responseData);
 
         user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).First();
-        UserClient? userAuthorizedClient = user.Clients.FirstOrDefault(ac => ac != null && ac.ClientId.ToString() == clients[0].Id.ToString());
+        AuthorizedClient? userAuthorizedClient = user.AuthorizedClients.FirstOrDefault(ac => ac != null && ac.ClientId.ToString() == clients[0].Id.ToString());
         Assert.NotNull(userAuthorizedClient);
         Assert.True(userAuthorizedClient.RefreshToken.TokenPrivileges.DeletesUser);
         Assert.Equal(userAuthorizedClient.RefreshToken.Value, new StringHelper().HashWithoutSalt(responseData.RefreshToken));
@@ -153,12 +153,12 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
             hashedTokenValue = new StringHelper().HashWithoutSalt(tokenValue)!;
             hashedRefreshTokenValue = new StringHelper().HashWithoutSalt(refreshTokenValue)!;
         } while ((await _userCollection.FindAsync(fbu.Or(
-            fbu.Eq(User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE, hashedTokenValue),
-            fbu.Eq(User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, hashedRefreshTokenValue))
+            fbu.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.TOKEN + "." + Token.VALUE, hashedTokenValue),
+            fbu.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, hashedRefreshTokenValue))
         )).FirstOrDefault() != null);
 
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.IS_VERIFIED, true))).First();
-        UserClient authorizedClient = new()
+        AuthorizedClient authorizedClient = new()
         {
             ClientId = client.Id,
             RefreshToken = new()
@@ -174,7 +174,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
                 ExpirationDate = DateTime.UtcNow.AddMinutes(5),
             }
         };
-        user.Clients = user.Clients
+        user.AuthorizedClients = user.AuthorizedClients
             .Append(authorizedClient)
             .ToArray();
         ReplaceOneResult replaceOneResult = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", user.Id), user);
@@ -203,10 +203,10 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         User updatedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).First();
 
-        Assert.Equal(new StringHelper().HashWithoutSalt(newTokenValue), updatedUser.Clients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.Value);
+        Assert.Equal(new StringHelper().HashWithoutSalt(newTokenValue), updatedUser.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.Value);
         Assert.NotEqual(
-            user.Clients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate,
-            updatedUser.Clients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate
+            user.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate,
+            updatedUser.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate
         );
     }
 }

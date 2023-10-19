@@ -540,7 +540,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
         user.IsVerified = true;
-        if (user.Clients.Length == 0) user.Clients = user.Clients.Append(UserClient.FakeUserClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
+        if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENT).Append(new() { Name = StaticData.DELETE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(user);
 
@@ -549,7 +549,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENT + "?clientId=" + user.Clients[0].ClientId.ToString() + "&userId=" + user.Id.ToString();
+        string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENT + "?clientId=" + user.AuthorizedClients[0].ClientId.ToString() + "&userId=" + user.Id.ToString();
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, null);
@@ -561,7 +561,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
-        Assert.Null(retrievedUser.Clients.FirstOrDefault(uc => uc != null && uc.ClientId == user.Clients[0].ClientId));
+        Assert.Null(retrievedUser.AuthorizedClients.FirstOrDefault(uc => uc != null && uc.ClientId == user.AuthorizedClients[0].ClientId));
     }
 
     [Fact]
@@ -575,7 +575,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
         user.IsVerified = true;
-        if (user.Clients.Length == 0) user.Clients = user.Clients.Append(UserClient.FakeUserClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
+        if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENTS).Append(new() { Name = StaticData.DELETE_CLIENTS, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(user);
 
@@ -594,7 +594,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
-        Assert.Empty(retrievedUser.Clients);
+        Assert.Empty(retrievedUser.AuthorizedClients);
     }
 
     [Fact]
@@ -650,7 +650,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
         user.IsVerified = true;
-        if (user.Clients.Length == 0) user.Clients = user.Clients.Append(UserClient.FakeUserClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
+        if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.READ_CLIENTS).Append(new() { Name = StaticData.READ_CLIENTS, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(user);
 
@@ -666,15 +666,15 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Dictionary<string, object?>[]? authorizedClients = await response.Content.ReadFromJsonAsync<Dictionary<string, object?>[]>();
         Assert.NotNull(authorizedClients);
-        Assert.Equal(authorizedClients.Length, user.Clients.Length);
-        user.Clients.ToList().ForEach(uc =>
+        Assert.Equal(authorizedClients.Length, user.AuthorizedClients.Length);
+        user.AuthorizedClients.ToList().ForEach(uc =>
         {
             Assert.NotNull(authorizedClients.FirstOrDefault(ac =>
             {
                 if (ac == null) return false;
-                if (!ac.TryGetValue(UserClient.CLIENT_ID, out object? clientId)) return false;
+                if (!ac.TryGetValue(AuthorizedClient.CLIENT_ID, out object? clientId)) return false;
                 if (clientId == null) return false;
-                if (ac[UserClient.CLIENT_ID]!.ToString() != uc.ClientId.ToString()) return false;
+                if (ac[AuthorizedClient.CLIENT_ID]!.ToString() != uc.ClientId.ToString()) return false;
                 return true;
             }, null));
         });

@@ -31,10 +31,10 @@ public class User : IEquatable<User>
     public UserPrivileges UserPrivileges { get; set; } = new();
     public const string USER_PRIVILEGES = "user_privileges";
 
-    [BsonElement(CLIENTS)]
+    [BsonElement(AUTHORIZED_CLIENTS)]
     [BsonRequired]
-    public UserClient[] Clients { get; set; } = new UserClient[] { };
-    public const string CLIENTS = "clients";
+    public AuthorizedClient[] AuthorizedClients { get; set; } = Array.Empty<AuthorizedClient>();
+    public const string AUTHORIZED_CLIENTS = "authorized_clients";
 
     [BsonElement(AUTHORIZING_CLIENT)]
     [BsonRequired]
@@ -129,8 +129,8 @@ public class User : IEquatable<User>
                 if (value != null && field.Name == "_id")
                     value = value!.ToString();
 
-                if (value != null && field.Name.ToPascalCase() == CLIENTS.ToPascalCase())
-                    value = (value as UserClient[])!.ToList().ConvertAll<UserClientRetrieveDto>(v => IMapper.Map<UserClientRetrieveDto>(v));
+                if (value != null && field.Name.ToPascalCase() == AUTHORIZED_CLIENTS.ToPascalCase())
+                    value = (value as AuthorizedClient[])!.ToList().ConvertAll<AuthorizedClientRetrieveDto>(v => IMapper.Map<AuthorizedClientRetrieveDto>(v));
 
                 if (value != null && field.Name.ToPascalCase() == USER_PRIVILEGES.ToPascalCase())
                     value = IMapper.Map<UserPrivilegesRetrieveDto>(value);
@@ -167,14 +167,14 @@ public class User : IEquatable<User>
     public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetReadableFields() => GetUnHiddenFields().ToList();
     public static List<Field> GetUpdatableFields() => GetReadableFields().Where(f => f.Name != PASSWORD || f.Name != IS_VERIFIED || f.Name != CREATED_AT || f.Name != UPDATED_AT || f.Name != "_id").ToList();
-    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == CLIENTS || f.Name == USER_PRIVILEGES).ToList();
+    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == AUTHORIZED_CLIENTS || f.Name == USER_PRIVILEGES).ToList();
     public static List<Field> GetMassUpdatableFields() => GetUpdatableFields().Where(f => GetProtectedFieldsAgainstMassUpdating().FirstOrDefault<Field?>(ff => ff != null && ff.Name == f.Name) == null).ToList();
     public static List<Field> GetFields() => new List<Field>()
         {
             new Field() { Name = "_id", IsPermitted = true },
             new Field() { Name = USER_PRIVILEGES, IsPermitted = true },
             new Field() { Name = AUTHORIZING_CLIENT, IsPermitted = true },
-            new Field() { Name = CLIENTS, IsPermitted = true },
+            new Field() { Name = AUTHORIZED_CLIENTS, IsPermitted = true },
             new Field() { Name = FIRST_NAME, IsPermitted = true },
             new Field() { Name = MIDDLE_NAME, IsPermitted = true },
             new Field() { Name = LAST_NAME, IsPermitted = true },
@@ -312,15 +312,15 @@ public class User : IEquatable<User>
         {
             IEnumerable<Client> pickedClients = faker.PickRandom<Client>(clients, faker.Random.Int(0, clients.Count()));
             for (int i = 0; i < pickedClients.Count(); i++)
-                user.Clients = user.Clients.Append(UserClient.FakeUserClient(pickedClients.ElementAt(i), userPrivileges)).ToArray();
+                user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(pickedClients.ElementAt(i), userPrivileges)).ToArray();
         }
         else if (fakeUserOptions.RandomClients && clients.Count() == 1 && faker.Random.Bool())
-            user.Clients = user.Clients.Append(UserClient.FakeUserClient(clients.ElementAt(0), userPrivileges)).ToArray();
+            user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(clients.ElementAt(0), userPrivileges)).ToArray();
         else if (!fakeUserOptions.RandomClients && clients.Count() > 1)
             for (int i = 0; i < clients.Count(); i++)
-                user.Clients = user.Clients.Append(UserClient.FakeUserClient(clients.ElementAt(i), userPrivileges)).ToArray();
+                user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(clients.ElementAt(i), userPrivileges)).ToArray();
         else if (!fakeUserOptions.RandomClients && clients.Count() == 1 && faker.Random.Bool())
-            user.Clients = user.Clients.Append(UserClient.FakeUserClient(clients.ElementAt(0), userPrivileges)).ToArray();
+            user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(clients.ElementAt(0), userPrivileges)).ToArray();
 
         if (fakeUserOptions.GiveUserPrivilegesToRandomUsers)
         {
@@ -384,31 +384,31 @@ public class User : IEquatable<User>
         };
 
         // Giving privileges to authorized clients.
-        for (int j = 0; j < user.Clients.Count(); j++)
+        for (int j = 0; j < user.AuthorizedClients.Count(); j++)
         {
-            if (user.Clients[j].RefreshToken == null) continue;
+            if (user.AuthorizedClients[j].RefreshToken == null) continue;
 
-            if (user.Clients[j].RefreshToken!.TokenPrivileges.ReadsFields.Length > 0)
+            if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.ReadsFields.Length > 0)
                 user.UserPrivileges.Readers = user.UserPrivileges.Readers.Append(new()
                 {
                     Author = Reader.CLIENT,
-                    AuthorId = user.Clients[j].ClientId,
+                    AuthorId = user.AuthorizedClients[j].ClientId,
                     IsPermitted = faker.Random.Bool(0.8f),
-                    Fields = user.Clients[j].RefreshToken!.TokenPrivileges.ReadsFields
+                    Fields = user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.ReadsFields
                 }).ToArray();
-            if (user.Clients[j].RefreshToken!.TokenPrivileges.UpdatesFields.Length > 0)
+            if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.UpdatesFields.Length > 0)
                 user.UserPrivileges.Updaters = user.UserPrivileges.Updaters.Append(new()
                 {
                     Author = Updater.CLIENT,
-                    AuthorId = user.Clients[j].ClientId,
+                    AuthorId = user.AuthorizedClients[j].ClientId,
                     IsPermitted = faker.Random.Bool(0.8f),
-                    Fields = user.Clients[j].RefreshToken!.TokenPrivileges.UpdatesFields
+                    Fields = user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.UpdatesFields
                 }).ToArray();
-            if (user.Clients[j].RefreshToken!.TokenPrivileges.DeletesUser)
+            if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.DeletesUser)
                 user.UserPrivileges.Deleters = user.UserPrivileges.Deleters.Append(new()
                 {
                     Author = Deleter.CLIENT,
-                    AuthorId = user.Clients[j].ClientId,
+                    AuthorId = user.AuthorizedClients[j].ClientId,
                     IsPermitted = faker.Random.Bool(0.8f)
                 }).ToArray();
         }

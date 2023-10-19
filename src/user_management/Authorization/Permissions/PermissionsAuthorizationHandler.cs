@@ -72,8 +72,8 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
         if (requirementTokens?.Any() != true) return;
 
         if (!_authenticatedByBearer.IsAuthenticated()) return;
-        
-        UserClient userClient = await _authenticatedByBearer.GetAuthenticated();
+
+        AuthorizedClient userClient = await _authenticatedByBearer.GetAuthenticated();
         if (userClient.RefreshToken == null) return;
 
         List<Privilege> privileges = userClient.RefreshToken.TokenPrivileges.Privileges.ToList();
