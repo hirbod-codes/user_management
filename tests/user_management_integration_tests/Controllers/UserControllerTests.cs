@@ -234,14 +234,14 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)))).FirstOrDefault<User?>();
             Assert.NotNull(user);
             Assert.False(user.IsVerified);
-            Reader? reader = user.UserPrivileges.Readers.FirstOrDefault<Reader?>(r => r != null && r.Author == Reader.USER && r.AuthorId.ToString() == id && r.IsPermitted);
+            Reader? reader = user.UserPermissions.Readers.FirstOrDefault<Reader?>(r => r != null && r.Author == Reader.USER && r.AuthorId.ToString() == id && r.IsPermitted);
             Assert.NotNull(reader);
             reader.Fields.ToList().ForEach(f =>
             {
                 Assert.True(f.IsPermitted && User.GetReadableFields().FirstOrDefault(ff => ff.Name == f.Name) != null);
             });
 
-            Updater? updater = user.UserPrivileges.Updaters.FirstOrDefault<Updater?>(u => u != null && u.Author == Updater.USER && u.AuthorId.ToString() == id && u.IsPermitted);
+            Updater? updater = user.UserPermissions.Updaters.FirstOrDefault<Updater?>(u => u != null && u.Author == Updater.USER && u.AuthorId.ToString() == id && u.IsPermitted);
             Assert.NotNull(updater);
             updater.Fields.ToList().ForEach(f =>
             {
@@ -611,12 +611,12 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.READ_ACCOUNT).Append(new() { Name = StaticData.READ_ACCOUNT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(user);
 
-        var readers = user.UserPrivileges.Readers.Where(r => r.AuthorId != user.Id).ToList();
+        var readers = user.UserPermissions.Readers.Where(r => r.AuthorId != user.Id).ToList();
         Field[] targetFieldsToRead = _faker.PickRandom(User.GetReadableFields(), _faker.Random.Int(2, 4)).ToArray();
         readers.Add(new() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = targetFieldsToRead });
-        user.UserPrivileges.Readers = readers.ToArray();
+        user.UserPermissions.Readers = readers.ToArray();
 
-        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", user.Id), Builders<User>.Update.Set(User.USER_PRIVILEGES, user.UserPrivileges));
+        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", user.Id), Builders<User>.Update.Set(User.USER_PERMISSIONS, user.UserPermissions));
         Assert.True(updateResult.IsAcknowledged && updateResult.MatchedCount == 1 && updateResult.ModifiedCount <= 1);
 
         LoginResult loginResult = await Login(client, user: user);
@@ -698,7 +698,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
-        user1.UserPrivileges.Readers = user1.UserPrivileges.Readers
+        user1.UserPermissions.Readers = user1.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -711,7 +711,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user1);
 
         User user2 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
-        user2.UserPrivileges.Readers = user2.UserPrivileges.Readers
+        user2.UserPermissions.Readers = user2.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -773,7 +773,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
-        user1.UserPrivileges.Readers = user1.UserPrivileges.Readers
+        user1.UserPermissions.Readers = user1.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -783,7 +783,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
                 Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.FIRST_NAME, IsPermitted = true } }
             })
             .ToArray();
-        user1.UserPrivileges.Updaters = user1.UserPrivileges.Updaters
+        user1.UserPermissions.Updaters = user1.UserPermissions.Updaters
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -796,7 +796,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user1);
 
         User user2 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
-        user2.UserPrivileges.Readers = user2.UserPrivileges.Readers
+        user2.UserPermissions.Readers = user2.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -806,7 +806,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
                 Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.LAST_NAME, IsPermitted = true } }
             })
             .ToArray();
-        user2.UserPrivileges.Updaters = user2.UserPrivileges.Updaters
+        user2.UserPermissions.Updaters = user2.UserPermissions.Updaters
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {
@@ -848,7 +848,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
-        user.UserPrivileges.Deleters = user.UserPrivileges.Deleters
+        user.UserPermissions.Deleters = user.UserPermissions.Deleters
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
             {

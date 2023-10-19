@@ -26,10 +26,10 @@ public class User : IEquatable<User>
     public Privilege[] Privileges { get; set; } = StaticData.GetDefaultUserPrivileges().ToArray();
     public const string PRIVILEGES = "privileges";
 
-    [BsonElement(USER_PRIVILEGES)]
+    [BsonElement(USER_PERMISSIONS)]
     [BsonRequired]
-    public UserPrivileges UserPrivileges { get; set; } = new();
-    public const string USER_PRIVILEGES = "user_privileges";
+    public UserPermissions UserPermissions { get; set; } = new();
+    public const string USER_PERMISSIONS = "user_permissions";
 
     [BsonElement(AUTHORIZED_CLIENTS)]
     [BsonRequired]
@@ -132,7 +132,7 @@ public class User : IEquatable<User>
                 if (value != null && field.Name.ToPascalCase() == AUTHORIZED_CLIENTS.ToPascalCase())
                     value = (value as AuthorizedClient[])!.ToList().ConvertAll<AuthorizedClientRetrieveDto>(v => IMapper.Map<AuthorizedClientRetrieveDto>(v));
 
-                if (value != null && field.Name.ToPascalCase() == USER_PRIVILEGES.ToPascalCase())
+                if (value != null && field.Name.ToPascalCase() == USER_PERMISSIONS.ToPascalCase())
                     value = IMapper.Map<UserPrivilegesRetrieveDto>(value);
 
                 if (field.IsPermitted && !userRetrieveDto.ContainsKey(field.Name))
@@ -141,16 +141,16 @@ public class User : IEquatable<User>
 
         try
         {
-            if (UserPrivileges!.AllReaders != null && UserPrivileges!.AllReaders.ArePermitted)
-                fields = fields.Concat(UserPrivileges!.AllReaders.Fields).ToList();
+            if (UserPermissions!.AllReaders != null && UserPermissions!.AllReaders.ArePermitted)
+                fields = fields.Concat(UserPermissions!.AllReaders.Fields).ToList();
         }
         catch (NullReferenceException) { }
         catch (InvalidOperationException) { }
 
         try
         {
-            if (UserPrivileges!.Readers.Length != 0)
-                fields = fields.Concat(UserPrivileges!.Readers.First(r => r != null && r.Author == (forClients ? Reader.CLIENT : Reader.USER) && r.AuthorId == actorId && r.IsPermitted == true).Fields).ToList();
+            if (UserPermissions!.Readers.Length != 0)
+                fields = fields.Concat(UserPermissions!.Readers.First(r => r != null && r.Author == (forClients ? Reader.CLIENT : Reader.USER) && r.AuthorId == actorId && r.IsPermitted == true).Fields).ToList();
         }
         catch (NullReferenceException) { }
         catch (InvalidOperationException) { }
@@ -167,12 +167,12 @@ public class User : IEquatable<User>
     public static List<Field> GetUnHiddenFields() => GetFields().Where(f => GetHiddenFields().FirstOrDefault<Field?>(hf => hf != null && hf.Name == f.Name, null) == null).ToList();
     public static List<Field> GetReadableFields() => GetUnHiddenFields().ToList();
     public static List<Field> GetUpdatableFields() => GetReadableFields().Where(f => f.Name != PASSWORD || f.Name != IS_VERIFIED || f.Name != CREATED_AT || f.Name != UPDATED_AT || f.Name != "_id").ToList();
-    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == AUTHORIZED_CLIENTS || f.Name == USER_PRIVILEGES).ToList();
+    public static List<Field> GetProtectedFieldsAgainstMassUpdating() => GetUpdatableFields().Where(f => f.Name == USERNAME || f.Name == PHONE_NUMBER || f.Name == EMAIL || f.Name == AUTHORIZED_CLIENTS || f.Name == USER_PERMISSIONS).ToList();
     public static List<Field> GetMassUpdatableFields() => GetUpdatableFields().Where(f => GetProtectedFieldsAgainstMassUpdating().FirstOrDefault<Field?>(ff => ff != null && ff.Name == f.Name) == null).ToList();
     public static List<Field> GetFields() => new List<Field>()
         {
             new Field() { Name = "_id", IsPermitted = true },
-            new Field() { Name = USER_PRIVILEGES, IsPermitted = true },
+            new Field() { Name = USER_PERMISSIONS, IsPermitted = true },
             new Field() { Name = AUTHORIZING_CLIENT, IsPermitted = true },
             new Field() { Name = AUTHORIZED_CLIENTS, IsPermitted = true },
             new Field() { Name = FIRST_NAME, IsPermitted = true },
@@ -328,7 +328,7 @@ public class User : IEquatable<User>
             for (int i = 0; i < pickedUsers.Count(); i++)
             {
                 if (faker.Random.Bool())
-                    user.UserPrivileges.Readers = user.UserPrivileges.Readers.Append(new()
+                    user.UserPermissions.Readers = user.UserPermissions.Readers.Append(new()
                     {
                         Author = Reader.USER,
                         AuthorId = pickedUsers.ElementAt(i).Id,
@@ -339,13 +339,13 @@ public class User : IEquatable<User>
                 if (faker.Random.Bool())
                 {
                     Field[] acceptableFields = User.GetUpdatableFields().Where(f =>
-                        user.UserPrivileges.Readers.FirstOrDefault(r =>
+                        user.UserPermissions.Readers.FirstOrDefault(r =>
                             r.AuthorId == pickedUsers.ElementAt(i).Id
                             && r.IsPermitted
                             && r.Fields.FirstOrDefault(readerField => readerField.Name == f.Name && readerField.IsPermitted) != null
                         ) != null).ToArray();
 
-                    user.UserPrivileges.Updaters = user.UserPrivileges.Updaters.Append(new()
+                    user.UserPermissions.Updaters = user.UserPermissions.Updaters.Append(new()
                     {
                         Author = Updater.USER,
                         AuthorId = pickedUsers.ElementAt(i).Id,
@@ -354,28 +354,28 @@ public class User : IEquatable<User>
                     }).ToArray();
                 }
 
-                if (faker.Random.Bool()) user.UserPrivileges.Deleters = user.UserPrivileges.Deleters.Append(new()
+                if (faker.Random.Bool()) user.UserPermissions.Deleters = user.UserPermissions.Deleters.Append(new()
                 {
                     Author = Deleter.USER,
                     AuthorId = pickedUsers.ElementAt(i).Id,
                     IsPermitted = faker.Random.Bool()
                 }).ToArray();
 
-                if (faker.Random.Bool()) user.UserPrivileges.AllReaders = new() { ArePermitted = faker.Random.Bool(0.8f), Fields = faker.PickRandom<Field>(User.GetReadableFields(), faker.Random.Int(0, User.GetReadableFields().Count())).ToArray() };
+                if (faker.Random.Bool()) user.UserPermissions.AllReaders = new() { ArePermitted = faker.Random.Bool(0.8f), Fields = faker.PickRandom<Field>(User.GetReadableFields(), faker.Random.Int(0, User.GetReadableFields().Count())).ToArray() };
 
                 if (faker.Random.Bool())
                 {
                     Field[] acceptableFields = User.GetUpdatableFields().Where(f =>
-                        user.UserPrivileges.AllReaders != null
-                        && user.UserPrivileges.AllReaders.ArePermitted
-                        && user.UserPrivileges.AllReaders.Fields.FirstOrDefault(allReadersField => allReadersField.Name == f.Name && allReadersField.IsPermitted) != null).ToArray();
+                        user.UserPermissions.AllReaders != null
+                        && user.UserPermissions.AllReaders.ArePermitted
+                        && user.UserPermissions.AllReaders.Fields.FirstOrDefault(allReadersField => allReadersField.Name == f.Name && allReadersField.IsPermitted) != null).ToArray();
 
-                    user.UserPrivileges.AllUpdaters = new() { ArePermitted = faker.Random.Bool(0.8f), Fields = faker.PickRandom<Field>(acceptableFields, faker.Random.Int(0, acceptableFields.Count())).ToArray() };
+                    user.UserPermissions.AllUpdaters = new() { ArePermitted = faker.Random.Bool(0.8f), Fields = faker.PickRandom<Field>(acceptableFields, faker.Random.Int(0, acceptableFields.Count())).ToArray() };
                 }
             }
         }
 
-        if (fakeUserOptions.GiveUserPrivilegesToItSelf) user.UserPrivileges = new()
+        if (fakeUserOptions.GiveUserPrivilegesToItSelf) user.UserPermissions = new()
         {
             Readers = new Reader[] { new() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = User.GetReadableFields().ToArray() } },
             AllReaders = new() { ArePermitted = false, Fields = new Field[] { } },
@@ -389,7 +389,7 @@ public class User : IEquatable<User>
             if (user.AuthorizedClients[j].RefreshToken == null) continue;
 
             if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.ReadsFields.Length > 0)
-                user.UserPrivileges.Readers = user.UserPrivileges.Readers.Append(new()
+                user.UserPermissions.Readers = user.UserPermissions.Readers.Append(new()
                 {
                     Author = Reader.CLIENT,
                     AuthorId = user.AuthorizedClients[j].ClientId,
@@ -397,7 +397,7 @@ public class User : IEquatable<User>
                     Fields = user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.ReadsFields
                 }).ToArray();
             if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.UpdatesFields.Length > 0)
-                user.UserPrivileges.Updaters = user.UserPrivileges.Updaters.Append(new()
+                user.UserPermissions.Updaters = user.UserPermissions.Updaters.Append(new()
                 {
                     Author = Updater.CLIENT,
                     AuthorId = user.AuthorizedClients[j].ClientId,
@@ -405,7 +405,7 @@ public class User : IEquatable<User>
                     Fields = user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.UpdatesFields
                 }).ToArray();
             if (user.AuthorizedClients[j].RefreshToken!.TokenPrivileges.DeletesUser)
-                user.UserPrivileges.Deleters = user.UserPrivileges.Deleters.Append(new()
+                user.UserPermissions.Deleters = user.UserPermissions.Deleters.Append(new()
                 {
                     Author = Deleter.CLIENT,
                     AuthorId = user.AuthorizedClients[j].ClientId,
@@ -425,7 +425,7 @@ public class User : IEquatable<User>
         {
             Id = adminId,
             Privileges = StaticData.Privileges.ToArray(),
-            UserPrivileges = new UserPrivileges()
+            UserPermissions = new UserPermissions()
             {
                 AllReaders = new() { ArePermitted = false, Fields = Array.Empty<Field>() },
                 AllUpdaters = new() { ArePermitted = false, Fields = Array.Empty<Field>() },

@@ -21,9 +21,9 @@ public class PartialUser
     public bool IsPrivilegesTouched() => _isPrivilegesTouched;
 
     [BsonElement(USER_PRIVILEGES)]
-    public UserPrivileges? UserPrivileges { get { return _userPrivileges; } set { _userPrivileges = value; _isUserPrivilegesTouched = true; } }
+    public UserPermissions? UserPrivileges { get { return _userPrivileges; } set { _userPrivileges = value; _isUserPrivilegesTouched = true; } }
     public const string USER_PRIVILEGES = "user_privileges";
-    public UserPrivileges? _userPrivileges = null;
+    public UserPermissions? _userPrivileges = null;
     private bool _isUserPrivilegesTouched = false;
     public bool IsUserPrivilegesTouched() => _isUserPrivilegesTouched;
 

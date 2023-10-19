@@ -27,7 +27,7 @@ class UserProfile : Profile
 
     private void MapUserPrivilegesRetrieveDto()
     {
-        CreateMap<UserPrivileges, UserPrivilegesRetrieveDto>().ConvertUsing<UserPrivilegesRetrieveConverter>();
+        CreateMap<UserPermissions, UserPrivilegesRetrieveDto>().ConvertUsing<UserPrivilegesRetrieveConverter>();
 
         CreateMap<Reader, ReaderRetrieveDto>();
         CreateMap<Updater, UpdaterRetrieveDto>();
@@ -36,7 +36,7 @@ class UserProfile : Profile
 
     private void MapUserPrivilegesPatchDto()
     {
-        CreateMap<UserPrivilegesPatchDto, UserPrivileges>().ConvertUsing<UserPrivilegesPatchConverter>();
+        CreateMap<UserPrivilegesPatchDto, UserPermissions>().ConvertUsing<UserPrivilegesPatchConverter>();
 
         CreateMap<ReaderPatchDto, Reader>();
         CreateMap<ReaderPatchDto[], Reader[]>();
@@ -47,9 +47,9 @@ class UserProfile : Profile
     }
 }
 
-public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPrivileges, UserPrivilegesRetrieveDto>
+public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPermissions, UserPrivilegesRetrieveDto>
 {
-    public UserPrivilegesRetrieveDto Convert(UserPrivileges s, UserPrivilegesRetrieveDto d, ResolutionContext context) => new UserPrivilegesRetrieveDto()
+    public UserPrivilegesRetrieveDto Convert(UserPermissions s, UserPrivilegesRetrieveDto d, ResolutionContext context) => new UserPrivilegesRetrieveDto()
     {
         Readers = s.Readers.ToList().ConvertAll<ReaderRetrieveDto>(o => new ReaderRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
         AllReaders = s.AllReaders,
@@ -59,9 +59,9 @@ public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPrivileges, Us
     };
 }
 
-public class UserPrivilegesPatchConverter : ITypeConverter<UserPrivilegesPatchDto, UserPrivileges>
+public class UserPrivilegesPatchConverter : ITypeConverter<UserPrivilegesPatchDto, UserPermissions>
 {
-    public UserPrivileges Convert(UserPrivilegesPatchDto s, UserPrivileges d, ResolutionContext context) => new UserPrivileges()
+    public UserPermissions Convert(UserPrivilegesPatchDto s, UserPermissions d, ResolutionContext context) => new UserPermissions()
     {
         Readers = s.Readers == null ? new Reader[] { } : s.Readers.ToList().ConvertAll<Reader>(o => new Reader() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
         AllReaders = s.AllReaders,

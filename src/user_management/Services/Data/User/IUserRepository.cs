@@ -100,7 +100,7 @@ public interface IUserRepository
     public Task<bool?> UpdateToken(ObjectId userId, ObjectId clientObjectId, Token token);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges);
+    public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPermissions userPrivileges);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>

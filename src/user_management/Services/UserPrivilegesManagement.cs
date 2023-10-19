@@ -27,11 +27,11 @@ public class UserPrivilegesManagement : IUserPrivilegesManagement
         if (dto.Readers == null) throw new ArgumentException(null, nameof(dto));
 
         User user = await _userRepository.RetrieveById(userObjectId) ?? throw new DataNotFoundException();
-        if (user.UserPrivileges == null) throw new OperationException();
+        if (user.UserPermissions == null) throw new OperationException();
 
-        user.UserPrivileges.Readers = dto.Readers.ToList().ConvertAll<Reader>(rpd => _mapper.Map<Reader>(rpd)).ToArray();
+        user.UserPermissions.Readers = dto.Readers.ToList().ConvertAll<Reader>(rpd => _mapper.Map<Reader>(rpd)).ToArray();
 
-        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPrivileges) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPermissions) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -43,11 +43,11 @@ public class UserPrivilegesManagement : IUserPrivilegesManagement
         if (dto.AllReaders == null) throw new ArgumentException(null, nameof(dto));
 
         User user = await _userRepository.RetrieveById(userObjectId) ?? throw new DataNotFoundException();
-        if (user.UserPrivileges == null) throw new OperationException();
+        if (user.UserPermissions == null) throw new OperationException();
 
-        user.UserPrivileges.AllReaders = _mapper.Map<AllReaders>(dto.AllReaders);
+        user.UserPermissions.AllReaders = _mapper.Map<AllReaders>(dto.AllReaders);
 
-        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPrivileges) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPermissions) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -59,11 +59,11 @@ public class UserPrivilegesManagement : IUserPrivilegesManagement
         if (dto.Updaters == null) throw new ArgumentException(null, nameof(dto));
 
         User user = await _userRepository.RetrieveById(userObjectId) ?? throw new DataNotFoundException();
-        if (user.UserPrivileges == null) throw new OperationException();
+        if (user.UserPermissions == null) throw new OperationException();
 
-        user.UserPrivileges.Updaters = dto.Updaters.ToList().ConvertAll<Updater>(rpd => _mapper.Map<Updater>(rpd)).ToArray();
+        user.UserPermissions.Updaters = dto.Updaters.ToList().ConvertAll<Updater>(rpd => _mapper.Map<Updater>(rpd)).ToArray();
 
-        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPrivileges) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPermissions) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -75,11 +75,11 @@ public class UserPrivilegesManagement : IUserPrivilegesManagement
         if (dto.AllUpdaters == null) throw new ArgumentException(null, nameof(dto));
 
         User user = await _userRepository.RetrieveById(userObjectId) ?? throw new DataNotFoundException();
-        if (user.UserPrivileges == null) throw new OperationException();
+        if (user.UserPermissions == null) throw new OperationException();
 
-        user.UserPrivileges.AllUpdaters = _mapper.Map<AllUpdaters>(dto.AllUpdaters);
+        user.UserPermissions.AllUpdaters = _mapper.Map<AllUpdaters>(dto.AllUpdaters);
 
-        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPrivileges) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPermissions) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -91,11 +91,11 @@ public class UserPrivilegesManagement : IUserPrivilegesManagement
         if (dto.Deleters == null) throw new ArgumentException(null, nameof(dto));
 
         User user = await _userRepository.RetrieveById(userObjectId) ?? throw new DataNotFoundException();
-        if (user.UserPrivileges == null) throw new OperationException();
+        if (user.UserPermissions == null) throw new OperationException();
 
-        user.UserPrivileges.Deleters = dto.Deleters.ToList().ConvertAll<Deleter>(rpd => _mapper.Map<Deleter>(rpd)).ToArray();
+        user.UserPermissions.Deleters = dto.Deleters.ToList().ConvertAll<Deleter>(rpd => _mapper.Map<Deleter>(rpd)).ToArray();
 
-        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPrivileges) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.UpdateUserPrivileges(authorObjectId, userObjectId, user.UserPermissions) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 }
