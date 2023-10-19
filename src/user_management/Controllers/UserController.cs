@@ -16,6 +16,7 @@ using user_management.Controllers.Services;
 using System.Security.Authentication;
 using user_management.Data;
 using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.AspNetCore.Cors;
 
 [ApiController]
 [Route("api")]
@@ -166,6 +167,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 403, type: typeof(string), description: "Unverified accounts won't be able to login.")]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    [EnableCors("third-party-clients")]
     public async Task<IActionResult> Login([FromBody] Login loggingInUser)
     {
         try

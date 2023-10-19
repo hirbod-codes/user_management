@@ -20,6 +20,7 @@ using System.Reflection;
 using Swashbuckle.AspNetCore.Filters;
 using user_management.Filters;
 using user_management.Notification;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,16 @@ else if (builder.Configuration["MUST_NOT_USE_ENV_FILE"] != "true" && builder.Con
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddCors(opt =>
+{
+    opt.DefaultPolicyName = "default-cors-policy";
+    opt.AddDefaultPolicy(c => { c.AllowAnyHeader(); c.AllowAnyMethod(); c.AllowAnyOrigin(); });
+    opt.AddPolicy("third-party-clients", c => { c.AllowAnyHeader(); c.AllowAnyMethod(); c.WithOrigins(Program.FirstPartyDomains); });
+    opt.AddPolicy("login", c => { c.AllowAnyHeader(); c.AllowAnyMethod(); c.WithOrigins(Program.FirstPartyDomains); });
+});
+
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "User Management API", Version = "v1", Contact = new() { Name = "hirbod", Email = "hirbod.khatami.word@gmail.com" }, Description = "An application to manage user accounts' authentication and authorization." });
@@ -150,6 +161,43 @@ await DatabaseManagement.SeedDatabase(
     app.Configuration["ADMIN_PHONE_NUMBER"]
     );
 
+// Configure the HTTP request pipeline.
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.DocumentTitle = "User Management - docs";
+    c.RoutePrefix = "swagger";
+    c.SwaggerEndpoint("v1/swagger.json", "API v1");
+    c.EnableDeepLinking();
+    c.DefaultModelsExpandDepth(0);
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
+
+app.UseCors("default-cors-policy");
+app.UseCors("third-party-clients");
+app.UseCors("login");
+
+app.UseAuthorization();
+
+app.Use((context, next) =>
+{
+    if (context.Request.Path.Value != "/api/" + user_management.Controllers.UserController.PATH_POST_LOGIN && context.Request.Path.Value != "/api/" + user_management.Controllers.TokenController.PATH_POST_AUTHORIZE)
+        return next();
+
+    if (Program.FirstPartyDomains.Contains(context.Request.Host.Host.ToLower()))
+        return next();
+
+    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+    return Task.FromResult<object?>(null);
+});
+
+app.MapControllers();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseDatabaseExceptionHandler();
@@ -170,6 +218,8 @@ public partial class Program
 {
     public const string ENV_PREFIX = "USER_MANAGEMENT_";
     public static string RootPath { get; set; } = "";
+
+    public static string[] FirstPartyDomains { get; internal set; } = new string[] { "::1", "127.0.0.1", "0.0.0.0", "localhost", "user_management_client" };
 
     public void Configure() { }
 }
