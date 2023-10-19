@@ -3,6 +3,7 @@ namespace user_management.Controllers;
 using System.Security.Authentication;
 using System.Text.Encodings.Web;
 using AutoMapper;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
@@ -46,6 +47,7 @@ public class TokenController : ControllerBase
     [SwaggerResponse(statusCode: 301, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    [EnableCors("third-party-clients")]
     public async Task<IActionResult> Authorize([FromBody] TokenAuthDto tokenAuthDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
