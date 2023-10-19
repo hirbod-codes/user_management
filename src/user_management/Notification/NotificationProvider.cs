@@ -7,16 +7,7 @@ public class NotificationProvider: INotificationProvider
 {
     public NotificationOptions NotificationOptions { get; }
 
-    public NotificationProvider(NotificationOptions notificationOptions)
-    {
-        NotificationOptions = notificationOptions;
-        System.Console.WriteLine("------------------------------------");
-        System.Console.WriteLine($"ServerSmtpHostAddress ==> {notificationOptions.ServerSmtpHostAddress}");
-        System.Console.WriteLine($"ServerSmtpPort ==> {notificationOptions.ServerSmtpPort}");
-        System.Console.WriteLine($"ServerEmailAddress ==> {notificationOptions.ServerEmailAddress}");
-        System.Console.WriteLine($"ServerEmailPassword ==> {notificationOptions.ServerEmailPassword}");
-        System.Console.WriteLine("------------------------------------");
-    }
+    public NotificationProvider(NotificationOptions notificationOptions) => NotificationOptions = notificationOptions;
 
     public async Task Notify(string to, string body, string subject, EmailNotificationOptions? emailNotificationOptions = null)
     {
