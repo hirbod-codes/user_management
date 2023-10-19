@@ -1,11 +1,9 @@
 namespace user_management.Controllers;
 
 using System.Security.Authentication;
-using System.Text.Encodings.Web;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.Filters;
 using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
