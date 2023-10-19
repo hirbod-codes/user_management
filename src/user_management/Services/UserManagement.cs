@@ -137,6 +137,16 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
+    public async Task ChangeUnverifiedEmail(ChangeUnverifiedEmail dto)
+    {
+        User user = await _userRepository.RetrieveUserForUnverifiedEmailChange(dto.Email) ?? throw new DataNotFoundException();
+
+        if (!_stringHelper.DoesHashMatch(user.Password, dto.Password)) throw new InvalidPasswordException();
+
+        bool r = await _userRepository.ChangeEmail(dto.Email, dto.NewEmail) ?? throw new DataNotFoundException();
+        if (r == false) throw new OperationException();
+    }
+
     public async Task ChangeUsername(ChangeUsername dto)
     {
         User user = await _userRepository.RetrieveUserForUsernameChange(dto.Email) ?? throw new DataNotFoundException();

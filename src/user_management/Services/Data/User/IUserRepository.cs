@@ -59,6 +59,9 @@ public interface IUserRepository
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> Verify(ObjectId id);
+    
+    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
+    public Task<User?> RetrieveUserForUnverifiedEmailChange(string email);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> ChangePassword(string email, string hashedPassword);

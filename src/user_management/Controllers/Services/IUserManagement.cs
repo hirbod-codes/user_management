@@ -33,6 +33,11 @@ public interface IUserManagement
     /// <exception cref="user_management.Services.Data.User.InvalidPasswordException"></exception>
     public Task Activate(Activation activatingUser);
 
+    /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidPasswordException"></exception>
+    /// <exception cref="user_management.Services.OperationException"></exception>
+    public Task ChangeUnverifiedEmail(ChangeUnverifiedEmail dto);
+
     /// <exception cref="user_management.Services.Data.User.PasswordConfirmationMismatchException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>

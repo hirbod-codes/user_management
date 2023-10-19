@@ -130,6 +130,8 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveUserForUsernameChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
+    public async Task<User?> RetrieveUserForUnverifiedEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.EMAIL, email),Builders<User>.Filter.Eq(User.IS_VERIFIED, false)))).FirstOrDefault<User?>();
+
     public async Task<User?> RetrieveUserForEmailChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveUserForPhoneNumberChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();

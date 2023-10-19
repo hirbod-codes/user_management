@@ -475,6 +475,43 @@ public class UserControllerTests
     }
 
     [Fact]
+    public async void ChangeUnverifiedEmail_Ok()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto));
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts<string>.IsOk(actionResult, "The email changed successfully.");
+    }
+
+    [Fact]
+    public async void ChangeUnverifiedEmail_NotFound()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<DataNotFoundException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsNotFound(actionResult);
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<InvalidPasswordException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsNotFound(actionResult);
+    }
+
+    [Fact]
+    public async void ChangeUnverifiedEmail_Problem()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<OperationException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsProblem(actionResult, "We couldn't change the user's email.");
+    }
+
+    [Fact]
     public async void ChangeUsername_Ok()
     {
         IActionResult actionResult;

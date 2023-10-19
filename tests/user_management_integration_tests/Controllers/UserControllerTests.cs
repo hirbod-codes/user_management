@@ -378,7 +378,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_LOGOUT;
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
         LoginResult loginResult = await Login(client, userCollection: _userCollection);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, null);
@@ -393,6 +393,36 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         response = await client.PostAsync(url, null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeUnverifiedEmail_Ok()
+    {
+        // Given
+        FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
+        FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
+
+        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        user.IsVerified = false;
+        await _userCollection.InsertOneAsync(user);
+
+        HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
+
+        string newEmail = "new_imaginary_email@example.com";
+        ChangeUnverifiedEmail dto = new() { Email = user.Email, NewEmail = newEmail, Password = UserSeeder.USERS_PASSWORDS };
+
+        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_UNVERIFIED_EMAIL;
+
+        // When
+        HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
+
+        // Then
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
+        Assert.Equal("The email changed successfully.", message);
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        Assert.NotNull(retrievedUser);
+        Assert.Equal(newEmail, retrievedUser.Email);
     }
 
     [Fact]
@@ -411,7 +441,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string newUsername = "newUsername";
         ChangeUsername dto = new() { Email = user.Email, Username = newUsername, VerificationSecret = user.VerificationSecret! };
@@ -446,7 +476,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string newPhoneNumber = "09999999999";
         ChangePhoneNumber dto = new() { Email = user.Email, PhoneNumber = newPhoneNumber, VerificationSecret = user.VerificationSecret! };
@@ -482,7 +512,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string newEmail = "new_imaginary_email@example.com";
         ChangeEmail dto = new() { Email = user.Email, NewEmail = newEmail, VerificationSecret = user.VerificationSecret! };
@@ -517,7 +547,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENT + "?clientId=" + user.Clients[0].ClientId.ToString() + "&userId=" + user.Id.ToString();
 
@@ -550,7 +580,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user);
 
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENTS + "?userId=" + user.Id.ToString();
 
@@ -590,7 +620,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.True(updateResult.IsAcknowledged && updateResult.MatchedCount == 1 && updateResult.ModifiedCount <= 1);
 
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string url = "api/" + user_management.Controllers.UserController.PATH_GET_USER.Replace("{userId}", Uri.EscapeDataString(user.Id.ToString()));
 
@@ -625,7 +655,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user);
 
         LoginResult loginResult = await Login(client, user: user);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         string url = "api/" + user_management.Controllers.UserController.PATH_GET_USER_AUTHORIZED_CLIENTS;
 
@@ -665,7 +695,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(actor);
 
         LoginResult loginResult = await Login(client, user: actor);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
         user1.UserPrivileges.Readers = user1.UserPrivileges.Readers
@@ -740,7 +770,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(actor);
 
         LoginResult loginResult = await Login(client, user: actor);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
         user1.UserPrivileges.Readers = user1.UserPrivileges.Readers
@@ -815,7 +845,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(actor);
 
         LoginResult loginResult = await Login(client, user: actor);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         User user = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
         user.UserPrivileges.Deleters = user.UserPrivileges.Deleters
