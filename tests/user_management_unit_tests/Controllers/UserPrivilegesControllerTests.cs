@@ -50,7 +50,7 @@ public class UserPrivilegesControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, dto)).Throws(new ArgumentException("authorId"));
+        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateReaders(authorId, dto)).Throws(new ArgumentException(null, nameof(authorId)));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateReaders(dto));
     }
 
@@ -112,7 +112,7 @@ public class UserPrivilegesControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, dto)).Throws(new ArgumentException("authorId"));
+        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllReaders(authorId, dto)).Throws(new ArgumentException(null, nameof(authorId)));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllReaders(dto));
     }
 
@@ -174,7 +174,7 @@ public class UserPrivilegesControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, dto)).Throws(new ArgumentException("authorId"));
+        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateUpdaters(authorId, dto)).Throws(new ArgumentException(null, nameof(authorId)));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateUpdaters(dto));
     }
 
@@ -236,7 +236,7 @@ public class UserPrivilegesControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, dto)).Throws(new ArgumentException("authorId"));
+        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateAllUpdaters(authorId, dto)).Throws(new ArgumentException(null, nameof(authorId)));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateAllUpdaters(dto));
     }
 
@@ -298,7 +298,7 @@ public class UserPrivilegesControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
-        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, dto)).Throws(new ArgumentException("authorId"));
+        Fixture.IUserPrivilegesManagement.Setup<Task>(um => um.UpdateDeleters(authorId, dto)).Throws(new ArgumentException(null, nameof(authorId)));
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateDeleters(dto));
     }
 

@@ -1032,10 +1032,10 @@ public class UserManagementTests
     {
         if (userId == "id" || clientId == "id" || authorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
-            if (clientId == "id") Assert.Equal("clientId", ex.Message);
-            if (authorId == "id") Assert.Equal("authorId", ex.Message);
-            if (userId == "id") Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
+            if (clientId == "id") Assert.Equal("clientId", ex.ParamName);
+            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
+            if (userId == "id") Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1091,9 +1091,9 @@ public class UserManagementTests
     {
         if (userId == "id" || authorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
-            if (authorId == "id") Assert.Equal("authorId", ex.Message);
-            else Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
+            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
+            else Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1153,13 +1153,13 @@ public class UserManagementTests
     {
         if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else if (userId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
+            Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1264,13 +1264,13 @@ public class UserManagementTests
     {
         if (dto.UpdatesString == null || dto.FiltersString == null || dto.FiltersString == "empty")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Assert.Equal("userPatchDto", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
+            Assert.Equal("userPatchDto", ex.ParamName);
         }
         else if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else
         {
@@ -1325,13 +1325,13 @@ public class UserManagementTests
     {
         if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else if (userId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
+            Assert.Equal("userId", ex.ParamName);
         }
         else
         {
