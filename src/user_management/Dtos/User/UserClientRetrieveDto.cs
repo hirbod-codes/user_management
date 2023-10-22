@@ -7,17 +7,17 @@ using user_management.Data;
 
 namespace user_management.Dtos.User;
 
-public class UserClientRetrieveDto : IExamplesProvider<UserClientRetrieveDto>
+public class AuthorizedClientRetrieveDto : IExamplesProvider<AuthorizedClientRetrieveDto>
 {
     [ObjectId]
-    [JsonPropertyName(UserClient.CLIENT_ID)]
+    [JsonPropertyName(AuthorizedClient.CLIENT_ID)]
     public string? ClientId { get; set; }
-    [JsonPropertyName(UserClient.REFRESH_TOKEN)]
+    [JsonPropertyName(AuthorizedClient.REFRESH_TOKEN)]
     public RefreshToken? RefreshToken { get; set; }
-    [JsonPropertyName(UserClient.TOKEN)]
+    [JsonPropertyName(AuthorizedClient.TOKEN)]
     public Models.Token? Token { get; set; }
 
-    public UserClientRetrieveDto GetExamples() => new()
+    public AuthorizedClientRetrieveDto GetExamples() => new()
     {
         ClientId = new Faker().Random.String2(24, "0123456789"),
         RefreshToken = new()

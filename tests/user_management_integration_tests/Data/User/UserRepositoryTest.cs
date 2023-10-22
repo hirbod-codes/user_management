@@ -52,7 +52,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         {
             user_management.Models.User user = user_management.Models.User.FakeUser(users, _clients);
 
-            if (user.Clients.Length == 0) user.Clients = user.Clients.Append(UserClient.FakeUserClient(_clients.ElementAt(0))).ToArray();
+            if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_clients.ElementAt(0))).ToArray();
 
             users = users.Append(user);
         }
@@ -193,10 +193,10 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         // Success
         await _userCollection.InsertOneAsync(readerUser);
 
-        var readers = user.UserPrivileges.Readers.Where(r => r.AuthorId != readerUser.Id).ToList();
+        var readers = user.UserPermissions.Readers.Where(r => r.AuthorId != readerUser.Id).ToList();
         user_management.Models.Field[] targetFieldsToRead = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), Faker.Random.Int(2, 4)).ToArray();
         readers.Add(new user_management.Models.Reader() { Author = user_management.Models.Reader.USER, AuthorId = (ObjectId)readerUser.Id, IsPermitted = true, Fields = targetFieldsToRead });
-        user.UserPrivileges.Readers = readers.ToArray();
+        user.UserPermissions.Readers = readers.ToArray();
 
         await _userCollection.InsertOneAsync(user);
 
@@ -268,7 +268,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         // Initiate users' UserPrivileges.Readers property
         for (int i = 0; i < users.Count(); i++)
         {
-            var readers = users.ElementAt(i).UserPrivileges.Readers.ToList();
+            var readers = users.ElementAt(i).UserPermissions.Readers.ToList();
 
             user_management.Models.Field[] targetFieldsToRead = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), Faker.Random.Int(2, 4)).ToArray();
             if (targetFieldsToRead.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CREATED_AT) == null)
@@ -282,7 +282,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
                 Fields = targetFieldsToRead
             });
 
-            users.ElementAt(i).UserPrivileges.Readers = readers.ToArray();
+            users.ElementAt(i).UserPermissions.Readers = readers.ToArray();
         }
 
         // Persist users to the db
@@ -328,7 +328,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         // Initiate users' UserPrivileges.Readers property
         for (int i = 0; i < users.Count(); i++)
         {
-            var readers = users.ElementAt(i).UserPrivileges.Readers.ToList();
+            var readers = users.ElementAt(i).UserPermissions.Readers.ToList();
 
             user_management.Models.Field[] targetFieldsToRead = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), Faker.Random.Int(2, 4)).ToArray();
             if (targetFieldsToRead.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.UPDATED_AT) == null)
@@ -342,7 +342,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
                 Fields = targetFieldsToRead
             });
 
-            users.ElementAt(i).UserPrivileges.Readers = readers.ToArray();
+            users.ElementAt(i).UserPermissions.Readers = readers.ToArray();
         }
 
         // Persist users to the db
@@ -388,7 +388,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         // Initiate users' UserPrivileges.Readers property
         for (int i = 0; i < users.Count(); i++)
         {
-            var readers = users.ElementAt(i).UserPrivileges.Readers.ToList();
+            var readers = users.ElementAt(i).UserPermissions.Readers.ToList();
 
             user_management.Models.Field[] targetFieldsToRead = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), Faker.Random.Int(2, 4)).ToArray();
             if (targetFieldsToRead.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CREATED_AT) == null)
@@ -402,7 +402,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
                 Fields = targetFieldsToRead
             });
 
-            users.ElementAt(i).UserPrivileges.Readers = readers.ToArray();
+            users.ElementAt(i).UserPermissions.Readers = readers.ToArray();
         }
 
         // Persist users to the db
@@ -431,7 +431,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
                         string fieldName = (customAttribute.ConstructorArguments[0].Value as string)!;
 
-                        user_management.Models.Field[] targetFieldsToRead = users.First(u => u.Id.ToString() == retrievedUser.Id.ToString()).UserPrivileges!.Readers.First(r => r.IsPermitted
+                        user_management.Models.Field[] targetFieldsToRead = users.First(u => u.Id.ToString() == retrievedUser.Id.ToString()).UserPermissions!.Readers.First(r => r.IsPermitted
                             && r.Author == user_management.Models.Reader.USER
                             && r.AuthorId == readerUser.Id
                         ).Fields;
@@ -462,7 +462,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     public async void RetrieveByIdForAuthenticationHandling(user_management.Models.User user)
     {
         // Success
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         user.LoggedOutAt = null;
 
         await _userCollection.InsertOneAsync(user);
@@ -474,7 +474,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             Assert.Null(user.LoggedOutAt);
-            Assert.True(user.IsVerified);
+            Assert.True(user.IsEmailVerified);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
@@ -482,7 +482,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         user.LoggedOutAt = DateTime.UtcNow.AddMinutes(-7);
 
         await _userCollection.InsertOneAsync(user);
@@ -497,7 +497,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         user.LoggedOutAt = null;
 
         await _userCollection.InsertOneAsync(user);
@@ -650,7 +650,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void RetrieveByRefreshTokenValue(user_management.Models.User user)
     {
-        string token = user.Clients[0].RefreshToken!.Value!;
+        string token = user.AuthorizedClients[0].RefreshToken!.Value!;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -661,7 +661,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
-            Assert.Equal(user.Clients[0].RefreshToken!.Value, retrievedUser.Clients[0].RefreshToken!.Value);
+            Assert.Equal(user.AuthorizedClients[0].RefreshToken!.Value, retrievedUser.AuthorizedClients[0].RefreshToken!.Value);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
@@ -674,7 +674,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void RetrieveByTokenValue(user_management.Models.User user)
     {
-        string token = user.Clients[0].Token!.Value!;
+        string token = user.AuthorizedClients[0].Token!.Value!;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -685,7 +685,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
-            Assert.Equal(user.Clients[0].Token!.Value!, retrievedUser.Clients[0].Token!.Value!);
+            Assert.Equal(user.AuthorizedClients[0].Token!.Value!, retrievedUser.AuthorizedClients[0].Token!.Value!);
             AssertFieldsExpectedValues(user, retrievedUser, new() { });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
@@ -741,11 +741,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void UpdateVerificationSecretForActivation(user_management.Models.User user)
     {
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         string VerificationSecret = "VerificationSecret";
 
         // Success
-        Assert.False(user.IsVerified);
+        Assert.False(user.IsEmailVerified);
 
         await _userCollection.InsertOneAsync(user);
 
@@ -762,9 +762,9 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
 
-        Assert.True(user.IsVerified);
+        Assert.True(user.IsEmailVerified);
 
         await _userCollection.InsertOneAsync(user);
 
@@ -806,9 +806,9 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void Verify(user_management.Models.User user)
     {
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
         // Success
-        Assert.False(user.IsVerified);
+        Assert.False(user.IsEmailVerified);
         await _userCollection.InsertOneAsync(user);
 
         try
@@ -816,7 +816,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Verify(user.Id);
 
             Assert.True(result);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.IS_VERIFIED, true } });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.IS_EMAIL_VERIFIED, true } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -934,37 +934,37 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void RemoveClient(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] {
+        user.UserPermissions.Readers = new user_management.Models.Reader[] {
             new() {
                 AuthorId = actor.Id,
                 Author = user_management.Models.Reader.USER,
                 IsPermitted = true,
-                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.CLIENTS, IsPermitted = true } }
+                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.AUTHORIZED_CLIENTS, IsPermitted = true } }
             }
         };
 
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] {
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] {
             new() {
                 AuthorId = actor.Id,
                 Author = user_management.Models.Updater.USER,
                 IsPermitted = true,
-                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.CLIENTS, IsPermitted = true } }
+                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.AUTHORIZED_CLIENTS, IsPermitted = true } }
             }
         };
 
         // Success
-        Assert.True(user.Clients.Length >= 1);
-        Assert.True(user.UserPrivileges.Readers.FirstOrDefault(r => r != null && r.AuthorId == actor.Id && r.IsPermitted && r.Author == user_management.Models.Reader.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CLIENTS && f.IsPermitted) != null) != null);
-        Assert.True(user.UserPrivileges.Updaters.FirstOrDefault(r => r != null && r.AuthorId == actor.Id && r.IsPermitted && r.Author == user_management.Models.Updater.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CLIENTS && f.IsPermitted) != null) != null);
+        Assert.True(user.AuthorizedClients.Length >= 1);
+        Assert.True(user.UserPermissions.Readers.FirstOrDefault(r => r != null && r.AuthorId == actor.Id && r.IsPermitted && r.Author == user_management.Models.Reader.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.AUTHORIZED_CLIENTS && f.IsPermitted) != null) != null);
+        Assert.True(user.UserPermissions.Updaters.FirstOrDefault(r => r != null && r.AuthorId == actor.Id && r.IsPermitted && r.Author == user_management.Models.Updater.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.AUTHORIZED_CLIENTS && f.IsPermitted) != null) != null);
         await _userCollection.InsertOneAsync(user);
 
         try
         {
-            bool? result = await _userRepository.RemoveClient(user.Id, user.Clients[0].ClientId, actor.Id, false);
+            bool? result = await _userRepository.RemoveClient(user.Id, user.AuthorizedClients[0].ClientId, actor.Id, false);
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.CLIENTS, user.Clients.Where(uc => uc.ClientId != user.Clients[0].ClientId).ToArray() }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients.Where(uc => uc.ClientId != user.AuthorizedClients[0].ClientId).ToArray() }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -975,28 +975,28 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(OneUser))]
     public async void RemoveAllClients(user_management.Models.User user)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] {
+        user.UserPermissions.Readers = new user_management.Models.Reader[] {
             new() {
                 AuthorId = user.Id,
                 Author = user_management.Models.Reader.USER,
                 IsPermitted = true,
-                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.CLIENTS, IsPermitted = true } }
+                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.AUTHORIZED_CLIENTS, IsPermitted = true } }
             }
         };
 
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] {
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] {
             new() {
                 AuthorId = user.Id,
                 Author = user_management.Models.Updater.USER,
                 IsPermitted = true,
-                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.CLIENTS, IsPermitted = true } }
+                Fields = new user_management.Models.Field[] { new() { Name = user_management.Models.User.AUTHORIZED_CLIENTS, IsPermitted = true } }
             }
         };
 
         // Success
-        Assert.True(user.Clients.Length >= 0);
-        Assert.True(user.UserPrivileges.Readers.FirstOrDefault(r => r != null && r.AuthorId == user.Id && r.IsPermitted && r.Author == user_management.Models.Reader.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CLIENTS && f.IsPermitted) != null) != null);
-        Assert.True(user.UserPrivileges.Updaters.FirstOrDefault(r => r != null && r.AuthorId == user.Id && r.IsPermitted && r.Author == user_management.Models.Updater.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.CLIENTS && f.IsPermitted) != null) != null);
+        Assert.True(user.AuthorizedClients.Length >= 0);
+        Assert.True(user.UserPermissions.Readers.FirstOrDefault(r => r != null && r.AuthorId == user.Id && r.IsPermitted && r.Author == user_management.Models.Reader.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.AUTHORIZED_CLIENTS && f.IsPermitted) != null) != null);
+        Assert.True(user.UserPermissions.Updaters.FirstOrDefault(r => r != null && r.AuthorId == user.Id && r.IsPermitted && r.Author == user_management.Models.Updater.USER && r.Fields.Length > 0 && r.Fields.FirstOrDefault(f => f != null && f.Name == user_management.Models.User.AUTHORIZED_CLIENTS && f.IsPermitted) != null) != null);
         await _userCollection.InsertOneAsync(user);
 
         try
@@ -1005,7 +1005,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.CLIENTS, new user_management.Models.UserClient[] { } }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, new user_management.Models.AuthorizedClient[] { } }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -1016,17 +1016,17 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_readsFields(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllReaders = new() { };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllUpdaters = new() { };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.Clients[0].ClientId;
+        ObjectId clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
-        user.UserPrivileges.Readers = user.UserPrivileges.Readers.Append(new() { Author = user_management.Models.Reader.CLIENT, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields }).ToArray();
+        user.UserPermissions.Readers = user.UserPermissions.Readers.Append(new() { Author = user_management.Models.Reader.CLIENT, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields }).ToArray();
 
         try
         {
@@ -1034,7 +1034,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -1046,17 +1046,17 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_updatesFields(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllReaders = new() { };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllUpdaters = new() { };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { UpdatesFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.Clients[0].ClientId;
+        ObjectId clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
-        user.UserPrivileges.Updaters = user.UserPrivileges.Updaters.Append(new() { Author = user_management.Models.Updater.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields }).ToArray();
+        user.UserPermissions.Updaters = user.UserPermissions.Updaters.Append(new() { Author = user_management.Models.Updater.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields }).ToArray();
 
         try
         {
@@ -1064,7 +1064,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -1076,17 +1076,17 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_deletes(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllReaders = new() { };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllUpdaters = new() { };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { DeletesUser = true };
-        ObjectId clientId = user.Clients[0].ClientId;
+        ObjectId clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
-        user.UserPrivileges.Deleters = user.UserPrivileges.Deleters.Append(new() { Author = user_management.Models.Deleter.USER, AuthorId = clientId, IsPermitted = true }).ToArray();
+        user.UserPermissions.Deleters = user.UserPermissions.Deleters.Append(new() { Author = user_management.Models.Deleter.USER, AuthorId = clientId, IsPermitted = true }).ToArray();
 
         try
         {
@@ -1094,8 +1094,8 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            Assert.True(retrievedUser.UserPrivileges.Deleters[0].AuthorId == clientId && retrievedUser.UserPrivileges.Deleters[0].IsPermitted);
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            Assert.True(retrievedUser.UserPermissions.Deleters[0].AuthorId == clientId && retrievedUser.UserPermissions.Deleters[0].IsPermitted);
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -1107,18 +1107,18 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_userAlreadyPrivileged(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.Clients[0].ClientId;
+        ObjectId clientId = user.AuthorizedClients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
 
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllReaders = new() { };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllUpdaters = new() { };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
 
         // Success
         await _userCollection.InsertOneAsync(user);
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields } };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields } };
 
         try
         {
@@ -1126,7 +1126,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
@@ -1138,7 +1138,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_allCases(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.Clients[0].ClientId;
+        ObjectId clientId = user.AuthorizedClients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new()
         {
             ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray(),
@@ -1146,17 +1146,17 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             DeletesUser = true,
         };
 
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllReaders = new() { };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.AllUpdaters = new() { };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllReaders = new() { };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.AllUpdaters = new() { };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
 
         // Success
         await _userCollection.InsertOneAsync(user);
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields } };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields } };
-        user.UserPrivileges.Deleters = new user_management.Models.Deleter[] { new() { Author = user_management.Models.Deleter.USER, AuthorId = clientId, IsPermitted = true } };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.ReadsFields } };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = clientId, IsPermitted = true, Fields = tokenPrivileges.UpdatesFields } };
+        user.UserPermissions.Deleters = new user_management.Models.Deleter[] { new() { Author = user_management.Models.Deleter.USER, AuthorId = clientId, IsPermitted = true } };
 
         try
         {
@@ -1164,7 +1164,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally
         {
@@ -1214,7 +1214,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     public async void AddAuthorizedClient(user_management.Models.User user)
     {
         ObjectId clientId = ObjectId.GenerateNewId();
-        user_management.Models.UserClient authorizedClient = new()
+        user_management.Models.AuthorizedClient authorizedClient = new()
         {
             ClientId = clientId,
             RefreshToken = new()
@@ -1230,19 +1230,19 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
                 IsRevoked = false
             }
         };
-        user.Clients = new user_management.Models.UserClient[] { };
+        user.AuthorizedClients = new user_management.Models.AuthorizedClient[] { };
 
         // Success
         await _userCollection.InsertOneAsync(user);
 
-        user.Clients = user.Clients.Append(authorizedClient).ToArray();
+        user.AuthorizedClients = user.AuthorizedClients.Append(authorizedClient).ToArray();
         try
         {
             bool? result = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient);
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.CLIENTS, user.Clients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
 
@@ -1256,7 +1256,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         ObjectId clientId = ObjectId.GenerateNewId();
         DateTime? expirationDate = DateTime.UtcNow;
         user_management.Models.Token token = new() { ExpirationDate = expirationDate, Value = "newValue", IsRevoked = false };
-        user.Clients = new user_management.Models.UserClient[] {
+        user.AuthorizedClients = new user_management.Models.AuthorizedClient[] {
             new() {
             ClientId = clientId,
             RefreshToken = new()
@@ -1276,14 +1276,14 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         // Success
         await _userCollection.InsertOneAsync(user);
 
-        user.Clients[0].Token = token;
+        user.AuthorizedClients[0].Token = token;
         try
         {
             bool? result = await _userRepository.UpdateToken(user.Id, clientId, token);
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.CLIENTS, user.Clients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
 
@@ -1294,13 +1294,13 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void UpdateUserPrivileges(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PRIVILEGES } } } };
+        user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Updater.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
 
         // Success
         await _userCollection.InsertOneAsync(user);
 
-        user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() {
+        user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() {
             Author = user_management.Models.Updater.USER, AuthorId = ObjectId.GenerateNewId(),
             IsPermitted = true,
             Fields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetUpdatableFields(), (int)Faker.Random.Int(1,3)).ToArray()
@@ -1308,11 +1308,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         try
         {
-            bool? result = await _userRepository.UpdateUserPrivileges(actor.Id, user.Id, user.UserPrivileges);
+            bool? result = await _userRepository.UpdateUserPrivileges(actor.Id, user.Id, user.UserPermissions);
 
             Assert.True(result);
             user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
-            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PRIVILEGES, user.UserPrivileges }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
+            AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
 
@@ -1326,12 +1326,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user_management.Models.User actor = users[0];
         users = users.Where((u, i) => i != 0).ToArray();
 
-        actor.UserPrivileges.Readers = new user_management.Models.Reader[] { };
+        actor.UserPermissions.Readers = new user_management.Models.Reader[] { };
         for (int i = 0; i < users.Length; i++)
         {
             user_management.Models.User user = users[i];
-            user.UserPrivileges.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.FIRST_NAME } } } };
-            user.UserPrivileges.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.FIRST_NAME } } } };
+            user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.FIRST_NAME } } } };
+            user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.FIRST_NAME } } } };
         }
 
         // Success
@@ -1361,7 +1361,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     [MemberData(nameof(TwoUsers))]
     public async void Delete_success(user_management.Models.User user, user_management.Models.User actor)
     {
-        user.UserPrivileges.Deleters = user.UserPrivileges.Deleters.Append(new() { Author = user_management.Models.Deleter.USER, AuthorId = actor.Id, IsPermitted = true }).ToArray();
+        user.UserPermissions.Deleters = user.UserPermissions.Deleters.Append(new() { Author = user_management.Models.Deleter.USER, AuthorId = actor.Id, IsPermitted = true }).ToArray();
         // Success
         await _userCollection.InsertOneAsync(user);
 

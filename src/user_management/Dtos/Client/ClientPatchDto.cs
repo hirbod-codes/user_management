@@ -9,12 +9,15 @@ public class ClientPatchDto : IExamplesProvider<ClientPatchDto>
 {
     [ObjectId]
     [Required]
+    [MaxLength(25)]
     public string Id { get; set; } = null!;
 
     [Required]
+    [MaxLength(1000)]
     public string Secret { get; set; } = null!;
 
     [Required]
+    [MaxLength(250)]
     public string RedirectUrl { get; set; } = null!;
 
     public ClientPatchDto GetExamples() => new()

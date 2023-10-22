@@ -167,7 +167,7 @@ public class ClientControllerTests
         ObjectId clientId = ObjectId.GenerateNewId();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientId"));
         HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(dto), "Invalid id for client provided.");
@@ -182,7 +182,7 @@ public class ClientControllerTests
         ObjectId clientId = ObjectId.GenerateNewId();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientSecret"));
         HttpAsserts.IsProblem(await InstantiateController().Update(dto), "Internal server error encountered.");
@@ -197,7 +197,7 @@ public class ClientControllerTests
         ObjectId clientId = ObjectId.GenerateNewId();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl));
         HttpAsserts.IsOk(await InstantiateController().Update(dto));
     }

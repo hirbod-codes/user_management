@@ -7,6 +7,8 @@ public static class StaticData
 {
     public static bool AreValid(IEnumerable<Privilege> privileges)
     {
+        if (privileges.Count() > Privileges.Count) return false;
+
         foreach (Privilege privilege in privileges)
             if (Privileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == privilege.Name, null) == null)
                 return false;
@@ -15,6 +17,8 @@ public static class StaticData
 
     public static bool AreValid(IEnumerable<Privilege> referencePrivileges, IEnumerable<Privilege> privilegesUnderValidation)
     {
+        if (privilegesUnderValidation.Count() > referencePrivileges.Count()) return false;
+
         for (int i = 0; i < referencePrivileges.Count(); i++)
         {
             Privilege? p = privilegesUnderValidation.FirstOrDefault<Privilege?>(p => p != null && p.Name == referencePrivileges.ElementAt(i).Name, null);

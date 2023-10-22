@@ -8,8 +8,10 @@ namespace user_management.Dtos.User;
 public class ChangePhoneNumber : IExamplesProvider<ChangePhoneNumber>
 {
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
     [RegEx(Models.User.PHONE_NUMBER_REGEX)]
+    [MaxLength(100)]
     public string PhoneNumber { get; set; } = null!;
     [MinLength(6)]
     public string VerificationSecret { get; set; } = null!;

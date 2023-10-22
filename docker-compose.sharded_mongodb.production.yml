@@ -7,6 +7,8 @@ networks:
 secrets:
     USER_MANAGEMENT_Jwt__SecretKey:
         external: true
+    USER_MANAGEMENT_FirstPartyDomains:
+        external: true
     USER_MANAGEMENT_DB_NAME:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__IsSharded:
@@ -48,6 +50,7 @@ services:
             USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
         secrets:
             - USER_MANAGEMENT_Jwt__SecretKey
+            - USER_MANAGEMENT_FirstPartyDomains
             - USER_MANAGEMENT_DB_NAME
             - USER_MANAGEMENT_DB_OPTIONS__IsSharded
             - USER_MANAGEMENT_DB_OPTIONS__DatabaseName

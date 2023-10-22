@@ -9,6 +9,7 @@ namespace user_management.Dtos.User;
 public class ChangePassword : IPasswordConfirmable, IExamplesProvider<ChangePassword>
 {
     [EmailAddress]
+    [MaxLength(300)]
     public string Email { get; set; } = null!;
     [Password]
     public string Password { get; set; } = null!;

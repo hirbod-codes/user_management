@@ -46,7 +46,7 @@ public class TokenManagement : ITokenManagement
         if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
 
         User user = await _authenticatedByJwt.GetAuthenticated();
-        if (user.Clients.FirstOrDefault(c => c != null && c.ClientId.ToString() == clientId) != null) await _userRepository.RemoveClient(user.Id, clientObjectId, user.Id, false);
+        if (user.AuthorizedClients.FirstOrDefault(c => c != null && c.ClientId.ToString() == clientId) != null) await _userRepository.RemoveClient(user.Id, clientObjectId, user.Id, false);
 
         Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, redirectUrl);
         if (client == null) throw new DataNotFoundException("client");
@@ -119,7 +119,7 @@ public class TokenManagement : ITokenManagement
                 throw new DatabaseServerException();
             }
 
-            UserClient authorizedClient = new()
+            AuthorizedClient authorizedClient = new()
             {
                 ClientId = clientId,
                 RefreshToken = new()
@@ -195,8 +195,8 @@ public class TokenManagement : ITokenManagement
         User? user = await _userRepository.RetrieveByRefreshTokenValue(hashedRefreshToken);
         if (user == null) throw new DataNotFoundException("user");
 
-        List<UserClient> userClients = user.Clients.ToList();
-        UserClient? userClient = userClients.FirstOrDefault<UserClient?>(uc => uc != null && uc.ClientId == client.Id, null);
+        List<AuthorizedClient> userClients = user.AuthorizedClients.ToList();
+        AuthorizedClient? userClient = userClients.FirstOrDefault<AuthorizedClient?>(uc => uc != null && uc.ClientId == client.Id, null);
         if (userClient == null) throw new DataNotFoundException("userClient");
         if (userClient.RefreshToken.ExpirationDate < _dateTimeProvider.ProvideUtcNow()) throw new ExpiredRefreshTokenException();
         if (userClient.RefreshToken.Value != hashedRefreshToken) throw new InvalidRefreshTokenException();

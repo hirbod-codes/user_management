@@ -200,6 +200,25 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Change a user's unverified email.
+    /// </summary>
+    /// <remarks>
+    /// Recently registered users that have not verified yet can change their unverified email.  
+    /// </remarks>
+    [HttpPost(PATH_POST_CHANGE_UNVERIFIED_EMAIL)]
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ChangeUnverifiedEmail([FromBody] ChangeUnverifiedEmail dto)
+    {
+        try { await _userManagement.ChangeUnverifiedEmail(dto); }
+        catch (InvalidPasswordException) { return NotFound(); }
+        catch (DataNotFoundException) { return NotFound(); }
+        catch (OperationException) { return Problem("We couldn't change the user's email."); }
+
+        return Ok("The email changed successfully.");
+    }
+
+    /// <summary>
     /// Change a registered user's username.
     /// </summary>
     /// <remarks>
@@ -279,7 +298,7 @@ public class UserController : ControllerBase
 
         try { await _userManagement.RemoveClient(clientId, userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
         catch (AuthenticationException) { return Unauthorized(); }
-        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
+        catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the client."); }
 
@@ -300,7 +319,7 @@ public class UserController : ControllerBase
 
         try { await _userManagement.RemoveClients(userId, _authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT"); }
         catch (AuthenticationException) { return Unauthorized(); }
-        catch (ArgumentException ex) { return BadRequest($"The {ex.Message} is not valid."); }
+        catch (ArgumentException) { return BadRequest(); }
         catch (DataNotFoundException) { return NotFound("We couldn't find your account."); }
         catch (OperationException) { return Problem("We couldn't remove the clients."); }
 
@@ -448,6 +467,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_CHANGE_PASSWORD = "change-password";
     public const string PATH_POST_LOGIN = "login";
     public const string PATH_POST_LOGOUT = "logout";
+    public const string PATH_POST_CHANGE_UNVERIFIED_EMAIL = "change-unverified-email";
     public const string PATH_POST_CHANGE_USERNAME = "change-username";
     public const string PATH_POST_CHANGE_EMAIL = "change-email";
     public const string PATH_POST_CHANGE_PHONE_NUMBER = "change-phone-number";

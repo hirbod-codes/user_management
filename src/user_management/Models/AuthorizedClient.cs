@@ -8,7 +8,7 @@ namespace user_management.Models;
 /// <summary>
 /// AKA Authorized clients by the user the has an object of this class.
 /// </summary>
-public class UserClient : IEquatable<UserClient>
+public class AuthorizedClient : IEquatable<AuthorizedClient>
 {
     [BsonElement(CLIENT_ID)]
     [BsonRequired]
@@ -23,7 +23,7 @@ public class UserClient : IEquatable<UserClient>
     public Token Token { get; set; } = null!;
     public const string TOKEN = "token";
 
-    public static UserClient FakeUserClient(Client client, IEnumerable<Privilege>? privileges = null, bool includeAllPrivileges = false)
+    public static AuthorizedClient FakeAuthorizedClient(Client client, IEnumerable<Privilege>? privileges = null, bool includeAllPrivileges = false)
     {
         Faker faker = new();
 
@@ -58,13 +58,13 @@ public class UserClient : IEquatable<UserClient>
         };
     }
 
-    public bool Equals(UserClient? other) =>
+    public bool Equals(AuthorizedClient? other) =>
         other != null &&
         ClientId.ToString() == other.ClientId.ToString() &&
         Object.Equals(RefreshToken, other.RefreshToken) &&
         Object.Equals(Token, other.Token);
 
-    public override bool Equals(object? obj) => obj != null && Equals(obj as UserClient);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as AuthorizedClient);
 
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }

@@ -36,6 +36,7 @@ if [[ $useTestValues == "true" ]]; then
     AppKey="$(cat $projectRootDirectory/security/user_management/app.key)"
     AppCrt="$(cat $projectRootDirectory/security/user_management/app.crt)"
     USER_MANAGEMENT_Jwt__SecretKey="123abc123abc"
+    USER_MANAGEMENT_FirstPartyDomains="user_management_client"
     USER_MANAGEMENT_ADMIN_USERNAME=hirbod
     USER_MANAGEMENT_ADMIN_PASSWORD="Pass%w0rd!99"
     USER_MANAGEMENT_ADMIN_EMAIL="your_functional_email@email.com"
@@ -76,6 +77,7 @@ if [[ -z $AppHttpsCrt ]];                                                   then
 if [[ -z $AppKey ]];                                                        then echo "AppKey                                                       parameter is required."; exit 1; fi
 if [[ -z $AppCrt ]];                                                        then echo "AppCrt                                                       parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_Jwt__SecretKey ]];                                then echo "USER_MANAGEMENT_Jwt__SecretKey                               parameter is required."; exit 1; fi
+if [[ -z $USER_MANAGEMENT_FirstPartyDomains ]];                             then echo "USER_MANAGEMENT_FirstPartyDomains                            parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_ADMIN_USERNAME ]];                                then echo "USER_MANAGEMENT_ADMIN_USERNAME                               parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_ADMIN_PASSWORD ]];                                then echo "USER_MANAGEMENT_ADMIN_PASSWORD                               parameter is required."; exit 1; fi
 if [[ -z $USER_MANAGEMENT_ADMIN_EMAIL ]];                                   then echo "USER_MANAGEMENT_ADMIN_EMAIL                                  parameter is required."; exit 1; fi
@@ -114,6 +116,7 @@ echo "$AppKey"                                                          | sudo d
 echo "$AppCrt"                                                          | sudo docker secret create AppCrt -
 echo "$HttpsCertificatePassword"                                        | sudo docker secret create HttpsCertificatePassword -
 echo "$USER_MANAGEMENT_Jwt__SecretKey"                                  | sudo docker secret create USER_MANAGEMENT_Jwt__SecretKey -
+echo "$USER_MANAGEMENT_FirstPartyDomains"                               | sudo docker secret create USER_MANAGEMENT_FirstPartyDomains -
 echo "$USER_MANAGEMENT_ADMIN_USERNAME"                                  | sudo docker secret create USER_MANAGEMENT_ADMIN_USERNAME -
 echo "$USER_MANAGEMENT_ADMIN_PASSWORD"                                  | sudo docker secret create USER_MANAGEMENT_ADMIN_PASSWORD -
 echo "$USER_MANAGEMENT_ADMIN_EMAIL"                                     | sudo docker secret create USER_MANAGEMENT_ADMIN_EMAIL -

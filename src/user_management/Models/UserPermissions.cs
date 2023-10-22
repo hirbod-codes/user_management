@@ -4,11 +4,11 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 [BsonIgnoreExtraElements]
-public class UserPrivileges : IEquatable<UserPrivileges>
+public class UserPermissions : IEquatable<UserPermissions>
 {
     [BsonElement(READERS)]
     [BsonRequired]
-    public Reader[] Readers { get; set; } = new Reader[] { };
+    public Reader[] Readers { get; set; } = Array.Empty<Reader>();
     public const string READERS = "readers";
 
     [BsonElement(ALL_READERS)]
@@ -18,7 +18,7 @@ public class UserPrivileges : IEquatable<UserPrivileges>
 
     [BsonElement(UPDATERS)]
     [BsonRequired]
-    public Updater[] Updaters { get; set; } = new Updater[] { };
+    public Updater[] Updaters { get; set; } = Array.Empty<Updater>();
     public const string UPDATERS = "updaters";
 
     [BsonElement(ALL_UPDATERS)]
@@ -28,10 +28,10 @@ public class UserPrivileges : IEquatable<UserPrivileges>
 
     [BsonElement(DELETERS)]
     [BsonRequired]
-    public Deleter[] Deleters { get; set; } = new Deleter[] { };
+    public Deleter[] Deleters { get; set; } = Array.Empty<Deleter>();
     public const string DELETERS = "deleters";
 
-    public bool Equals(UserPrivileges? other)
+    public bool Equals(UserPermissions? other)
     {
         if (other == null) return false;
 
@@ -50,6 +50,6 @@ public class UserPrivileges : IEquatable<UserPrivileges>
         return true;
     }
 
-    public override bool Equals(object? obj) => obj != null && Equals(obj as UserPrivileges);
+    public override bool Equals(object? obj) => obj != null && Equals(obj as UserPermissions);
     public override int GetHashCode() => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(this);
 }
