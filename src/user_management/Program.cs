@@ -21,6 +21,7 @@ using Swashbuckle.AspNetCore.Filters;
 using user_management.Filters;
 using user_management.Notification;
 using System.Net;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,9 @@ else if (builder.Configuration["MUST_NOT_USE_ENV_FILE"] != "true" && builder.Con
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+if (!builder.Configuration["FirstPartyDomains"].IsNullOrEmpty())
+    Program.FirstPartyDomains = Program.FirstPartyDomains.Concat<string>(builder.Configuration["FirstPartyDomains"]!.Split(",", StringSplitOptions.TrimEntries)).ToArray();
 
 builder.Services.AddCors(opt =>
 {
@@ -219,7 +223,7 @@ public partial class Program
     public const string ENV_PREFIX = "USER_MANAGEMENT_";
     public static string RootPath { get; set; } = "";
 
-    public static string[] FirstPartyDomains { get; internal set; } = new string[] { "::1", "127.0.0.1", "0.0.0.0", "localhost", "user_management_client" };
+    public static string[] FirstPartyDomains { get; set; } = new string[] { "::1", "127.0.0.1", "0.0.0.0", "localhost" };
 
     public void Configure() { }
 }

@@ -44,6 +44,8 @@ APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
+FirstPartyDomains=user_management_client
+
 ADMIN_USERNAME=hirbod
 ADMIN_PASSWORD="Pass%w0rd!99"
 ADMIN_EMAIL="your_functional_email@email.com"
@@ -124,6 +126,8 @@ APP_HTTP_PORT=5000
 APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
+
+FirstPartyDomains=user_management_client
 
 ADMIN_USERNAME=hirbod
 ADMIN_PASSWORD="Pass%w0rd!99"
