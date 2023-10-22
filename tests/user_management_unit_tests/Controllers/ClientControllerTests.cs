@@ -156,50 +156,50 @@ public class ClientControllerTests
     [Fact]
     public async void Update_Unauthenticated()
     {
-        ClientPutDto clientPutDto = new();
+        ClientPatchDto dto = new();
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
-        HttpAsserts.IsUnauthenticated(await InstantiateController().Update(clientPutDto));
+        HttpAsserts.IsUnauthenticated(await InstantiateController().Update(dto));
     }
 
     [Fact]
     public async void Update_BadRequest()
     {
         ObjectId clientId = ObjectId.GenerateNewId();
-        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws(new ArgumentException("clientId"));
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(clientPutDto), "Invalid id for client provided.");
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientId"));
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(dto), "Invalid id for client provided.");
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws<DuplicationException>();
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(clientPutDto), "The provided redirect url is not unique!");
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws<DuplicationException>();
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(dto), "The provided redirect url is not unique!");
     }
 
     [Fact]
     public async void Update_Problem()
     {
         ObjectId clientId = ObjectId.GenerateNewId();
-        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws(new ArgumentException("clientSecret"));
-        HttpAsserts.IsProblem(await InstantiateController().Update(clientPutDto), "Internal server error encountered.");
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientSecret"));
+        HttpAsserts.IsProblem(await InstantiateController().Update(dto), "Internal server error encountered.");
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl)).Throws<DatabaseServerException>();
-        HttpAsserts.IsProblem(await InstantiateController().Update(clientPutDto), "We failed to update this client.");
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws<DatabaseServerException>();
+        HttpAsserts.IsProblem(await InstantiateController().Update(dto), "We failed to update this client.");
     }
 
     [Fact]
     public async void Update_Ok()
     {
         ObjectId clientId = ObjectId.GenerateNewId();
-        ClientPutDto clientPutDto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
+        ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
-        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { Clients = new UserClient[] { new() { ClientId = clientId } } }));
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(clientPutDto.Id, clientPutDto.Secret, clientPutDto.RedirectUrl));
-        HttpAsserts.IsOk(await InstantiateController().Update(clientPutDto));
+        Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl));
+        HttpAsserts.IsOk(await InstantiateController().Update(dto));
     }
 
     [Fact]

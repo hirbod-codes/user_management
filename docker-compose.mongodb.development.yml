@@ -29,18 +29,33 @@ services:
             USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft_AspNetCore}"
             USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_ADMIN_USERNAME: "${ADMIN_USERNAME}"
+            USER_MANAGEMENT_FirstPartyDomains: "${FirstPartyDomains}"
+            USER_MANAGEMENT_ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+            USER_MANAGEMENT_ADMIN_EMAIL: "${ADMIN_EMAIL}"
+            USER_MANAGEMENT_ADMIN_PHONE_NUMBER: "${ADMIN_PHONE_NUMBER}"
+            USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailAddress: "${ServerEmailAddress}"
+            USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpHostAddress: "${ServerSmtpHostAddress}"
+            USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailPassword: "${ServerEmailPassword}"
+            USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpPort: "${ServerSmtpPort}"
             USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
             USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"
             USER_MANAGEMENT_DB_OPTIONS__DatabaseName: "${DB_OPTIONS__DatabaseName}"
-            USER_MANAGEMENT_DB_OPTIONS__Host: "${DB_OPTIONS__Host}"
-            USER_MANAGEMENT_DB_OPTIONS__Port: "${DB_OPTIONS__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host: "${DB_OPTIONS__Servers__0__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port: "${DB_OPTIONS__Servers__0__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host: "${DB_OPTIONS__Servers__1__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port: "${DB_OPTIONS__Servers__1__Port}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host: "${DB_OPTIONS__Servers__2__Host}"
+            USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port: "${DB_OPTIONS__Servers__2__Port}"
             USER_MANAGEMENT_DB_OPTIONS__Username: "${DB_OPTIONS__Username}"
         depends_on:
             - user_management_replicaSet_p
     user_management_replicaSet_p:
         ports:
           - "${DB_PRIMARY_CONTAINER_PORT}:${DB_SERVER_PORT}"
+        environment:
+            localhostUsername: ${LOCALHOST_USERNAME}
     user_management_replicaSet_s_1:
         ports:
           - "${DB_SECONDARY_1_CONTAINER_PORT}:${DB_SERVER_PORT}"

@@ -91,7 +91,7 @@ public class UserManagementTests
         unverifiedUser.Password = hashedPassword;
         unverifiedUser.VerificationSecret = code;
         unverifiedUser.VerificationSecretUpdatedAt = dateTime;
-        unverifiedUser.IsVerified = false;
+        unverifiedUser.IsEmailVerified = false;
 
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.Create(unverifiedUser)).Returns(Task.FromResult<User?>(unverifiedUser));
 
@@ -119,7 +119,7 @@ public class UserManagementTests
         unverifiedUser.Password = hashedPassword;
         unverifiedUser.VerificationSecret = code;
         unverifiedUser.VerificationSecretUpdatedAt = dateTime;
-        unverifiedUser.IsVerified = false;
+        unverifiedUser.IsEmailVerified = false;
 
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.Create(unverifiedUser)).Returns(Task.FromResult<User?>(null));
         await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Register(dto));
@@ -136,7 +136,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -150,9 +150,9 @@ public class UserManagementTests
     {
         Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
 
-        user.IsVerified = true;
+        user.IsEmailVerified = true;
         await InstantiateService().Activate(dto);
-        user.IsVerified = false;
+        user.IsEmailVerified = false;
 
         Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
 
@@ -181,7 +181,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -196,7 +196,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -211,7 +211,7 @@ public class UserManagementTests
                 } ,
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -330,7 +330,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -346,7 +346,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -362,7 +362,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = false,
+                    IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -420,7 +420,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Id = ObjectId.GenerateNewId(),
-                    IsVerified = true,
+                    IsEmailVerified = true,
                     Password = "hashedPassword"
                 }
             }
@@ -472,7 +472,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Password = "password",
-                    IsVerified = false,
+                    IsEmailVerified = false,
                 }
             },
             new object?[] {
@@ -482,7 +482,7 @@ public class UserManagementTests
                 },
                 new User() {
                     Password = "password",
-                    IsVerified = true,
+                    IsEmailVerified = true,
                 }
             },
         };
@@ -504,7 +504,7 @@ public class UserManagementTests
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(false);
             await Assert.ThrowsAsync<InvalidPasswordException>(async () => await InstantiateService().Login(dto));
         }
-        else if (user.IsVerified == false)
+        else if (user.IsEmailVerified == false)
         {
             Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
@@ -562,6 +562,88 @@ public class UserManagementTests
 
             Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(ObjectId.Parse(identifier))).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Logout(identifier));
+        }
+    }
+
+    public static IEnumerable<object?[]> ChangeUnverifiedEmail_Ok_Data =>
+        new List<object?[]>
+        {
+            new object?[]
+            {
+                new ChangeUnverifiedEmail()
+                {
+                    Email = Faker.Internet.ExampleEmail(),
+                    NewEmail = Faker.Internet.ExampleEmail(),
+                    Password = Faker.Internet.Password()
+                },
+                new User()
+                {
+                    Password = Faker.Random.String2(128),
+                }
+            }
+        };
+
+    [Theory]
+    [MemberData(nameof(ChangeUnverifiedEmail_Ok_Data))]
+    public async void ChangeUnverifiedEmail_Ok(ChangeUnverifiedEmail dto, User user)
+    {
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserForUnverifiedEmailChange(dto.Email)).Returns(Task.FromResult<User?>(user));
+        Fixture.IStringHelper.Setup(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.ChangeEmail(dto.Email, dto.NewEmail)).Returns(Task.FromResult<bool?>(true));
+        await InstantiateService().ChangeUnverifiedEmail(dto);
+    }
+
+    public static IEnumerable<object?[]> ChangeUnverifiedEmail_Not_Ok_Data =>
+        new List<object?[]>
+        {
+            new object?[]
+            {
+                new ChangeUnverifiedEmail()
+                {
+                    Email = Faker.Internet.ExampleEmail(),
+                    NewEmail = Faker.Internet.ExampleEmail(),
+                    Password = Faker.Internet.Password()
+                },
+                null
+            },
+            new object?[]
+            {
+                new ChangeUnverifiedEmail()
+                {
+                    Email = Faker.Internet.ExampleEmail(),
+                    NewEmail = Faker.Internet.ExampleEmail(),
+                    Password = Faker.Internet.Password()
+                },
+                new User()
+                {
+                    Password = Faker.Random.String2(128),
+                }
+            }
+        };
+
+    [Theory]
+    [MemberData(nameof(ChangeUnverifiedEmail_Not_Ok_Data))]
+    public async void ChangeUnverifiedEmail_Not_Ok(ChangeUnverifiedEmail dto, User? user)
+    {
+        if (user == null)
+        {
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserForUnverifiedEmailChange(dto.Email)).Returns(Task.FromResult<User?>(user));
+            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().ChangeUnverifiedEmail(dto));
+        }
+        else
+        {
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserForUnverifiedEmailChange(dto.Email)).Returns(Task.FromResult<User?>(user));
+
+            Fixture.IStringHelper.Setup(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(false);
+            await Assert.ThrowsAsync<InvalidPasswordException>(async () => await InstantiateService().ChangeUnverifiedEmail(dto));
+
+            Fixture.IStringHelper.Setup(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
+
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.ChangeEmail(dto.Email, dto.NewEmail)).Returns(Task.FromResult<bool?>(null));
+            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().ChangeUnverifiedEmail(dto));
+
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.ChangeEmail(dto.Email, dto.NewEmail)).Returns(Task.FromResult<bool?>(false));
+            await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().ChangeUnverifiedEmail(dto));
         }
     }
 
@@ -950,10 +1032,10 @@ public class UserManagementTests
     {
         if (userId == "id" || clientId == "id" || authorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
-            if (clientId == "id") Assert.Equal("clientId", ex.Message);
-            if (authorId == "id") Assert.Equal("authorId", ex.Message);
-            if (userId == "id") Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
+            if (clientId == "id") Assert.Equal("clientId", ex.ParamName);
+            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
+            if (userId == "id") Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1009,9 +1091,9 @@ public class UserManagementTests
     {
         if (userId == "id" || authorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
-            if (authorId == "id") Assert.Equal("authorId", ex.Message);
-            else Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
+            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
+            else Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1071,13 +1153,13 @@ public class UserManagementTests
     {
         if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else if (userId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
+            Assert.Equal("userId", ex.ParamName);
         }
         else
         {
@@ -1182,13 +1264,13 @@ public class UserManagementTests
     {
         if (dto.UpdatesString == null || dto.FiltersString == null || dto.FiltersString == "empty")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Assert.Equal("userPatchDto", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
+            Assert.Equal("userPatchDto", ex.ParamName);
         }
         else if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else
         {
@@ -1243,13 +1325,13 @@ public class UserManagementTests
     {
         if (actorId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
+            Assert.Equal("actorId", ex.ParamName);
         }
         else if (userId == "id")
         {
-            Exception ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("userId", ex.Message);
+            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
+            Assert.Equal("userId", ex.ParamName);
         }
         else
         {

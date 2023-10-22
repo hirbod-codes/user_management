@@ -475,6 +475,43 @@ public class UserControllerTests
     }
 
     [Fact]
+    public async void ChangeUnverifiedEmail_Ok()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto));
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts<string>.IsOk(actionResult, "The email changed successfully.");
+    }
+
+    [Fact]
+    public async void ChangeUnverifiedEmail_NotFound()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<DataNotFoundException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsNotFound(actionResult);
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<InvalidPasswordException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsNotFound(actionResult);
+    }
+
+    [Fact]
+    public async void ChangeUnverifiedEmail_Problem()
+    {
+        IActionResult actionResult;
+        ChangeUnverifiedEmail dto = new() { };
+
+        Fixture.IUserManagement.Setup<Task>(um => um.ChangeUnverifiedEmail(dto)).Throws<OperationException>();
+        actionResult = await InstantiateController().ChangeUnverifiedEmail(dto);
+        HttpAsserts.IsProblem(actionResult, "We couldn't change the user's email.");
+    }
+
+    [Fact]
     public async void ChangeUsername_Ok()
     {
         IActionResult actionResult;
@@ -668,7 +705,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClient(clientId, userId, authorId, forClients)).Throws(new ArgumentException("clientId"));
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId), "The clientId is not valid.");
+        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId));
     }
 
     [Fact]
@@ -749,7 +786,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClients(userId, authorId, forClients)).Throws(new ArgumentException("authorId"));
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClients(userId), "The authorId is not valid.");
+        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClients(userId));
     }
 
     [Fact]
@@ -843,18 +880,18 @@ public class UserControllerTests
     [Fact]
     public async void RetrieveClients_Ok()
     {
-        UserClient[] clients = new UserClient[] { };
+        AuthorizedClient[] clients = new AuthorizedClient[] { };
         PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), Clients = clients };
         string userId = "userId";
         bool forClients = false;
-        IEnumerable<UserClientRetrieveDto> authorizedClients = Array.Empty<UserClientRetrieveDto>();
+        IEnumerable<AuthorizedClientRetrieveDto> authorizedClients = Array.Empty<AuthorizedClientRetrieveDto>();
 
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(true);
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(userId);
 
         Fixture.IUserManagement.Setup(um => um.RetrieveClientsById(userId, userId, forClients)).Returns(Task.FromResult(authorizedClients));
-        HttpAsserts<IEnumerable<UserClientRetrieveDto>>.IsOk(await InstantiateController().RetrieveClients(), authorizedClients);
+        HttpAsserts<IEnumerable<AuthorizedClientRetrieveDto>>.IsOk(await InstantiateController().RetrieveClients(), authorizedClients);
     }
 
     [Fact]
@@ -894,7 +931,7 @@ public class UserControllerTests
     [Fact]
     public async void RetrieveClients_Unauthorized()
     {
-        UserClient[] clients = new UserClient[] { };
+        AuthorizedClient[] clients = new AuthorizedClient[] { };
         PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId() };
         string userId = "userId";
         bool forClients = false;

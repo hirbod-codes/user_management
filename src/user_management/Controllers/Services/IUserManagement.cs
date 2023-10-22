@@ -33,6 +33,11 @@ public interface IUserManagement
     /// <exception cref="user_management.Services.Data.User.InvalidPasswordException"></exception>
     public Task Activate(Activation activatingUser);
 
+    /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
+    /// <exception cref="user_management.Services.Data.User.InvalidPasswordException"></exception>
+    /// <exception cref="user_management.Services.OperationException"></exception>
+    public Task ChangeUnverifiedEmail(ChangeUnverifiedEmail dto);
+
     /// <exception cref="user_management.Services.Data.User.PasswordConfirmationMismatchException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.User.VerificationCodeExpiredException"></exception>
@@ -103,5 +108,5 @@ public interface IUserManagement
     /// <exception cref="System.ArgumentException"></exception>
     /// <exception cref="System.UnauthorizedAccessException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
-    public Task<IEnumerable<UserClientRetrieveDto>> RetrieveClientsById(string authorId, string userId, bool forClients);
+    public Task<IEnumerable<AuthorizedClientRetrieveDto>> RetrieveClientsById(string authorId, string userId, bool forClients);
 }

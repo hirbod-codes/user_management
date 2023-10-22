@@ -61,6 +61,9 @@ public interface IUserRepository
     public Task<bool?> Verify(ObjectId id);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
+    public Task<User?> RetrieveUserForUnverifiedEmailChange(string email);
+
+    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> ChangePassword(string email, string hashedPassword);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
@@ -91,13 +94,13 @@ public interface IUserRepository
     public Task<bool?> UpdateAuthorizingClient(ObjectId userId, AuthorizingClient authorizingClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddAuthorizedClient(ObjectId userId, UserClient authorizedClient, IClientSessionHandle? session = null);
+    public Task<bool?> AddAuthorizedClient(ObjectId userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> UpdateToken(ObjectId userId, ObjectId clientObjectId, Token token);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPrivileges userPrivileges);
+    public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPermissions userPrivileges);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>

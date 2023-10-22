@@ -44,13 +44,29 @@ APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
 
+FirstPartyDomains=user_management_client
+
+ADMIN_USERNAME=hirbod
+ADMIN_PASSWORD="Pass%w0rd!99"
+ADMIN_EMAIL="your_functional_email@email.com"
+ADMIN_PHONE_NUMBER=
+
+ServerEmailAddress=example@email.com
+ServerSmtpHostAddress=smtp.gmail.com
+ServerEmailPassword=password
+ServerSmtpPort=587
+
 DB_NAME=mongodb
 
 DB_OPTIONS__DatabaseName=user_management_db
 DB_OPTIONS__ReplicaSetName=user_management_replicaSet
 DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
-DB_OPTIONS__Host=user_management_replicaSet_p
-DB_OPTIONS__Port=27017
+DB_OPTIONS__Servers__0__Host=user_management_replicaSet_p
+DB_OPTIONS__Servers__0__Port=27017
+DB_OPTIONS__Servers__1__Host=user_management_replicaSet_s_1
+DB_OPTIONS__Servers__1__Port=27017
+DB_OPTIONS__Servers__2__Host=user_management_replicaSet_s_2
+DB_OPTIONS__Servers__2__Port=27017
 DB_OPTIONS__IsSharded=false
 DB_OPTIONS__CertificateP12=/security/app.p12
 
@@ -81,8 +97,12 @@ DB_NAME=mongodb
 DB_OPTIONS__DatabaseName=user_management_db
 DB_OPTIONS__Username=CN=user_management,OU=mongodb_client,O=user_management
 DB_OPTIONS__ReplicaSetName=user_management_replicaSet
-DB_OPTIONS__Host=user_management_replicaSet_p
-DB_OPTIONS__Port=27017
+DB_OPTIONS__Servers__0__Host=user_management_replicaSet_p
+DB_OPTIONS__Servers__0__Port=27017
+DB_OPTIONS__Servers__1__Host=user_management_replicaSet_s_1
+DB_OPTIONS__Servers__1__Port=27017
+DB_OPTIONS__Servers__2__Host=user_management_replicaSet_s_2
+DB_OPTIONS__Servers__2__Port=27017
 DB_OPTIONS__IsSharded=false
 DB_OPTIONS__CertificateP12=/security/app.p12
 
@@ -106,6 +126,18 @@ APP_HTTP_PORT=5000
 APP_HTTPS_PORT=5001
 
 Jwt__SecretKey=TW9zaGVFcmV6UHJpdmF0ZUtleQ==
+
+FirstPartyDomains=user_management_client
+
+ADMIN_USERNAME=hirbod
+ADMIN_PASSWORD="Pass%w0rd!99"
+ADMIN_EMAIL="your_functional_email@email.com"
+ADMIN_PHONE_NUMBER=
+
+ServerEmailAddress=example@email.com
+ServerSmtpHostAddress=smtp.gmail.com
+ServerEmailPassword=password
+ServerSmtpPort=587
 
 DB_NAME=mongodb
 

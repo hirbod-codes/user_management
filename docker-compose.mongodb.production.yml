@@ -7,17 +7,35 @@ networks:
 secrets:
     USER_MANAGEMENT_Jwt__SecretKey:
         external: true
+    USER_MANAGEMENT_FirstPartyDomains:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailAddress:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpHostAddress:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailPassword:
+        external: true
+    USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpPort:
+        external: true
     USER_MANAGEMENT_DB_NAME:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__IsSharded:
         external: true
     USER_MANAGEMENT_DB_OPTIONS__DatabaseName:
         external: true
-    USER_MANAGEMENT_DB_OPTIONS__Host:
-        external: true
-    USER_MANAGEMENT_DB_OPTIONS__Port:
-        external: true
     USER_MANAGEMENT_DB_OPTIONS__Username:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host:
+        external: true
+    USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port:
         external: true
     CA:
         external: true
@@ -47,11 +65,20 @@ services:
             USER_MANAGEMENT_SECRETS_PREFIX: USER_MANAGEMENT_
         secrets:
             - USER_MANAGEMENT_Jwt__SecretKey
+            - USER_MANAGEMENT_FirstPartyDomains
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailAddress
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpHostAddress
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerEmailPassword
+            - USER_MANAGEMENT_NOTIFICATION_OPTIONS__ServerSmtpPort
             - USER_MANAGEMENT_DB_NAME
             - USER_MANAGEMENT_DB_OPTIONS__IsSharded
             - USER_MANAGEMENT_DB_OPTIONS__DatabaseName
-            - USER_MANAGEMENT_DB_OPTIONS__Host
-            - USER_MANAGEMENT_DB_OPTIONS__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__0__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__0__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__1__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__1__Port
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__2__Host
+            - USER_MANAGEMENT_DB_OPTIONS__Servers__2__Port
             - USER_MANAGEMENT_DB_OPTIONS__Username
             - CA
             - AppHttpsCrt

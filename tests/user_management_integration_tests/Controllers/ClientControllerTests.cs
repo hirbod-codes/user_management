@@ -42,7 +42,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         HttpClient httpClient = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.REGISTER_CLIENT).Append(new() { Name = StaticData.REGISTER_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -78,7 +78,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         HttpClient httpClient = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.READ_CLIENT).Append(new() { Name = StaticData.READ_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -113,7 +113,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.READ_CLIENT).Append(new() { Name = StaticData.READ_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -151,7 +151,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.UPDATE_CLIENT).Append(new() { Name = StaticData.UPDATE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -163,7 +163,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);
 
-        ClientPutDto dto = new()
+        ClientPatchDto dto = new()
         {
             Id = client.Id.ToString(),
             Secret = secret,
@@ -195,7 +195,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENT).Append(new() { Name = StaticData.DELETE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 
@@ -237,7 +237,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
         User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        u.IsVerified = true;
+        u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.UPDATE_CLIENT).Append(new() { Name = StaticData.UPDATE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
 

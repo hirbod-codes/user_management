@@ -37,6 +37,7 @@ services:
             USER_MANAGEMENT_Logging__LogLevel__Default: "${Logging__LogLevel__Default}"
             USER_MANAGEMENT_Logging__LogLevel__Microsoft.AspNetCore: "${Logging__LogLevel__Microsoft_AspNetCore}"
             USER_MANAGEMENT_Jwt__SecretKey: "${Jwt__SecretKey}"
+            USER_MANAGEMENT_FirstPartyDomains: "${FirstPartyDomains}"
             USER_MANAGEMENT_DB_NAME: "${DB_NAME}"
             USER_MANAGEMENT_DB_OPTIONS__IsSharded: "${DB_OPTIONS__IsSharded}"
             USER_MANAGEMENT_DB_OPTIONS__CertificateP12: "${DB_OPTIONS__CertificateP12}"

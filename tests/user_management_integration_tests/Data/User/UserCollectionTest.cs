@@ -124,15 +124,15 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
     {
         user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
 
-        if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
+        if (user1.AuthorizedClients.Count() == 0 || user2.AuthorizedClients.Count() == 0 || user3.AuthorizedClients.Count() == 0)
         {
-            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret1)) };
-            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret2)) };
-            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret3)) };
+            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret1)) };
+            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret2)) };
+            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret3)) };
         }
 
-        user2.Clients[0].RefreshToken!.Value = user1.Clients[0].RefreshToken!.Value;
-        user3.Clients[0].RefreshToken!.Value = user1.Clients[0].RefreshToken!.Value;
+        user2.AuthorizedClients[0].RefreshToken!.Value = user1.AuthorizedClients[0].RefreshToken!.Value;
+        user3.AuthorizedClients[0].RefreshToken!.Value = user1.AuthorizedClients[0].RefreshToken!.Value;
         await TestUniqueIndex(user1, user2, user3);
     }
 
@@ -141,15 +141,15 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
     {
         user_management.Models.User user1 = TemplateUser(), user2 = TemplateUser(), user3 = TemplateUser();
 
-        if (user1.Clients.Count() == 0 || user2.Clients.Count() == 0 || user3.Clients.Count() == 0)
+        if (user1.AuthorizedClients.Count() == 0 || user2.AuthorizedClients.Count() == 0 || user3.AuthorizedClients.Count() == 0)
         {
-            user1.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret1)) };
-            user2.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret2)) };
-            user3.Clients = new user_management.Models.UserClient[] { user_management.Models.UserClient.FakeUserClient(user_management.Models.Client.FakeClient(out string secret3)) };
+            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret1)) };
+            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret2)) };
+            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret3)) };
         }
 
-        user2.Clients[0].Token!.Value = user1.Clients[0].Token!.Value;
-        user3.Clients[0].Token!.Value = user1.Clients[0].Token!.Value;
+        user2.AuthorizedClients[0].Token!.Value = user1.AuthorizedClients[0].Token!.Value;
+        user3.AuthorizedClients[0].Token!.Value = user1.AuthorizedClients[0].Token!.Value;
         await TestUniqueIndex(user1, user2, user3);
     }
 

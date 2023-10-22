@@ -9,7 +9,7 @@ public interface IAuthenticatedByBearer
 
     /// <returns>The Authenticated Client</returns>
     /// <exception cref="System.Security.Authentication.AuthenticationException"></exception>
-    public Task<UserClient> GetAuthenticated();
+    public Task<AuthorizedClient> GetAuthenticated();
 
-    public void SetAuthenticated(UserClient authenticatedUserClient);
+    public void SetAuthenticated(AuthorizedClient authenticatedAuthorizedClient);
 }

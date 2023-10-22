@@ -7,17 +7,17 @@ namespace user_management.Controllers.Services;
 public interface ITokenManagement
 {
     /// <summary>
-    /// Creates a UserClient object with an unverified refreshToken field and stores it in user document in database.<br/>
+    /// Creates a AuthorizedClient object with an unverified refreshToken field and stores it in user document in database.<br/>
     /// 
     /// Checks:<br/>
     /// 1.check if clientId is valid<br/>
-    /// 2.check authentication and the existence of the UserClient in authenticated user<br/>
+    /// 2.check authentication and the existence of the AuthorizedClient in authenticated user<br/>
     /// 3.check client exists and is not exposed more than 2 times<br/>
     /// 4.check if authenticated user has requested privileges by the token<br/>
     /// 
     /// Delete UserCLient object if it already exists.<br/>
     /// Create UserCLient object<br/>
-    /// Try to add the UserClient object authenticated user in db with a unique code<br/>
+    /// Try to add the AuthorizedClient object authenticated user in db with a unique code<br/>
     /// return code if successful<br/>
     /// throw DuplicationException if failed<br/>
     /// </summary>

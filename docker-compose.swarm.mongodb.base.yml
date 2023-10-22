@@ -39,7 +39,7 @@ secrets:
         external: true
 services:
     user_management_replicaSet_p:
-        image: mongo:4.4.18
+        image: mongo:4
         command: bash -c "/mongodb/rs_server.sh"
         environment:
             replSet: user_management_replicaSet
@@ -72,7 +72,7 @@ services:
         networks:
             - db
     user_management_replicaSet_s_1:
-        image: mongo:4.4.18
+        image: mongo:4
         command: bash -c "/mongodb/secondary_rs_server.sh"
         environment:
             replSet: user_management_replicaSet
@@ -94,7 +94,7 @@ services:
         networks:
             - db
     user_management_replicaSet_s_2:
-        image: mongo:4.4.18
+        image: mongo:4
         command: bash -c "/mongodb/secondary_rs_server.sh"
         environment:
             replSet: user_management_replicaSet

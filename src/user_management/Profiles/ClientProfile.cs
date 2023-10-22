@@ -11,7 +11,7 @@ class ClientProfile : Profile
     {
         MapClientCreateDto();
         MapClientRetrieveDto();
-        MapClientPutDto();
+        MapClientPatchDto();
     }
 
     private void MapClientCreateDto()
@@ -27,8 +27,8 @@ class ClientProfile : Profile
         CreateMap<Client, ClientPublicInfoRetrieveDto>();
     }
 
-    private void MapClientPutDto()
+    private void MapClientPatchDto()
     {
-        CreateMap<ClientPutDto, Client>();
+        CreateMap<ClientPatchDto, Client>();
     }
 }

@@ -55,8 +55,7 @@ public class FilterLogics<TDocument> : IFilterLogic<TDocument>
         throw new ArgumentException("Invalid operator property.");
     }
 
-    // logicsString: Name::Eq::name::string||(Price::Gt::100::int&&CreatedAt::Gt::2023-04-29T09:07:07.250Z::datetime)
-    // logicsString: Name::Eq::name::string||(Price::Gt::100::int&&Description::Eq::null::null)
+    /// <param name="logicsString"><include file='./docs/xml.xml' path='user_management/Data/Logics/Filter/FilterLogicsGeneric/BuildILogic/logicsString' /></param>
     public static IFilterLogic<TDocument> BuildILogic(string logicsString)
     {
         if (logicsString.IsNullOrEmpty())

@@ -1,17 +1,18 @@
 namespace user_management.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
 using user_management.Data;
 using user_management.Dtos.User;
+using user_management.Models;
 using user_management.Services;
 using user_management.Services.Data;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
 public class UserPrivilegesController : ControllerBase
 {
     private readonly IUserPrivilegesManagement _userPrivilegesManagement;
@@ -23,82 +24,135 @@ public class UserPrivilegesController : ControllerBase
         _authenticated = authenticated;
     }
 
+    /// <summary>
+    /// Update user's privileges' Readers field.
+    /// </summary>
+    /// <remarks>
+    /// Only UserId and Readers fields are used in this endpoint.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS })]
     [HttpPatch(UPDATE_READERS)]
-    public async Task<IActionResult> UpdateReaders(UserPrivilegesPatchDto dto, string userId)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> UpdateReaders([FromBody] UserPrivilegesPatchDto dto)
     {
         if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        try { await _userPrivilegesManagement.UpdateReaders(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
-        catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
+        try { await _userPrivilegesManagement.UpdateReaders(_authenticated.GetAuthenticatedIdentifier(), dto); }
+        catch (ArgumentException ex) { return ex.ParamName == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
+    /// <summary>
+    /// Update user's privileges' AllReaders field.
+    /// </summary>
+    /// <remarks>
+    /// Only UserId and AllReaders fields are used in this endpoint.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_READERS })]
     [HttpPatch(UPDATE_ALL_READERS)]
-    public async Task<IActionResult> UpdateAllReaders(UserPrivilegesPatchDto dto, string userId)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> UpdateAllReaders([FromBody] UserPrivilegesPatchDto dto)
     {
         if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        try { await _userPrivilegesManagement.UpdateAllReaders(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
-        catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
+        try { await _userPrivilegesManagement.UpdateAllReaders(_authenticated.GetAuthenticatedIdentifier(), dto); }
+        catch (ArgumentException ex) { return ex.ParamName == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
+    /// <summary>
+    /// Update user's privileges' Updaters field.
+    /// </summary>
+    /// <remarks>
+    /// Only UserId and Updaters fields are used in this endpoint.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_UPDATERS })]
     [HttpPatch(UPDATE_UPDATERS)]
-    public async Task<IActionResult> UpdateUpdaters(UserPrivilegesPatchDto dto, string userId)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> UpdateUpdaters([FromBody] UserPrivilegesPatchDto dto)
     {
         if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        try { await _userPrivilegesManagement.UpdateUpdaters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
-        catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
+        try { await _userPrivilegesManagement.UpdateUpdaters(_authenticated.GetAuthenticatedIdentifier(), dto); }
+        catch (ArgumentException ex) { return ex.ParamName == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
+    /// <summary>
+    /// Update user's privileges' AllUpdaters field.
+    /// </summary>
+    /// <remarks>
+    /// Only UserId and AllUpdaters fields are used in this endpoint.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_ALL_UPDATERS })]
     [HttpPatch(UPDATE_ALL_UPDATERS)]
-    public async Task<IActionResult> UpdateAllUpdaters(UserPrivilegesPatchDto dto, string userId)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> UpdateAllUpdaters([FromBody] UserPrivilegesPatchDto dto)
     {
         if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        try { await _userPrivilegesManagement.UpdateAllUpdaters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
-        catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
+        try { await _userPrivilegesManagement.UpdateAllUpdaters(_authenticated.GetAuthenticatedIdentifier(), dto); }
+        catch (ArgumentException ex) { return ex.ParamName == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
+    /// <summary>
+    /// Update user's privileges' Deleters field.
+    /// </summary>
+    /// <remarks>
+    /// Only UserId and Deleters fields are used in this endpoint.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_DELETERS })]
     [HttpPatch(UPDATE_DELETERS)]
-    public async Task<IActionResult> UpdateDeleters(UserPrivilegesPatchDto dto, string userId)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> UpdateDeleters([FromBody] UserPrivilegesPatchDto dto)
     {
         if (_authenticated.GetAuthenticationType() != "JWT") return StatusCode(403);
 
-        try { await _userPrivilegesManagement.UpdateDeleters(_authenticated.GetAuthenticatedIdentifier(), userId, dto); }
-        catch (ArgumentException ex) { return ex.Message == "authorId" ? Unauthorized() : BadRequest(); }
+        try { await _userPrivilegesManagement.UpdateDeleters(_authenticated.GetAuthenticatedIdentifier(), dto); }
+        catch (ArgumentException ex) { return ex.ParamName == "authorId" ? Unauthorized() : BadRequest(); }
         catch (DataNotFoundException) { return NotFound(); }
         catch (OperationException) { return Problem(); }
 
         return Ok();
     }
 
+    /// <summary>
+    /// Retrieve a list of fields that are assignable to Readers and AllReaders fields.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
     [HttpGet(READER_ASSIGNABLE_FIELDS)]
+    [SwaggerResponse(statusCode: 200, type: typeof(List<Field>))]
     public IActionResult ReaderAssignableFields() => Ok(Models.User.GetReadableFields());
 
+    /// <summary>
+    /// Retrieve a list of fields that are assignable to Updaters and AllUpdaters fields.
+    /// </summary>
     [Permissions(Permissions = new string[] { StaticData.UPDATE_READERS, StaticData.UPDATE_ALL_READERS })]
     [HttpGet(UPDATER_ASSIGNABLE_FIELDS)]
+    [SwaggerResponse(statusCode: 200, type: typeof(List<Field>))]
     public IActionResult UpdaterAssignableFields() => Ok(Models.User.GetUpdatableFields());
 
     public const string UPDATE_READERS = "update-readers";

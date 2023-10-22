@@ -2,7 +2,9 @@ namespace user_management.Controllers;
 
 using System.Security.Authentication;
 using AutoMapper;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using user_management.Authentication;
 using user_management.Authorization.Attributes;
 using user_management.Controllers.Services;
@@ -30,9 +32,21 @@ public class TokenController : ControllerBase
         _authenticatedByJwt = authenticatedByJwt;
     }
 
+    /// <summary>
+    /// Authorize a third party client. 
+    /// </summary>
+    /// <remarks>
+    /// The endpoint to authorize a registered third party client by a user.
+    /// 
+    /// state and code will be placed in query parameters of the client's redirect url.
+    /// </remarks>
     [Permissions(Permissions = new string[] { StaticData.AUTHORIZE_CLIENT })]
     [HttpPost(PATH_POST_AUTHORIZE)]
-    public async Task<IActionResult> Authorize(TokenAuthDto tokenAuthDto)
+    [SwaggerResponse(statusCode: 301, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    [EnableCors("third-party-clients")]
+    public async Task<IActionResult> Authorize([FromBody] TokenAuthDto tokenAuthDto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -60,8 +74,14 @@ public class TokenController : ControllerBase
         return RedirectPermanent(tokenAuthDto.RedirectUrl + $"?code={r}&state={tokenAuthDto.State}");
     }
 
+    /// <summary>
+    /// Verify and generate token for the authorized third party client.
+    /// </summary>
     [HttpPost(PATH_POST_TOKEN_VERIFICATION)]
-    public async Task<IActionResult> VerifyAndGenerateTokens(TokenCreateDto tokenCreateDto)
+    [SwaggerResponse(statusCode: 200, type: typeof(TokenRetrieveDto))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> VerifyAndGenerateTokens([FromBody] TokenCreateDto tokenCreateDto)
     {
         if (tokenCreateDto.GrantType != "authorization_code") return BadRequest("only 'authorization_code' grant type is supported");
 
@@ -90,8 +110,14 @@ public class TokenController : ControllerBase
         catch (OperationException) { return Problem("Internal server error encountered"); }
     }
 
+    /// <summary>
+    /// Regenerate expired token with refresh token.
+    /// </summary>
     [HttpPost(PATH_POST_RETOKEN)]
-    public async Task<IActionResult> ReToken(ReTokenDto reTokenDto)
+    [SwaggerResponse(statusCode: 200, type: typeof(string))]
+    [SwaggerResponse(statusCode: 400, type: typeof(string))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    public async Task<IActionResult> ReToken([FromBody] ReTokenDto reTokenDto)
     {
         try { return Ok(await _tokenManagement.ReToken(reTokenDto.ClientId, reTokenDto.ClientSecret, reTokenDto.RefreshToken)); }
         catch (OperationException) { return Problem(); }

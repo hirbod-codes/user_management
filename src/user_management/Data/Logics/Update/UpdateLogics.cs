@@ -18,7 +18,7 @@ public class UpdateLogics<TDocument>
         return Builders<TDocument>.Update.Combine(Logics.ToArray());
     }
 
-    // updatesString ==> field::Set::value::string||| ...
+    /// <param name="updatesString"><include file='./docs/xml.xml' path='user_management/Data/Logics/Update/UpdateLogicsGeneric/BuildILogic/updatesString' /></param>
     public UpdateLogics<TDocument> BuildILogic(string updatesString)
     {
         UpdateLogics<TDocument> updateLogics = new UpdateLogics<TDocument>();

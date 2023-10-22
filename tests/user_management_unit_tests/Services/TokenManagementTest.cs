@@ -335,7 +335,7 @@ public class TokenManagementTest
         Fixture.IStringHelper.SetupSequence(o => o.GenerateRandomString(128)).Returns(token).Returns(refreshToken);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(refreshToken, "SHA512")).Returns(hashedRefreshToken);
 
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<UserClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -348,7 +348,7 @@ public class TokenManagementTest
         Assert.Equal("user", dataNotFoundException.Message);
 
         Fixture.IStringHelper.SetupSequence(o => o.GenerateRandomString(128)).Returns(token).Returns(refreshToken);
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<UserClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -409,7 +409,7 @@ public class TokenManagementTest
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(token, "SHA512")).Returns(hashedToken);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(refreshToken, "SHA512")).Returns(hashedRefreshToken);
 
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<UserClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -514,13 +514,13 @@ public class TokenManagementTest
         DataNotFoundException dataNotFoundException = await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().ReToken(clientIdStr, secret, refreshToken));
         Assert.Equal("userClient", dataNotFoundException.Message);
 
-        user.Clients = new UserClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(-2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } };
+        user.AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(-2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } };
         Fixture.IUserRepository.Setup(o => o.RetrieveByRefreshTokenValue(hashedRefreshToken)).Returns(Task.FromResult<User?>(user));
         await Assert.ThrowsAsync<ExpiredRefreshTokenException>(async () => await InstantiateService().ReToken(clientIdStr, secret, refreshToken));
 
-        user.Clients[0].RefreshToken!.ExpirationDate = now.AddMinutes(2);
+        user.AuthorizedClients[0].RefreshToken!.ExpirationDate = now.AddMinutes(2);
 
-        user.Clients[0].RefreshToken!.Value = "anotherRefreshToken";
+        user.AuthorizedClients[0].RefreshToken!.Value = "anotherRefreshToken";
         Fixture.IUserRepository.Setup(o => o.RetrieveByRefreshTokenValue(hashedRefreshToken)).Returns(Task.FromResult<User?>(user));
         await Assert.ThrowsAsync<InvalidRefreshTokenException>(async () => await InstantiateService().ReToken(clientIdStr, secret, refreshToken));
     }
@@ -538,7 +538,7 @@ public class TokenManagementTest
         string? hashedSecret = "hashedSecret";
         Client? client = new() { Id = clientId };
         DateTime now = DateTime.UtcNow;
-        User? user = new() { Clients = new UserClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
+        User? user = new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
 
         Fixture.IDateTimeProvider.Setup(o => o.ProvideUtcNow()).Returns(now);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
@@ -573,7 +573,7 @@ public class TokenManagementTest
         string? hashedSecret = "hashedSecret";
         Client? client = new() { Id = clientId };
         DateTime now = DateTime.UtcNow;
-        User? user = new() { Clients = new UserClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
+        User? user = new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
 
         Fixture.IDateTimeProvider.Setup(o => o.ProvideUtcNow()).Returns(now);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
@@ -617,7 +617,7 @@ public class TokenManagementTest
         string? hashedSecret = "hashedSecret";
         Client? client = new() { Id = clientId };
         DateTime now = DateTime.UtcNow;
-        User? user = new() { Clients = new UserClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
+        User? user = new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId, RefreshToken = new() { ExpirationDate = now.AddMinutes(2), Value = hashedRefreshToken }, Token = new() { IsRevoked = false, ExpirationDate = now, Value = hashedToken } } } };
 
         Fixture.IDateTimeProvider.Setup(o => o.ProvideUtcNow()).Returns(now);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);

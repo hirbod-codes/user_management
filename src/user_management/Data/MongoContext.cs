@@ -28,6 +28,7 @@ public class MongoContext
     public string CertificateP12 { get; set; } = null!;
     public string Host { get; set; } = null!;
     public int Port { get; set; }
+    public List<MongoServer> Servers { get; set; } = null!;
 
     public async Task Initialize(MongoCollections mongoCollections, IMongoDatabase mongoDatabase)
     {
@@ -99,12 +100,12 @@ public class MongoContext
         }));
 
         // Clients.RefreshToken.Value
-        string refreshTokenValueIndexField = Models.User.CLIENTS + "." + UserClient.REFRESH_TOKEN + "." + RefreshToken.VALUE;
+        string refreshTokenValueIndexField = Models.User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.REFRESH_TOKEN + "." + RefreshToken.VALUE;
         IndexKeysDefinition<Models.User> refreshTokenValueIndex = Builders<Models.User>.IndexKeys.Ascending(refreshTokenValueIndexField);
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(refreshTokenValueIndex, new CreateIndexOptions<Models.User>() { Unique = true, Sparse = true }));
 
         // Clients.Token.Value
-        string tokenValueIndexField = Models.User.CLIENTS + "." + UserClient.TOKEN + "." + Token.VALUE;
+        string tokenValueIndexField = Models.User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.TOKEN + "." + Token.VALUE;
         IndexKeysDefinition<Models.User> tokenValueIndex = Builders<Models.User>.IndexKeys.Ascending(tokenValueIndexField);
         await userCollection.Indexes.CreateOneAsync(new CreateIndexModel<Models.User>(tokenValueIndex, new CreateIndexOptions<Models.User>() { Unique = true, Sparse = true }));
     }
@@ -113,7 +114,7 @@ public class MongoContext
     {
         ReplicaSetName = ReplicaSetName,
         Scheme = ConnectionStringScheme.MongoDB,
-        Server = new MongoServerAddress(Host, Port),
+        Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
         Credential = MongoCredential.CreateMongoX509Credential(Username),
         UseTls = true,
         SslSettings = new()
