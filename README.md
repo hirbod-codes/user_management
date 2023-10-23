@@ -113,6 +113,14 @@ Temporarily set the environment in Program.cs like
 Environment.SetEnvironmentVariable("ENV_FILE_PATH", ".env.file");
 ```
 
+or run following:
+
+```bash
+USER_MANAGEMENT_ENV_FILE_PATH=.env.mongodb.integration_test dotnet test --filter "FullyQualifiedName~user_management_integration_tests"
+# or
+dotnet test --filter "FullyQualifiedName~user_management_unit_tests"
+```
+
 TO DO:
 
 Change environment values in .env file properly when running outside a docker container.
@@ -128,3 +136,5 @@ Set DirectConnection to true.\
 Set host name localhost and port of the primary server in Server property of MongoClient.
 
 **Unset Servers property in MongoClient, because mongodb replica set uses dns names and they are only available in docker compose network.**
+
+**Do not use MongoDB standalone container because integration tests need atomic transactions.**
