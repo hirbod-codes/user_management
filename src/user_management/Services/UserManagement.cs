@@ -223,9 +223,9 @@ public class UserManagement : IUserManagement
 
         PartialUser user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
 
-        if (!user.IsClientsTouched()) throw new UnauthorizedAccessException();
+        if (!user.IsAuthorizedClientsTouched()) throw new UnauthorizedAccessException();
 
-        return user.Clients == null ? Array.Empty<AuthorizedClientRetrieveDto>() : user.Clients.ToList().ConvertAll<AuthorizedClientRetrieveDto>(c => _mapper.Map<AuthorizedClientRetrieveDto>(c));
+        return user.AuthorizedClients == null ? Array.Empty<AuthorizedClientRetrieveDto>() : user.AuthorizedClients.ToList().ConvertAll<AuthorizedClientRetrieveDto>(c => _mapper.Map<AuthorizedClientRetrieveDto>(c));
     }
 
     public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
