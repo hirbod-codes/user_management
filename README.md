@@ -52,7 +52,6 @@ cd path-to-project-root-directory/ && \
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
-    ./generate_certificates.sh --projectRootDirectory . && \
     sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
