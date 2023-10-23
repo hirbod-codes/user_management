@@ -247,7 +247,8 @@ public class ClientRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebAppli
             user_management.Models.Client retrievedClient = (await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).First();
             AssertFieldsExpectedValues(client, retrievedClient, new() { { user_management.Models.Client.REDIRECT_URL, newRedirectUrl }, { user_management.Models.Client.UPDATED_AT, retrievedClient.UpdatedAt } });
         }
-        finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
+        finally { await _clientCollection.DeleteManyAsync(Builders<user_management.Models.Client>.Filter.Empty); }
+        // finally { await _clientCollection.DeleteOneAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id)); }
 
         Assert.Null((await _clientCollection.FindAsync(Builders<user_management.Models.Client>.Filter.Eq("_id", client.Id))).FirstOrDefault<user_management.Models.Client?>());
 
