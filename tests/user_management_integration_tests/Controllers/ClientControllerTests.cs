@@ -47,7 +47,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         ClientCreateDto dto = new() { RedirectUrl = _faker.Internet.Url() };
 
@@ -83,7 +83,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).First();
 
@@ -118,7 +118,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = Client.FakeClient(out string secret, clients);
         client.ExposedCount = 0;
@@ -156,7 +156,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = Client.FakeClient(out string secret, clients);
         client.ExposedCount = 0;
@@ -200,7 +200,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = Client.FakeClient(out string secret, clients);
         client.ExposedCount = 0;
@@ -242,7 +242,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = Client.FakeClient(out string secret, clients);
         client.ExposedCount = 0;
@@ -254,11 +254,12 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
             ClientId = client.Id.ToString(),
             Secret = secret,
         };
+        var t = JsonContent.Create(dto);
 
         string url = "api/" + ClientController.PATH_PATCH_EXPOSURE;
 
         // When
-        HttpResponseMessage response = await httpClient.PatchAsync(url, JsonContent.Create(dto));
+        HttpResponseMessage response = await httpClient.PatchAsJsonAsync(url, dto);
 
         // Then
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

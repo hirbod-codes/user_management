@@ -881,7 +881,7 @@ public class UserControllerTests
     public async void RetrieveClients_Ok()
     {
         AuthorizedClient[] clients = new AuthorizedClient[] { };
-        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), Clients = clients };
+        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), AuthorizedClients = clients };
         string userId = "userId";
         bool forClients = false;
         IEnumerable<AuthorizedClientRetrieveDto> authorizedClients = Array.Empty<AuthorizedClientRetrieveDto>();

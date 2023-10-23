@@ -97,7 +97,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         // Then
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("\"At least one of the following variables must be provided: firstName, middleName and lastName.\"", await response.Content.ReadAsStringAsync());
+        Assert.Equal("At least one of the following variables must be provided: firstName, middleName and lastName.", await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -169,9 +169,10 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
     {
         // Given
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
-        string phoneNumber = "09999999999";
 
-        Assert.Null((await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber))).FirstOrDefault());
+        // make sure current phone number doesn't exist.
+        string phoneNumber = "09999999999";
+        await _userCollection.DeleteManyAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber));
 
         string url = "api/" + user_management.Controllers.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", Uri.EscapeDataString(Uri.EscapeDataString("09999999999")));
 
@@ -408,7 +409,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
+        // Make sure new email doesn't exist.
         string newEmail = "new_imaginary_email@example.com";
+        await _userCollection.DeleteManyAsync(fb.Eq(User.EMAIL, newEmail));
         ChangeUnverifiedEmail dto = new() { Email = user.Email, NewEmail = newEmail, Password = UserSeeder.USERS_PASSWORDS };
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_UNVERIFIED_EMAIL;
@@ -443,7 +446,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
+        // Make sure new username doesn't exist.
         string newUsername = "newUsername";
+        await _userCollection.DeleteManyAsync(fb.Eq(User.USERNAME, newUsername));
         ChangeUsername dto = new() { Email = user.Email, Username = newUsername, VerificationSecret = user.VerificationSecret! };
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_USERNAME;
@@ -478,7 +483,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
+        // Make sure new phone number doesn't exist.
         string newPhoneNumber = "09999999999";
+        await _userCollection.DeleteManyAsync(fb.Eq(User.PHONE_NUMBER, newPhoneNumber));
         ChangePhoneNumber dto = new() { Email = user.Email, PhoneNumber = newPhoneNumber, VerificationSecret = user.VerificationSecret! };
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_PHONE_NUMBER;
@@ -514,7 +521,9 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
+        // Make sure new email doesn't exist.
         string newEmail = "new_imaginary_email@example.com";
+        await _userCollection.DeleteManyAsync(fb.Eq(User.EMAIL, newEmail));
         ChangeEmail dto = new() { Email = user.Email, NewEmail = newEmail, VerificationSecret = user.VerificationSecret! };
 
         string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_EMAIL;
@@ -612,7 +621,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user);
 
         var readers = user.UserPermissions.Readers.Where(r => r.AuthorId != user.Id).ToList();
-        Field[] targetFieldsToRead = _faker.PickRandom(User.GetReadableFields(), _faker.Random.Int(2, 4)).ToArray();
+        Field[] targetFieldsToRead = _faker.PickRandom(User.GetReadableFields(), _faker.Random.Int(2, 4)).Where(f => f.Name != "_id").ToArray();
         readers.Add(new() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = targetFieldsToRead });
         user.UserPermissions.Readers = readers.ToArray();
 
@@ -632,7 +641,8 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Dictionary<string, object?>? retrievedUser = await response.Content.ReadFromJsonAsync<Dictionary<string, object?>>();
         Assert.NotNull(retrievedUser);
 
-        Assert.Equal(retrievedUser.Count, targetFieldsToRead.FirstOrDefault(f => f.Name == "_id") == null ? targetFieldsToRead.Length + 1 : targetFieldsToRead.Length);
+        // Adding one because _id field is always added to the result. 
+        Assert.Equal(retrievedUser.Count, targetFieldsToRead.Length + 1);
         Assert.True(retrievedUser.TryGetValue("_id", out object? userId));
         Assert.NotNull(userId);
         Assert.Equal(user.Id.ToString(), retrievedUser["_id"]!.ToString());

@@ -53,7 +53,7 @@ public class TokenManagement : ITokenManagement
 
         if (client.ExposedCount > 2) throw new BannedClientException();
 
-        if (!StaticData.AreValid(scope.Privileges, user.Privileges!)) throw new UnauthorizedAccessException();
+        if (scope.Privileges.Length != 0 && !StaticData.IsEntityPrivileged(user.Privileges!, scope.Privileges)) throw new UnauthorizedAccessException();
 
         AuthorizingClient authorizingClient = new()
         {

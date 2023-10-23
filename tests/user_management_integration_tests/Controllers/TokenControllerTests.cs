@@ -51,7 +51,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         await _userCollection.InsertOneAsync(u);
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("JWT", loginResult.Jwt);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
         Client client = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).First();
         TokenAuthDto dto = new()
