@@ -322,7 +322,7 @@ public class UserRepository : IUserRepository
         if (tokenPrivileges.ReadsFields.Length > 0)
         {
             string fields = "";
-            tokenPrivileges.ReadsFields.ToList().ConvertAll<string>(f => $"{{'name': '{f.Name}', 'is_permitted': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
+            tokenPrivileges.ReadsFields.ToList().ConvertAll<string>(f => $"{{'{Field.NAME}': '{f.Name}', '{Field.IS_PERMITTED}': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
             fields = "[" + fields + "]";
 
             Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> f = (p) => p
@@ -346,10 +346,10 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.READERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.READERS}',
                                 [
                                     {{
-                                        'author_id': ObjectId('{clientIdString}'),
-                                        'author': '{Reader.CLIENT}',
-                                        'is_permitted': true,
-                                        'fields': {fields}
+                                        '{Reader.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Reader.AUTHOR}': '{Reader.CLIENT}',
+                                        '{Reader.IS_PERMITTED}': true,
+                                        '{Reader.FIELDS}': {fields}
                                     }}
                                 ]
                             ]
@@ -363,7 +363,7 @@ public class UserRepository : IUserRepository
         if (tokenPrivileges.UpdatesFields.Length > 0)
         {
             string fields = "";
-            tokenPrivileges.UpdatesFields.ToList().ConvertAll<string>(f => $"{{'name': '{f.Name}', 'is_permitted': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
+            tokenPrivileges.UpdatesFields.ToList().ConvertAll<string>(f => $"{{'{Field.NAME}': '{f.Name}', '{Field.IS_PERMITTED}': {f.IsPermitted.ToString().ToLower()}}}").ToList().ForEach(f => fields += f + ", ");
             fields = "[" + fields + "]";
 
             Func<PipelineDefinition<User, User>, PipelineDefinition<User, User>> f = (p) => p
@@ -387,10 +387,10 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.UPDATERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.UPDATERS}',
                                 [
                                     {{
-                                        'author_id': ObjectId('{clientIdString}'),
-                                        'author': '{Updater.CLIENT}',
-                                        'is_permitted': true,
-                                        'fields': {fields}
+                                        '{Updater.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Updater.AUTHOR}': '{Updater.CLIENT}',
+                                        '{Updater.IS_PERMITTED}': true,
+                                        '{Updater.FIELDS}': {fields}
                                     }}
                                 ]
                             ]
@@ -424,9 +424,9 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.DELETERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.DELETERS}',
                                 [
                                     {{
-                                        'author_id': ObjectId('{clientIdString}'),
-                                        'author': '{Deleter.CLIENT}',
-                                        'is_permitted': true
+                                        '{Deleter.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Deleter.AUTHOR}': '{Deleter.CLIENT}',
+                                        '{Deleter.IS_PERMITTED}': true
                                     }}
                                 ]
                             ]
@@ -583,10 +583,10 @@ public class UserRepository : IUserRepository
                 $addFields: {{
                     reader: {{
                         $arrayElemAt: [
-                        '$user_privileges.readers',
+                        '${PartialUser.USER_PERMISSIONS}.{UserPermissions.READERS}',
                         {{
                             $indexOfArray: [
-                            '$user_privileges.readers.author_id',
+                            '${PartialUser.USER_PERMISSIONS}.{UserPermissions.READERS}.{Reader.AUTHOR_ID}',
                             ObjectId('{actorId.ToString()}'),
                             ],
                         }},
@@ -598,7 +598,7 @@ public class UserRepository : IUserRepository
                 $addFields: {{
                     readableFields: {{
                         $map: {{
-                        input: '$reader.fields',
+                        input: '$reader.{Reader.FIELDS}',
                         in: '$$this.name',
                         }},
                     }},
@@ -653,19 +653,19 @@ public class UserRepository : IUserRepository
             filters.Add(builder.In(Reader.FIELDS, optionalFields));
 
         List<FilterDefinition<PartialUser>> allFilters = new() {
-            builder.Eq(PartialUser.USER_PRIVILEGES + "." + UserPermissions.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true)
+            builder.Eq(PartialUser.USER_PERMISSIONS + "." + UserPermissions.ALL_READERS + "." + AllReaders.ARE_PERMITTED, true)
         };
 
         if (requiredFields != null && requiredFields.Count != 0)
-            allFilters.Add(builder.All(PartialUser.USER_PRIVILEGES + "." + UserPermissions.ALL_READERS + "." + AllReaders.FIELDS, requiredFields));
+            allFilters.Add(builder.All(PartialUser.USER_PERMISSIONS + "." + UserPermissions.ALL_READERS + "." + AllReaders.FIELDS, requiredFields));
 
         if (optionalFields != null && optionalFields.Count != 0)
-            allFilters.Add(builder.In(PartialUser.USER_PRIVILEGES + "." + UserPermissions.ALL_READERS + "." + AllReaders.FIELDS, optionalFields));
+            allFilters.Add(builder.In(PartialUser.USER_PERMISSIONS + "." + UserPermissions.ALL_READERS + "." + AllReaders.FIELDS, optionalFields));
 
         return builder.Or(
                     builder.And(
-                        builder.SizeGt(PartialUser.USER_PRIVILEGES + "." + UserPermissions.READERS, 0),
-                        builder.ElemMatch(PartialUser.USER_PRIVILEGES + "." + UserPermissions.READERS, builder.And(filters))
+                        builder.SizeGt(PartialUser.USER_PERMISSIONS + "." + UserPermissions.READERS, 0),
+                        builder.ElemMatch(PartialUser.USER_PERMISSIONS + "." + UserPermissions.READERS, builder.And(filters))
                     ),
                     builder.And(allFilters)
                 );
