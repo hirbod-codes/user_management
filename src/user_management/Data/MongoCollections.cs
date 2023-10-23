@@ -17,5 +17,9 @@ public class MongoCollections
         Clients = dbDatabase.GetCollection<Models.Client>(CLIENTS);
     }
 
-    public async Task ClearCollections(IMongoDatabase dbDatabase) => (await dbDatabase.ListCollectionsAsync()).ToList().ForEach(c => c.Clear());
+    public async Task ClearCollections(IMongoDatabase dbDatabase)
+    {
+        await Users.DeleteManyAsync(Builders<Models.User>.Filter.Empty);
+        await Clients.DeleteManyAsync(Builders<Models.Client>.Filter.Empty);
+    }
 }

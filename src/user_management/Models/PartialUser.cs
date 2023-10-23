@@ -20,12 +20,12 @@ public class PartialUser
     private bool _isPrivilegesTouched = false;
     public bool IsPrivilegesTouched() => _isPrivilegesTouched;
 
-    [BsonElement(USER_PRIVILEGES)]
-    public UserPermissions? UserPrivileges { get { return _userPrivileges; } set { _userPrivileges = value; _isUserPrivilegesTouched = true; } }
-    public const string USER_PRIVILEGES = "user_privileges";
-    public UserPermissions? _userPrivileges = null;
-    private bool _isUserPrivilegesTouched = false;
-    public bool IsUserPrivilegesTouched() => _isUserPrivilegesTouched;
+    [BsonElement(USER_PERMISSIONS)]
+    public UserPermissions? UserPermissions { get { return _userPermissions; } set { _userPermissions = value; _isUserPermissionsTouched = true; } }
+    public const string USER_PERMISSIONS = "user_permissions";
+    public UserPermissions? _userPermissions = null;
+    private bool _isUserPermissionsTouched = false;
+    public bool IsUserPermissionsTouched() => _isUserPermissionsTouched;
 
     [BsonElement(AUTHORIZING_CLIENT)]
     public AuthorizingClient? AuthorizingClient { get { return _authorizingClient; } set { _authorizingClient = value; _isAuthorizingClientTouched = true; } }
@@ -34,12 +34,12 @@ public class PartialUser
     private bool _isAuthorizingClientTouched = false;
     public bool IsAuthorizingClientTouched() => _isAuthorizingClientTouched;
 
-    [BsonElement(CLIENTS)]
-    public AuthorizedClient[]? Clients { get { return _clients; } set { _clients = value; _isClientsTouched = true; } }
-    public const string CLIENTS = "clients";
-    public AuthorizedClient[]? _clients = null;
-    private bool _isClientsTouched = false;
-    public bool IsClientsTouched() => _isClientsTouched;
+    [BsonElement(AUTHORIZED_CLIENTS)]
+    public AuthorizedClient[]? AuthorizedClients { get { return _authorizedClients; } set { _authorizedClients = value; _isAuthorizedClientsTouched = true; } }
+    public const string AUTHORIZED_CLIENTS = "authorized_clients";
+    public AuthorizedClient[]? _authorizedClients = null;
+    private bool _isAuthorizedClientsTouched = false;
+    public bool IsAuthorizedClientsTouched() => _isAuthorizedClientsTouched;
 
     [BsonElement(FIRST_NAME)]
     public string? FirstName { get { return _firstName; } set { _firstName = value; _isFirstNameTouched = true; } }
@@ -104,12 +104,12 @@ public class PartialUser
     private bool _isVerificationSecretUpdatedAtTouched = false;
     public bool IsVerificationSecretUpdatedAtTouched() => _isVerificationSecretUpdatedAtTouched;
 
-    [BsonElement(IS_VERIFIED)]
-    public bool? IsVerified { get { return _isVerified; } set { _isVerified = value; _isIsVerifiedTouched = true; } }
-    public const string IS_VERIFIED = "is_verified";
-    public bool? _isVerified = null;
-    private bool _isIsVerifiedTouched = false;
-    public bool IsIsVerifiedTouched() => _isIsVerifiedTouched;
+    [BsonElement(IS_EMAIL_VERIFIED)]
+    public bool? IsEmailVerified { get { return _isEmailVerified; } set { _isEmailVerified = value; _isIsEmailVerifiedTouched = true; } }
+    public const string IS_EMAIL_VERIFIED = "is_email_verified";
+    public bool? _isEmailVerified = null;
+    private bool _isIsEmailVerifiedTouched = false;
+    public bool IsIsEmailVerifiedTouched() => _isIsEmailVerifiedTouched;
 
     [BsonElement(LOGGED_OUT_AT)]
     public DateTime? LoggedOutAt { get { return _loggedOutAt; } set { _loggedOutAt = value; _isLoggedOutAtTouched = true; } }
@@ -147,23 +147,17 @@ public class PartialUser
     public object GetReadable()
     {
         List<System.Reflection.PropertyInfo> properties = this.GetType().GetProperties().ToList()
-            .Where(p => p.CustomAttributes.ToList().Where(ca => ca.AttributeType == typeof(BsonElementAttribute) || ca.AttributeType == typeof(BsonIdAttribute)).Count() != 0)
+            .Where(p => p.CustomAttributes.ToList().Where(ca => ca.AttributeType == typeof(BsonElementAttribute)).Count() != 0)
             .ToList();
 
         var retrievableUser = new ExpandoObject() as IDictionary<string, object?>;
 
         properties.ForEach(p =>
         {
-            CustomAttributeData customAttribute = p.CustomAttributes.First(ca => ca.AttributeType == typeof(BsonElementAttribute) || ca.AttributeType == typeof(BsonIdAttribute));
+            CustomAttributeData customAttribute = p.CustomAttributes.First(ca => ca.AttributeType == typeof(BsonElementAttribute));
 
-            string key = (customAttribute.AttributeType == typeof(BsonIdAttribute) ? "_id" : customAttribute.ConstructorArguments[0].Value as string)!;
+            string key = (customAttribute.ConstructorArguments[0].Value as string)!;
             object? value = p.GetValue(this);
-
-            if (key == "_id")
-            {
-                retrievableUser.Add(key, value!.ToString());
-                return;
-            }
 
             var method = this.GetType().GetMethod("Is" + p.Name + "Touched");
             object? methodReturn = null;
@@ -171,6 +165,8 @@ public class PartialUser
 
             if (methodReturn != null && (bool)methodReturn) retrievableUser.Add(key, value);
         });
+
+        retrievableUser.Add("_id", Id.ToString());
 
         return retrievableUser;
     }

@@ -101,17 +101,14 @@ public class ClientController : ControllerBase
     /// Update a client.
     /// </summary>
     /// <remarks>To Update client's redirect url, server needs client's secret.</remarks>
-    [Permissions(Permissions = new string[] { StaticData.UPDATE_CLIENT })]
     [HttpPatch(PATH_PATCH)]
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     public async Task<IActionResult> Update([FromBody] ClientPatchDto dto)
     {
-        if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
-
         try { await _clientManagement.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl); }
         catch (AuthenticationException) { return Unauthorized(); }
-        catch (ArgumentException ex) { return ex.Message == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
+        catch (ArgumentException ex) { return ex.ParamName == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
         catch (DatabaseServerException) { return Problem("We failed to update this client."); }
 
@@ -126,7 +123,7 @@ public class ClientController : ControllerBase
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
-    public async Task<IActionResult> Delete(string secret)
+    public async Task<IActionResult> Delete([FromRoute] string secret)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 
@@ -151,7 +148,7 @@ public class ClientController : ControllerBase
     [HttpPatch(PATH_PATCH_EXPOSURE)]
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
-    public async Task<IActionResult> UpdateExposedClient(ClientExposedDto dto)
+    public async Task<IActionResult> UpdateExposedClient([FromBody] ClientExposedDto dto)
     {
         if (!_authenticatedByJwt.IsAuthenticated()) return Unauthorized();
 

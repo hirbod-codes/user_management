@@ -705,7 +705,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClient(clientId, userId, authorId, forClients)).Throws(new ArgumentException("clientId"));
-        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId));
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId), "The clientId is not valid.");
     }
 
     [Fact]
@@ -786,7 +786,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClients(userId, authorId, forClients)).Throws(new ArgumentException("authorId"));
-        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClients(userId));
+        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClients(userId), "The authorId is not valid.");
     }
 
     [Fact]
@@ -881,7 +881,7 @@ public class UserControllerTests
     public async void RetrieveClients_Ok()
     {
         AuthorizedClient[] clients = new AuthorizedClient[] { };
-        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), Clients = clients };
+        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), AuthorizedClients = clients };
         string userId = "userId";
         bool forClients = false;
         IEnumerable<AuthorizedClientRetrieveDto> authorizedClients = Array.Empty<AuthorizedClientRetrieveDto>();

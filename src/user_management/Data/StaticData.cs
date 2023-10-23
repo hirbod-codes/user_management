@@ -15,13 +15,13 @@ public static class StaticData
         return true;
     }
 
-    public static bool AreValid(IEnumerable<Privilege> referencePrivileges, IEnumerable<Privilege> privilegesUnderValidation)
+    public static bool IsEntityPrivileged(IEnumerable<Privilege> referenceEntityPrivileges, IEnumerable<Privilege> underValidationEntityPrivileges)
     {
-        if (privilegesUnderValidation.Count() > referencePrivileges.Count()) return false;
+        if (underValidationEntityPrivileges.Count() > referenceEntityPrivileges.Count()) return false;
 
-        for (int i = 0; i < referencePrivileges.Count(); i++)
+        for (int i = 0; i < referenceEntityPrivileges.Count(); i++)
         {
-            Privilege? p = privilegesUnderValidation.FirstOrDefault<Privilege?>(p => p != null && p.Name == referencePrivileges.ElementAt(i).Name, null);
+            Privilege? p = underValidationEntityPrivileges.FirstOrDefault<Privilege?>(p => p != null && p.Name == referenceEntityPrivileges.ElementAt(i).Name, null);
             if (p == null || p.Value == null || (bool)(p.Value) != true) return false;
         }
         return true;
