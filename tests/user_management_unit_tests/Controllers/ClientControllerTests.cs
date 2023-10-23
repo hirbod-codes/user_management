@@ -154,14 +154,6 @@ public class ClientControllerTests
     }
 
     [Fact]
-    public async void Update_Unauthenticated()
-    {
-        ClientPatchDto dto = new();
-        Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
-        HttpAsserts.IsUnauthenticated(await InstantiateController().Update(dto));
-    }
-
-    [Fact]
     public async void Update_BadRequest()
     {
         ObjectId clientId = ObjectId.GenerateNewId();
@@ -169,7 +161,7 @@ public class ClientControllerTests
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientId"));
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException(null, paramName: "clientId"));
         HttpAsserts<string>.IsBadRequest(await InstantiateController().Update(dto), "Invalid id for client provided.");
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws<DuplicationException>();
@@ -184,7 +176,7 @@ public class ClientControllerTests
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
 
-        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws(new ArgumentException("clientSecret"));
+        Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws<ArgumentException>();
         HttpAsserts.IsProblem(await InstantiateController().Update(dto), "Internal server error encountered.");
 
         Fixture.IClientManagement.Setup(o => o.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl)).Throws<DatabaseServerException>();

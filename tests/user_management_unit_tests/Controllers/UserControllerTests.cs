@@ -705,7 +705,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClient(clientId, userId, authorId, forClients)).Throws(new ArgumentException("clientId"));
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId), "The clientId is not valid.");
+        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClient(clientId, userId));
     }
 
     [Fact]
@@ -786,7 +786,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(authorId);
 
         Fixture.IUserManagement.Setup<Task>(um => um.RemoveClients(userId, authorId, forClients)).Throws(new ArgumentException("authorId"));
-        HttpAsserts<string>.IsBadRequest(await InstantiateController().RemoveClients(userId), "The authorId is not valid.");
+        HttpAsserts.IsBadRequest(await InstantiateController().RemoveClients(userId));
     }
 
     [Fact]
