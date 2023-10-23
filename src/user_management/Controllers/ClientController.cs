@@ -107,7 +107,6 @@ public class ClientController : ControllerBase
     public async Task<IActionResult> Update([FromBody] ClientPatchDto dto)
     {
         try { await _clientManagement.UpdateRedirectUrl(dto.Id, dto.Secret, dto.RedirectUrl); }
-        catch (AuthenticationException) { return Unauthorized(); }
         catch (ArgumentException ex) { return ex.ParamName == "clientId" ? BadRequest("Invalid id for client provided.") : Problem("Internal server error encountered."); }
         catch (DuplicationException) { return BadRequest("The provided redirect url is not unique!"); }
         catch (DatabaseServerException) { return Problem("We failed to update this client."); }
