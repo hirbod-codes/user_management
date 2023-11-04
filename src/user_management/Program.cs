@@ -24,6 +24,7 @@ using System.Net;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using user_management.Docs;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -69,9 +70,9 @@ builder.Services.AddVersionedApiExplorer(o =>
     o.SubstituteApiVersionInUrl = true;
 });
 
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "User Management API", Version = "v1", Contact = new() { Name = "hirbod", Email = "hirbod.khatami.word@gmail.com" }, Description = "An application to manage user accounts' authentication and authorization." });
     c.ExampleFilters();
     c.IncludeXmlComments(Path.Combine(System.AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"), true);
 
@@ -96,6 +97,8 @@ builder.Services.AddSwaggerGen(c =>
 
     c.OperationFilter<SecurityRequirementsFilter>();
     c.OperationFilter<GlobalResponsesFilter>();
+
+    c.OperationFilter<SwaggerDefaultValues>();
 });
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
@@ -151,9 +154,11 @@ app.UseSwaggerUI(c =>
 {
     c.DocumentTitle = "User Management - docs";
     c.RoutePrefix = "swagger";
-    c.SwaggerEndpoint("v1/swagger.json", "API v1");
     c.EnableDeepLinking();
     c.DefaultModelsExpandDepth(0);
+
+    foreach (var description in app.Services.GetRequiredService<IApiVersionDescriptionProvider>().ApiVersionDescriptions)
+        c.SwaggerEndpoint($"{description.GroupName}/swagger.json", $"{description.GroupName}");
 });
 
 if (!app.Environment.IsDevelopment())
@@ -183,17 +188,6 @@ await DatabaseManagement.SeedDatabase(
     app.Configuration["ADMIN_EMAIL"]!,
     app.Configuration["ADMIN_PHONE_NUMBER"]
     );
-
-// Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.DocumentTitle = "User Management - docs";
-    c.RoutePrefix = "swagger";
-    c.SwaggerEndpoint("v1/swagger.json", "API v1");
-    c.EnableDeepLinking();
-    c.DefaultModelsExpandDepth(0);
-});
 
 if (!app.Environment.IsDevelopment())
 {
