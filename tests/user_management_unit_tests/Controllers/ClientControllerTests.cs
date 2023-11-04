@@ -17,7 +17,7 @@ public class ClientControllerTests
 
     public ClientControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.ClientController InstantiateController() => new user_management.Controllers.ClientController(Fixture.IMapper.Object, Fixture.IClientManagement.Object, Fixture.IAuthenticatedByJwt.Object);
+    private user_management.Controllers.V1.ClientController InstantiateController() => new user_management.Controllers.V1.ClientController(Fixture.IMapper.Object, Fixture.IClientManagement.Object, Fixture.IAuthenticatedByJwt.Object);
 
     public static Faker Faker = new("en");
 

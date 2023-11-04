@@ -17,7 +17,7 @@ public class TokenControllerTests
 
     public TokenControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.TokenController InstantiateController() => new user_management.Controllers.TokenController(Fixture.ITokenManagement.Object, Fixture.IMapper.Object, Fixture.IAuthenticatedByJwt.Object);
+    private user_management.Controllers.V1.TokenController InstantiateController() => new user_management.Controllers.V1.TokenController(Fixture.ITokenManagement.Object, Fixture.IMapper.Object, Fixture.IAuthenticatedByJwt.Object);
 
     public static Faker Faker = new("en");
 
