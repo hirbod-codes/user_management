@@ -22,6 +22,9 @@ using user_management.Filters;
 using user_management.Notification;
 using System.Net;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,6 +52,22 @@ builder.Services.AddCors(opt =>
     opt.AddPolicy("login", c => { c.AllowAnyHeader(); c.AllowAnyMethod(); c.WithOrigins(Program.FirstPartyDomains); });
 });
 
+builder.Services.AddApiVersioning(opt =>
+{
+    opt.AssumeDefaultVersionWhenUnspecified = true;
+    opt.DefaultApiVersion = ApiVersion.Parse("1.0");
+    opt.ReportApiVersions = true;
+    opt.ApiVersionReader = ApiVersionReader.Combine(
+        new HeaderApiVersionReader("x-api-version"),
+        new MediaTypeApiVersionReader("x-api-version")
+    );
+});
+
+builder.Services.AddVersionedApiExplorer(o =>
+{
+    o.GroupNameFormat = "'v'VVV";
+    o.SubstituteApiVersionInUrl = true;
+});
 
 builder.Services.AddSwaggerGen(c =>
 {
