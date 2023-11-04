@@ -5,14 +5,14 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using user_management.Controllers;
+using user_management.Controllers.V1;
 using user_management.Data;
 using user_management.Dtos.Client;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
 
-namespace user_management_integration_tests.Controllers;
+namespace user_management_integration_tests.Controllers.V1;
 
 [CollectionDefinition("ClientControllerTests", DisableParallelization = true)]
 public class ClientControllerTestsCollectionDefinition { }

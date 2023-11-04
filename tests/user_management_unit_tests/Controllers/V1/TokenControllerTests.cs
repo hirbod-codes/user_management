@@ -8,7 +8,7 @@ using user_management.Services.Client;
 using user_management.Services.Data;
 using user_management.Services.Data.Client;
 
-namespace user_management_unit_tests.Controllers;
+namespace user_management_unit_tests.Controllers.V1;
 
 [Collection("Controller")]
 public class TokenControllerTests

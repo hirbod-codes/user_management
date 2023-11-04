@@ -13,7 +13,7 @@ using System.Security.Authentication;
 using Xunit.Sdk;
 using Xunit.Abstractions;
 
-namespace user_management_unit_tests.Controllers;
+namespace user_management_unit_tests.Controllers.V1;
 
 [Collection("Controller")]
 public class UserControllerTests
