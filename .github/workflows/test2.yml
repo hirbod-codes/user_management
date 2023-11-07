@@ -1,9 +1,11 @@
 on:
-    workflow_dispatch:
-
     pull_request:
         branches:
             - cicd_test
+    workflow_run: 
+        workflows: test
+        types: completed
+    workflow_dispatch:
 
 jobs:
     create-release-version:
