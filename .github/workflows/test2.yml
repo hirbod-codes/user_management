@@ -1,9 +1,10 @@
 on:
+    workflow_dispatch:
+
     pull_request:
         branches:
             - cicd_test
-    workflow_dispatch:
-    
+
 jobs:
     create-release-version:
         name: Create release version
