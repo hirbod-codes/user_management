@@ -1,0 +1,57 @@
+on:
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+
+jobs:
+    create-release-version:
+        name: Create release version
+        runs-on: ubuntu-latest
+        permissions:
+            packages: write
+            contents: write
+            pull-requests: write
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                fetch-depth: 0
+
+            - uses: release-drafter/release-drafter@v5
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: paulhatch/semantic-version@v5.3.0
+              id: samver
+              with:
+                tag_prefix: "v"
+                major_pattern: "(MAJOR)"
+                minor_pattern: "(MINOR)"
+                version_format: "${major}.${minor}.${patch}"
+                # Optional path to check for changes. If any changes are detected in the path the
+                # 'changed' output will true. Enter multiple paths separated by spaces.
+                change_path: "src/user_management"
+                # Named version, will be used as suffix for name version tag
+                namespace: user_management
+                # If this is set to true, *every* commit will be treated as a new version.
+                bump_each_commit: false
+                # If bump_each_commit is also set to true, setting this value will cause the version to increment only if the pattern specified is matched.
+                bump_each_commit_patch_pattern: ""
+                search_commit_body: false
+                # The output method used to generate list of users, 'csv' or 'json'.
+                user_format_type: "json"
+                # Prevents pre-v1.0.0 version from automatically incrementing the major version.
+                # If enabled, when the major version is 0, major releases will be treated as minor and minor as patch. Note that the version_type output is unchanged.
+                enable_prerelease_mode: false
+                # If enabled, diagnostic information will be added to the action output.
+                debug: true
+                # If true, the branch will be used to select the maximum version.
+                version_from_branch: false
+
+            - run: echo "hello world";
+            - run: echo "${{steps.samver.outputs.version_type}}";
+            - run: echo "${{steps.samver.outputs.version}}";
+            - run: echo "${{steps.samver.outputs.version_tag}}";
+            - run: echo "${{steps.samver.outputs.changed}}";
