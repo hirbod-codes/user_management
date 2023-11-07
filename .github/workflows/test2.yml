@@ -55,4 +55,3 @@ jobs:
             - run: echo "${{steps.samver.outputs.version}}";
             - run: echo "${{steps.samver.outputs.version_tag}}";
             - run: echo "${{steps.samver.outputs.changed}}";
-            - run: echo "${{steps.samver.outputs.debug_output}}";
