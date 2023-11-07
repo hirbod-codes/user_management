@@ -1,7 +1,4 @@
 on:
-    push:
-        branches:
-            - cicd_test
     pull_request:
         branches:
             - cicd_test
@@ -21,6 +18,10 @@ jobs:
               uses: actions/checkout@v2
               with:
                 fetch-depth: 0
+
+            - uses: release-drafter/release-drafter@v5
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - uses: paulhatch/semantic-version@v5.3.0
               id: samver
@@ -49,12 +50,9 @@ jobs:
                 # If true, the branch will be used to select the maximum version.
                 version_from_branch: false
 
-            - run: echo "${{steps.samver.outputs.debug_output}}";
+            - run: echo "hello world";
             - run: echo "${{steps.samver.outputs.version_type}}";
             - run: echo "${{steps.samver.outputs.version}}";
             - run: echo "${{steps.samver.outputs.version_tag}}";
             - run: echo "${{steps.samver.outputs.changed}}";
-
-            - uses: release-drafter/release-drafter@v5
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - run: echo "${{steps.samver.outputs.debug_output}}";
