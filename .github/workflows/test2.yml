@@ -1,4 +1,7 @@
 on:
+    pull_request:
+        branches:
+            - cicd_test
     workflow_dispatch:
 
 jobs:
