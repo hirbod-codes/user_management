@@ -19,12 +19,6 @@ jobs:
               with:
                 fetch-depth: 0
 
-            - name: Changelog
-              uses: scottbrenner/generate-changelog-action@master
-              id: changelog
-              env:
-                REPO: ${{ github.repository }}
-
             - name: Build Changelog
               id: github_release
               uses: mikepenz/release-changelog-builder-action@v3
@@ -43,9 +37,3 @@ jobs:
                 tag: ${{ steps.tag_version.outputs.new_tag }}
                 name: Release ${{ steps.tag_version.outputs.new_tag }}
                 body: ${{ steps.github_release.outputs.changelog }}
-
-            - run: echo "${{steps.tag_version.outputs.new_tag}}";
-            - run: echo "${{steps.tag_version.outputs.new_version}}";
-            - run: echo "${{steps.tag_version.outputs.previous_tag}}";
-            - run: echo "${{steps.tag_version.outputs.release_type}}";
-            - run: echo "${{steps.tag_version.outputs.changelog}}";
