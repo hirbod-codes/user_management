@@ -2,9 +2,7 @@ version: '3.8'
 services:
     user_management:
         container_name: user_management_unit_test
-        build:
-            context: ./
-            dockerfile: ./tests/user_management_unit_tests/Dockerfile.unit_test
+        image: "${TESTING_IMAGE}"
         environment:
             USER_MANAGEMENT_MUST_NOT_USE_ENV_FILE: true
             USER_MANAGEMENT_ASPNETCORE_ENVIRONMENT: "${ENVIRONMENT}"
