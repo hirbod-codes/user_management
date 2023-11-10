@@ -22,6 +22,10 @@ using user_management.Filters;
 using user_management.Notification;
 using System.Net;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc.Versioning;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using user_management.Docs;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,10 +53,26 @@ builder.Services.AddCors(opt =>
     opt.AddPolicy("login", c => { c.AllowAnyHeader(); c.AllowAnyMethod(); c.WithOrigins(Program.FirstPartyDomains); });
 });
 
+builder.Services.AddApiVersioning(opt =>
+{
+    opt.AssumeDefaultVersionWhenUnspecified = true;
+    opt.DefaultApiVersion = ApiVersion.Parse("1.0");
+    opt.ReportApiVersions = true;
+    opt.ApiVersionReader = ApiVersionReader.Combine(
+        new HeaderApiVersionReader("x-api-version"),
+        new MediaTypeApiVersionReader("x-api-version")
+    );
+});
 
+builder.Services.AddVersionedApiExplorer(o =>
+{
+    o.GroupNameFormat = "'v'VVV";
+    o.SubstituteApiVersionInUrl = true;
+});
+
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "User Management API", Version = "v1", Contact = new() { Name = "hirbod", Email = "hirbod.khatami.word@gmail.com" }, Description = "An application to manage user accounts' authentication and authorization." });
     c.ExampleFilters();
     c.IncludeXmlComments(Path.Combine(System.AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"), true);
 
@@ -77,6 +97,8 @@ builder.Services.AddSwaggerGen(c =>
 
     c.OperationFilter<SecurityRequirementsFilter>();
     c.OperationFilter<GlobalResponsesFilter>();
+
+    c.OperationFilter<SwaggerDefaultValues>();
 });
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
@@ -132,9 +154,11 @@ app.UseSwaggerUI(c =>
 {
     c.DocumentTitle = "User Management - docs";
     c.RoutePrefix = "swagger";
-    c.SwaggerEndpoint("v1/swagger.json", "API v1");
     c.EnableDeepLinking();
     c.DefaultModelsExpandDepth(0);
+
+    foreach (var description in app.Services.GetRequiredService<IApiVersionDescriptionProvider>().ApiVersionDescriptions)
+        c.SwaggerEndpoint($"{description.GroupName}/swagger.json", $"{description.GroupName}");
 });
 
 if (!app.Environment.IsDevelopment())
@@ -165,17 +189,6 @@ await DatabaseManagement.SeedDatabase(
     app.Configuration["ADMIN_PHONE_NUMBER"]
     );
 
-// Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.DocumentTitle = "User Management - docs";
-    c.RoutePrefix = "swagger";
-    c.SwaggerEndpoint("v1/swagger.json", "API v1");
-    c.EnableDeepLinking();
-    c.DefaultModelsExpandDepth(0);
-});
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -190,7 +203,7 @@ app.UseAuthorization();
 
 app.Use((context, next) =>
 {
-    if (context.Request.Path.Value != "/api/" + user_management.Controllers.UserController.PATH_POST_LOGIN && context.Request.Path.Value != "/api/" + user_management.Controllers.TokenController.PATH_POST_AUTHORIZE)
+    if (context.Request.Path.Value != "/api/" + user_management.Controllers.V1.UserController.PATH_POST_LOGIN && context.Request.Path.Value != "/api/" + user_management.Controllers.V1.TokenController.PATH_POST_AUTHORIZE)
         return next();
 
     if (Program.FirstPartyDomains.Contains(context.Request.Host.Host.ToLower()))

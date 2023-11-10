@@ -13,7 +13,7 @@ using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
 
-namespace user_management_integration_tests.Controllers;
+namespace user_management_integration_tests.Controllers.V1;
 
 [CollectionDefinition("UserControllerTests", DisableParallelization = true)]
 public class UserControllerTestsCollectionDefinition { }
@@ -40,7 +40,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Given
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
         url += "?";
         url += "FirstName=imaginary_first_name&";
         url += "MiddleName=imaginary_first_name&";
@@ -65,7 +65,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             Builders<User>.Filter.Ne<string?>(User.LAST_NAME, null)
         ))).First();
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
         url += "?";
         if (user.FirstName != null) url += "FirstName=" + user.FirstName + "&";
         if (user.MiddleName != null) url += "MiddleName=" + user.MiddleName + "&";
@@ -90,7 +90,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             Builders<User>.Filter.Ne<string?>(User.LAST_NAME, null)
         ))).First();
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_FULL_NAME_EXISTENCE_CHECK;
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -106,7 +106,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Given
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_USERNAME_EXISTENCE_CHECK.Replace("{username}", Uri.EscapeDataString("imaginary_username"));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USERNAME_EXISTENCE_CHECK.Replace("{username}", Uri.EscapeDataString("imaginary_username"));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -123,7 +123,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).First();
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_USERNAME_EXISTENCE_CHECK.Replace("{username}", Uri.EscapeDataString(user.Username));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USERNAME_EXISTENCE_CHECK.Replace("{username}", Uri.EscapeDataString(user.Username));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -138,7 +138,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Given
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", Uri.EscapeDataString("imaginary_email@example.com"));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", Uri.EscapeDataString("imaginary_email@example.com"));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -155,7 +155,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).First();
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", Uri.EscapeDataString(user.Email));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_EMAIL_EXISTENCE_CHECK.Replace("{email}", Uri.EscapeDataString(user.Email));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -174,7 +174,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string phoneNumber = "09999999999";
         await _userCollection.DeleteManyAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber));
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", Uri.EscapeDataString(Uri.EscapeDataString("09999999999")));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", Uri.EscapeDataString(Uri.EscapeDataString("09999999999")));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -192,7 +192,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Ne<string?>(User.PHONE_NUMBER, null))).First();
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", Uri.EscapeDataString(user.PhoneNumber!));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_PHONE_NUMBER_EXISTENCE_CHECK.Replace("{phoneNumber}", Uri.EscapeDataString(user.PhoneNumber!));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -222,7 +222,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             Assert.Null(user);
             user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq<string?>(User.EMAIL, dto.Email))).FirstOrDefault<User?>();
             Assert.Null(user);
-            string url = "api/" + user_management.Controllers.UserController.PATH_POST_REGISTER;
+            string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_REGISTER;
 
             // When
             HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create<UserCreateDto>(dto));
@@ -258,7 +258,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Given
         _factory.INotificationHelper.Setup(o => o.SendVerificationMessage(It.IsAny<string>(), It.IsAny<string>()));
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).First();
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_SEND_VERIFICATION_EMAIL + "?email=" + user.Email;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_SEND_VERIFICATION_EMAIL + "?email=" + user.Email;
 
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
@@ -284,7 +284,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         Activation dto = new() { Email = user.Email, Password = UserSeeder.USERS_PASSWORDS, VerificationSecret = user.VerificationSecret! };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_ACTIVATE;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_ACTIVATE;
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
         // When
@@ -314,7 +314,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string newPassword = "New%Password99";
         ChangePassword dto = new() { Email = user.Email, Password = newPassword, PasswordConfirmation = newPassword, VerificationSecret = user.VerificationSecret! };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_PASSWORD;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_PASSWORD;
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
         // When
@@ -365,7 +365,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         }
         Login dto = new() { Email = user.Email, Password = password ?? UserSeeder.USERS_PASSWORDS };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_LOGIN;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_LOGIN;
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -376,7 +376,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
     public async Task Logout_Ok()
     {
         // Given
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_LOGOUT;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_LOGOUT;
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
         LoginResult loginResult = await Login(client, userCollection: _userCollection);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
@@ -414,7 +414,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.DeleteManyAsync(fb.Eq(User.EMAIL, newEmail));
         ChangeUnverifiedEmail dto = new() { Email = user.Email, NewEmail = newEmail, Password = UserSeeder.USERS_PASSWORDS };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_UNVERIFIED_EMAIL;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_UNVERIFIED_EMAIL;
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
@@ -451,7 +451,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.DeleteManyAsync(fb.Eq(User.USERNAME, newUsername));
         ChangeUsername dto = new() { Email = user.Email, Username = newUsername, VerificationSecret = user.VerificationSecret! };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_USERNAME;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_USERNAME;
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
@@ -488,7 +488,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.DeleteManyAsync(fb.Eq(User.PHONE_NUMBER, newPhoneNumber));
         ChangePhoneNumber dto = new() { Email = user.Email, PhoneNumber = newPhoneNumber, VerificationSecret = user.VerificationSecret! };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_PHONE_NUMBER;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_PHONE_NUMBER;
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
@@ -526,7 +526,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.DeleteManyAsync(fb.Eq(User.EMAIL, newEmail));
         ChangeEmail dto = new() { Email = user.Email, NewEmail = newEmail, VerificationSecret = user.VerificationSecret! };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_CHANGE_EMAIL;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_EMAIL;
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
@@ -558,7 +558,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENT + "?clientId=" + user.AuthorizedClients[0].ClientId.ToString() + "&userId=" + user.Id.ToString();
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_REMOVE_CLIENT + "?clientId=" + user.AuthorizedClients[0].ClientId.ToString() + "&userId=" + user.Id.ToString();
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, null);
@@ -591,7 +591,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_POST_REMOVE_CLIENTS + "?userId=" + user.Id.ToString();
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_REMOVE_CLIENTS + "?userId=" + user.Id.ToString();
 
         // When
         HttpResponseMessage response = await client.PostAsync(url, null);
@@ -631,7 +631,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_USER.Replace("{userId}", Uri.EscapeDataString(user.Id.ToString()));
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USER.Replace("{userId}", Uri.EscapeDataString(user.Id.ToString()));
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -667,7 +667,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: user);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_USER_AUTHORIZED_CLIENTS;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USER_AUTHORIZED_CLIENTS;
 
         // When
         HttpResponseMessage response = await client.GetAsync(url);
@@ -733,7 +733,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             .ToArray();
         await _userCollection.InsertOneAsync(user2);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_GET_USERS
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USERS
             .Replace("{logicsString}", Uri.EscapeDataString($"Username::Eq::{user1.Username}::string||Email::Eq::{user2.Email}::string"))
             .Replace("{limit}", Uri.EscapeDataString("5"))
             .Replace("{iteration}", Uri.EscapeDataString("0"))
@@ -831,7 +831,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string lastName = "fake_last_name";
         UserPatchDto dto = new() { FiltersString = $"Username::Eq::{user1.Username}::string||Username::Eq::{user2.Username}::string", UpdatesString = $"LastName::Set::{lastName}::string" };
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_PATCH_USERS;
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_PATCH_USERS;
 
         // When
         HttpResponseMessage response = await client.PatchAsync(url, JsonContent.Create(dto));
@@ -869,7 +869,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             .ToArray();
         await _userCollection.InsertOneAsync(user);
 
-        string url = "api/" + user_management.Controllers.UserController.PATH_DELETE_USER + "?id=" + user.Id.ToString();
+        string url = "api/" + user_management.Controllers.V1.UserController.PATH_DELETE_USER + "?id=" + user.Id.ToString();
 
         // When
         HttpResponseMessage response = await client.DeleteAsync(url);

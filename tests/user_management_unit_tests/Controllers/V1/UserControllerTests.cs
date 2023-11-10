@@ -13,7 +13,7 @@ using System.Security.Authentication;
 using Xunit.Sdk;
 using Xunit.Abstractions;
 
-namespace user_management_unit_tests.Controllers;
+namespace user_management_unit_tests.Controllers.V1;
 
 [Collection("Controller")]
 public class UserControllerTests
@@ -22,7 +22,7 @@ public class UserControllerTests
 
     public UserControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.UserController InstantiateController() => new(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
+    private user_management.Controllers.V1.UserController InstantiateController() => new(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 
