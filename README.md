@@ -33,6 +33,9 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_integration_test:latest -f ./tests/user_management_integration_tests/Dockerfile.integration_test . && \
+    export TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_integration_test:latest && \
+    echo Testing image: "$TESTING_IMAGE" && \
     sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
@@ -43,6 +46,9 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_integration_test:latest -f ./tests/user_management_integration_tests/Dockerfile.integration_test . && \
+    export TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_integration_test:latest && \
+    echo Testing image: "$TESTING_IMAGE" && \
     sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
@@ -52,6 +58,9 @@ cd path-to-project-root-directory/ && \
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_unit_test:latest -f ./tests/user_management_unit_tests/Dockerfile.unit_test . && \
+    export TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_unit_test:latest && \
+    echo Testing image: "$TESTING_IMAGE" && \
     sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 

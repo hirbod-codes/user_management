@@ -17,9 +17,7 @@ volumes:
 services:
     user_management:
         container_name: user_management
-        build:
-            context: ./
-            dockerfile: ./tests/user_management_integration_tests/Dockerfile.integration_test
+        image: "${TESTING_IMAGE}"
         command: bash -c "sleep 240s && dotnet test --no-restore"
         volumes:
             - ./security/ca/ca.crt:/etc/ssl/certs/ca.crt
