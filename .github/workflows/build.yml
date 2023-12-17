@@ -1,4 +1,4 @@
-name: build 
+name: build
 
 on:
     repository_dispatch:
@@ -61,3 +61,4 @@ jobs:
                     labels: ${{ steps.docker_meta.outputs.labels }}
                     cache-from: type=gha
                     cache-to: type=gha,mode=max
+                    platforms: linux/amd64,linux/arm64
