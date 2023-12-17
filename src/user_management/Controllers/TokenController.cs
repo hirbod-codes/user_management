@@ -17,6 +17,7 @@ using user_management.Services.Data;
 using user_management.Services.Data.Client;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api")]
 [Produces("application/json")]
 public class TokenController : ControllerBase

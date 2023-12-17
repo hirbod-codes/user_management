@@ -15,6 +15,7 @@ using user_management.Services.Client;
 using user_management.Services.Data;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api")]
 public class ClientController : ControllerBase
 {

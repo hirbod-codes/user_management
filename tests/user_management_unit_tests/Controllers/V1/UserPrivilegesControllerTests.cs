@@ -4,7 +4,7 @@ using user_management.Dtos.User;
 using user_management.Services;
 using user_management.Services.Data;
 
-namespace user_management_unit_tests.Controllers;
+namespace user_management_unit_tests.Controllers.V1;
 
 [Collection("Controller")]
 public class UserPrivilegesControllerTests
@@ -13,7 +13,7 @@ public class UserPrivilegesControllerTests
 
     public UserPrivilegesControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.UserPrivilegesController InstantiateController() => new user_management.Controllers.UserPrivilegesController(Fixture.IUserPrivilegesManagement.Object, Fixture.IAuthenticated.Object);
+    private user_management.Controllers.UserPrivilegesController InstantiateController() => new(Fixture.IUserPrivilegesManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 

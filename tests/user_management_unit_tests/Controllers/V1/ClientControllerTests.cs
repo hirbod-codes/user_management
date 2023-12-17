@@ -4,11 +4,10 @@ using user_management.Models;
 using user_management.Services;
 using user_management.Dtos.Client;
 using user_management.Services.Data;
-using user_management.Services.Data.User;
 using user_management.Services.Client;
 using System.Security.Authentication;
 
-namespace user_management_unit_tests.Controllers;
+namespace user_management_unit_tests.Controllers.V1;
 
 [Collection("Controller")]
 public class ClientControllerTests

@@ -19,6 +19,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Cors;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api")]
 public class UserController : ControllerBase
 {

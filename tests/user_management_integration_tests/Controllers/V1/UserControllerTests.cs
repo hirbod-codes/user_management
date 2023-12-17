@@ -13,7 +13,7 @@ using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Utilities;
 
-namespace user_management_integration_tests.Controllers;
+namespace user_management_integration_tests.Controllers.V1;
 
 [CollectionDefinition("UserControllerTests", DisableParallelization = true)]
 public class UserControllerTestsCollectionDefinition { }
