@@ -41,6 +41,7 @@ jobs:
                 tags: ghcr.io/${{github.repository}}_unit_test:${{ github.run_id }}
                 cache-from: type=gha
                 cache-to: type=gha,mode=max
+                platforms: linux/amd64,linux/arm64
 
         -
             name: Build integration test docker image and push to GHCR
@@ -52,6 +53,7 @@ jobs:
                 tags: ghcr.io/${{github.repository}}_integration_test:${{ github.run_id }}
                 cache-from: type=gha
                 cache-to: type=gha,mode=max
+                platforms: linux/amd64,linux/arm64
 
     unit-tests:
         runs-on: ubuntu-latest
@@ -84,8 +86,9 @@ jobs:
             -
                 name: Run unit tests
                 run: |
-                    echo ghcr.io/${{github.repository}}_unit_test:"$GITHUB_RUN_ID"
-                    sudo TESTING_IMAGE=ghcr.io/${{github.repository}}_unit_test:"$GITHUB_RUN_ID" docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
+                    export TESTING_IMAGE=ghcr.io/${{github.repository}}_unit_test:"$GITHUB_RUN_ID"
+                    echo Testing image: "$TESTING_IMAGE"
+                    sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 
 
     integration-tests:
@@ -118,6 +121,7 @@ jobs:
             -
                 name: Run integration tests
                 run: |
-                    echo ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID"
-                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID" docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
-                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID" docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+                    export TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID"
+                    echo Testing image: "$TESTING_IMAGE"
+                    docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+                    docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
