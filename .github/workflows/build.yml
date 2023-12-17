@@ -1,8 +1,9 @@
 name: build
 
 on:
-    repository_dispatch:
-        types: [on-new-version]
+    workflow_run:
+        workflows: ["version"]
+        types: completed
     workflow_dispatch:
 
 jobs:
@@ -39,6 +40,13 @@ jobs:
                     username: ${{github.repository_owner}}
                     password: ${{secrets.GITHUB_TOKEN}}
 
+            -
+                name: Bump version and push tag
+                id: tag_version
+                uses: mathieudutour/github-tag-action@v6.1
+                with:
+                    github_token: ${{ secrets.GITHUB_TOKEN }}
+
             - 
                 name: Docker Metadata for Final Image Build
                 id: docker_meta
@@ -48,7 +56,7 @@ jobs:
                     flavor: |
                         latest=false
                     tags: |
-                        type=semver,pattern={{version}},value=${{ github.event.client_payload.version }}
+                        type=semver,pattern={{version}},value=${{ steps.tag_version.outputs.previous_tag }}
 
             - 
                 name: Build and push user_management service docker image  to GHCR and Docker Hub

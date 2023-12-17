@@ -47,10 +47,3 @@ jobs:
                     body: ${{ steps.changelog_generator.outputs.changelog }}
                     draft: false
                     prerelease: false
-
-            -
-                name: Repository Dispatch
-                uses: peter-evans/repository-dispatch@v2
-                with:
-                    event-type: on-new-version
-                    client-payload: '{ "version": "${{ steps.tag_version.outputs.new_version }}" }'
