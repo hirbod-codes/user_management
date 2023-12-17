@@ -2,14 +2,19 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0
 
 WORKDIR /project
 
-COPY ./src/user_management/user_management.csproj ./
-RUN dotnet restore -f --force-evaluate -v d
-
 RUN apt update && apt install openssl
 
-COPY ./src/user_management/ ./
+COPY ./user_management.sln ./
+COPY ./src/user_management/user_management.csproj ./src/user_management/
+COPY ./tests/user_management_integration_tests/user_management_integration_tests.csproj ./tests/user_management_integration_tests/
+COPY ./tests/user_management_unit_tests/user_management_unit_tests.csproj ./tests/user_management_unit_tests/
+RUN dotnet restore -f --force-evaluate -v d
 
-RUN dotnet publish --no-restore -c Release -o /publish
+COPY ./src/ ./src/
+
+WORKDIR /project/src/user_management
+
+RUN && dotnet publish --no-restore -c Release -o /publish
 
 WORKDIR /publish
 
