@@ -46,6 +46,8 @@ jobs:
                 uses: mathieudutour/github-tag-action@v6.1
                 with:
                     github_token: ${{ secrets.GITHUB_TOKEN }}
+                    default_bump: false
+                    default_prerelease_bump: false
 
             - 
                 name: Docker Metadata for Final Image Build
