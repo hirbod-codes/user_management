@@ -56,7 +56,7 @@ jobs:
                 with:
                     push: true
                     context: ./
-                    file: ./src/user_anagement/Dockerfile.production
+                    file: ./src/user_management/Dockerfile.production
                     tags: ${{ steps.docker_meta.outputs.tags }}
                     labels: ${{ steps.docker_meta.outputs.labels }}
                     cache-from: type=gha
