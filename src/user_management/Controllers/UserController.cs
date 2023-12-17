@@ -1,4 +1,4 @@
-namespace user_management.Controllers.V1;
+namespace user_management.Controllers;
 
 using System.Net.Mail;
 using Microsoft.AspNetCore.Authorization;

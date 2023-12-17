@@ -1,4 +1,4 @@
-namespace user_management.Controllers.V1;
+namespace user_management.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;

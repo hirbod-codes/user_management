@@ -22,7 +22,7 @@ public class UserControllerTests
 
     public UserControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.V1.UserController InstantiateController() => new(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
+    private user_management.Controllers.UserController InstantiateController() => new(Fixture.IUserManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 

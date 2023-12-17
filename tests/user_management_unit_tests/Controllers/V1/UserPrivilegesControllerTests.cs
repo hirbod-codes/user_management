@@ -13,7 +13,7 @@ public class UserPrivilegesControllerTests
 
     public UserPrivilegesControllerTests(ControllerFixture controllerFixture) => Fixture = controllerFixture;
 
-    private user_management.Controllers.V1.UserPrivilegesController InstantiateController() => new(Fixture.IUserPrivilegesManagement.Object, Fixture.IAuthenticated.Object);
+    private user_management.Controllers.UserPrivilegesController InstantiateController() => new(Fixture.IUserPrivilegesManagement.Object, Fixture.IAuthenticated.Object);
 
     public static Faker Faker = new("en");
 

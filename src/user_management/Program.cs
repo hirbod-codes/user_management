@@ -203,7 +203,7 @@ app.UseAuthorization();
 
 app.Use((context, next) =>
 {
-    if (context.Request.Path.Value != "/api/" + user_management.Controllers.V1.UserController.PATH_POST_LOGIN && context.Request.Path.Value != "/api/" + user_management.Controllers.V1.TokenController.PATH_POST_AUTHORIZE)
+    if (context.Request.Path.Value != "/api/" + user_management.Controllers.UserController.PATH_POST_LOGIN && context.Request.Path.Value != "/api/" + user_management.Controllers.TokenController.PATH_POST_AUTHORIZE)
         return next();
 
     if (Program.FirstPartyDomains.Contains(context.Request.Host.Host.ToLower()))
