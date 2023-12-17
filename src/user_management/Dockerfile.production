@@ -14,7 +14,7 @@ COPY ./src/ ./src/
 
 WORKDIR /project/src/user_management
 
-RUN && dotnet publish --no-restore -c Release -o /publish
+RUN dotnet publish --no-restore -c Release -o /publish
 
 WORKDIR /publish
 
