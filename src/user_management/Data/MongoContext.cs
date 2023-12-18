@@ -114,7 +114,8 @@ public class MongoContext
     {
         ReplicaSetName = ReplicaSetName,
         Scheme = ConnectionStringScheme.MongoDB,
-        Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
+        // Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
+        Server = new MongoServerAddress(Servers[0].Host, Servers[0].Port),
         Credential = MongoCredential.CreateMongoX509Credential(Username),
         UseTls = true,
         SslSettings = new()
@@ -127,6 +128,8 @@ public class MongoContext
         ReadConcern = ReadConcern.Majority,
         ReadPreference = ReadPreference.Primary,
         RetryWrites = true,
+        DirectConnection = true,
+        AllowInsecureTls = true,
         WriteConcern = WriteConcern.WMajority
     });
 
