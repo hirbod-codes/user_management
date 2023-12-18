@@ -119,5 +119,5 @@ jobs:
             -
                 name: Run integration tests
                 run: |
-                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID"docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
-                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID"docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID" docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+                    TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID" docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
