@@ -5,7 +5,7 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using user_management.Controllers;
+using user_management.Controllers.V1;
 using user_management.Data;
 using user_management.Dtos.Token;
 using user_management.Dtos.User;
