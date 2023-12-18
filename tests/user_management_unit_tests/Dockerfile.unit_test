@@ -1,20 +1,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 
-RUN apt-get update && apt-get install -y unzip curl
-RUN curl -sSL https://aka.ms/getvsdbgsh | /bin/sh /dev/stdin -v latest -l /root/vsdbg
-
 WORKDIR /app
-COPY ./tests/user_management_unit_tests/user_management_unit_tests.csproj ./tests/user_management_unit_tests/
+
+COPY ./user_management.sln .
 COPY ./src/user_management/user_management.csproj ./src/user_management/
+COPY ./tests/user_management_unit_tests/user_management_unit_tests.csproj ./tests/user_management_unit_tests/
+COPY ./tests/user_management_integration_tests/user_management_integration_tests.csproj ./tests/user_management_integration_tests/
 
-WORKDIR /app/tests/user_management_unit_tests
-RUN dotnet restore -v d
+RUN dotnet restore -f --force-evaluate -v d
 
-WORKDIR /app
-COPY ./tests/user_management_unit_tests/ ./tests/user_management_unit_tests/
-COPY ./src/user_management/ ./src/user_management/
+COPY ./tests/ ./tests/
+COPY ./src/ ./src/
 
 RUN dotnet dev-certs https --trust
 
-WORKDIR /app/tests/user_management_unit_tests
-CMD dotnet test --no-restore
+CMD dotnet test --no-restore --filter="FullyQualifiedName~user_management_unit_tests"
