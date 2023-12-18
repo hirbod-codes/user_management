@@ -35,6 +35,8 @@ jobs:
                 uses: mathieudutour/github-tag-action@v6.1
                 with:
                     github_token: ${{ secrets.GITHUB_TOKEN }}
+                    default_bump: false
+                    default_prerelease_bump: false
 
             -
                 name: Create Release
@@ -47,10 +49,3 @@ jobs:
                     body: ${{ steps.changelog_generator.outputs.changelog }}
                     draft: false
                     prerelease: false
-
-            -
-                name: Repository Dispatch
-                uses: peter-evans/repository-dispatch@v2
-                with:
-                    event-type: on-new-version
-                    client-payload: '{ "version": "${{ steps.tag_version.outputs.new_version }}" }'
