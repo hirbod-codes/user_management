@@ -5,8 +5,9 @@ namespace user_management.Models;
 
 public class AuthorizingClient : IEquatable<AuthorizingClient>
 {
+    [BsonRepresentation(BsonType.ObjectId)]
     [BsonElement(CLIENT_ID)]
-    public ObjectId ClientId { get; set; }
+    public string ClientId { get; set; } = null!;
     public const string CLIENT_ID = "client_id";
 
     [BsonElement(TOKEN_PRIVILEGES)]

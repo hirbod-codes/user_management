@@ -2,7 +2,6 @@ using user_management.Utilities;
 using user_management.Services.Client;
 using user_management.Controllers.Services;
 using user_management.Services.Data.User;
-using MongoDB.Bson;
 using user_management.Dtos.Token;
 using user_management.Models;
 using user_management.Services.Data;
@@ -43,12 +42,10 @@ public class TokenManagement : ITokenManagement
         TokenPrivileges scope
         )
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException("clientId");
-
         User user = await _authenticatedByJwt.GetAuthenticated();
-        if (user.AuthorizedClients.FirstOrDefault(c => c != null && c.ClientId.ToString() == clientId) != null) await _userRepository.RemoveClient(user.Id, clientObjectId, user.Id, false);
+        if (user.AuthorizedClients.FirstOrDefault(c => c != null && c.ClientId.ToString() == clientId) != null) await _userRepository.RemoveClient(user.Id, clientId, user.Id, false);
 
-        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientObjectId, redirectUrl);
+        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientId, redirectUrl);
         if (client == null) throw new DataNotFoundException("client");
 
         if (client.ExposedCount > 2) throw new BannedClientException();
@@ -57,7 +54,7 @@ public class TokenManagement : ITokenManagement
 
         AuthorizingClient authorizingClient = new()
         {
-            ClientId = clientObjectId,
+            ClientId = clientId,
             CodeChallenge = codeChallenge,
             CodeChallengeMethod = codeChallengeMethod,
             TokenPrivileges = scope
@@ -85,18 +82,16 @@ public class TokenManagement : ITokenManagement
 
     public async Task<TokenRetrieveDto> VerifyAndGenerateTokens(TokenCreateDto dto)
     {
-        if (!ObjectId.TryParse(dto.ClientId, out ObjectId clientId)) throw new ArgumentException();
-
-        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl);
+        Models.Client? client = await _clientRepository.RetrieveByIdAndRedirectUrl(dto.ClientId, dto.RedirectUrl);
         if (client == null) throw new DataNotFoundException("client");
         if (client.ExposedCount > 2) throw new BannedClientException();
 
         User? user = await _userRepository.RetrieveByClientIdAndCode(client.Id, dto.Code);
         if (user == null) throw new DataNotFoundException("user");
 
-        if (user.AuthorizingClient == null || user.AuthorizingClient.ClientId.ToString() != clientId.ToString())
+        if (user.AuthorizingClient == null || user.AuthorizingClient.ClientId.ToString() != dto.ClientId.ToString())
             throw new DataNotFoundException("clientId");
-        if (user.AuthorizingClient.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())
+        if (user.AuthorizingClient!.CodeExpiresAt < _dateTimeProvider.ProvideUtcNow())
             throw new CodeExpirationException();
         if (_stringHelper.HashWithoutSalt(dto.CodeVerifier, user.AuthorizingClient.CodeChallengeMethod) != _stringHelper.Base64Decode(user.AuthorizingClient.CodeChallenge))
             throw new InvalidCodeVerifierException();
@@ -121,7 +116,7 @@ public class TokenManagement : ITokenManagement
 
             AuthorizedClient authorizedClient = new()
             {
-                ClientId = clientId,
+                ClientId = dto.ClientId,
                 RefreshToken = new()
                 {
                     TokenPrivileges = user.AuthorizingClient.TokenPrivileges,
@@ -181,12 +176,10 @@ public class TokenManagement : ITokenManagement
 
     public async Task<string> ReToken(string clientId, string secret, string refreshToken)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException();
-
         string? hashedSecret = _stringHelper.HashWithoutSalt(secret);
         if (hashedSecret == null) throw new OperationException();
 
-        Models.Client? client = await _clientRepository.RetrieveByIdAndSecret(clientObjectId, hashedSecret);
+        Models.Client? client = await _clientRepository.RetrieveByIdAndSecret(clientId, hashedSecret);
         if (client == null) throw new DataNotFoundException("client");
         if (client.ExposedCount > 2) throw new BannedClientException();
 
@@ -213,7 +206,7 @@ public class TokenManagement : ITokenManagement
             Token token = new() { ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS), Value = hashedTokenValue, IsRevoked = false };
 
             bool? r = null;
-            try { r = await _userRepository.UpdateToken(user.Id, clientObjectId, token); }
+            try { r = await _userRepository.UpdateToken(user.Id, clientId, token); }
             catch (DuplicationException) { safety++; continue; }
 
             if (r == true) break;

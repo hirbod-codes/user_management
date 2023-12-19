@@ -19,7 +19,7 @@ public class ClientManagement : IClientManagement
 
     public async Task<(Models.Client client, string? notHashedSecret)> Register(Models.Client client)
     {
-        string? secret = null;
+        string? secret;
         bool again = false;
         int safety = 0;
         do
@@ -45,12 +45,7 @@ public class ClientManagement : IClientManagement
         return (client, secret);
     }
 
-    public async Task<Models.Client?> RetrieveClientPublicInfo(string id)
-    {
-        if (!ObjectId.TryParse(id, out ObjectId idObject)) throw new ArgumentException();
-
-        return await _clientRepository.RetrieveById(idObject);
-    }
+    public async Task<Models.Client?> RetrieveClientPublicInfo(string id) => await _clientRepository.RetrieveById(id);
 
     public async Task<Models.Client?> RetrieveBySecret(string secret)
     {
@@ -62,11 +57,9 @@ public class ClientManagement : IClientManagement
 
     public async Task UpdateRedirectUrl(string clientId, string clientSecret, string redirectUrl)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
-
         string hashedSecret = _stringHelper.HashWithoutSalt(clientSecret) ?? throw new ArgumentException(null, nameof(clientSecret));
 
-        bool r = await _clientRepository.UpdateRedirectUrl(redirectUrl, clientObjectId, hashedSecret);
+        bool r = await _clientRepository.UpdateRedirectUrl(redirectUrl, clientId, hashedSecret);
 
         if (r == false) throw new DataNotFoundException();
     }
@@ -79,8 +72,6 @@ public class ClientManagement : IClientManagement
 
     public async Task<string> UpdateExposedClient(string clientId, string secret)
     {
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
-
         string hashedSecret = _stringHelper.HashWithoutSalt(secret) ?? throw new OperationException();
 
         int safety = 0;
@@ -91,7 +82,7 @@ public class ClientManagement : IClientManagement
             string newHashedSecret = _stringHelper.HashWithoutSalt(newSecret) ?? throw new OperationException();
 
             bool? r = false;
-            try { r = await _clientRepository.ClientExposed(clientObjectId, hashedSecret, newHashedSecret); }
+            try { r = await _clientRepository.ClientExposed(clientId, hashedSecret, newHashedSecret); }
             catch (DuplicationException) { safety++; continue; }
 
             if (r == null) throw new DataNotFoundException();

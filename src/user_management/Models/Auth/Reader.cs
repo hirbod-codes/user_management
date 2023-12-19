@@ -5,9 +5,10 @@ using MongoDB.Bson.Serialization.Attributes;
 
 public class Reader : IEquatable<Reader>
 {
+    [BsonRepresentation(BsonType.ObjectId)]
     [BsonElement(AUTHOR_ID)]
     [BsonRequired]
-    public ObjectId AuthorId { get; set; }
+    public string AuthorId { get; set; } = null!;
     public const string AUTHOR_ID = "author_id";
 
     [BsonElement(IS_PERMITTED)]

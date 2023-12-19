@@ -11,7 +11,7 @@ public class PartialUser
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [BsonRequired]
-    public ObjectId Id { get; set; }
+    public string Id { get; set; } = null!;
 
     [BsonElement(PRIVILEGES)]
     public Privilege[]? Privileges { get { return _privileges; } set { _privileges = value; _isPrivilegesTouched = true; } }

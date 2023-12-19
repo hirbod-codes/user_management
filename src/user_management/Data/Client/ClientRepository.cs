@@ -5,6 +5,7 @@ using user_management.Models;
 using user_management.Services.Client;
 using MongoDB.Bson;
 using user_management.Services.Data;
+using System.Collections.Generic;
 
 public class ClientRepository : IClientRepository
 {
@@ -17,9 +18,11 @@ public class ClientRepository : IClientRepository
         _clientCollection = mongoCollections.Clients;
     }
 
+    public async Task<IEnumerable<Client>> RetrieveFirstPartyClients() => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.IS_FIRST_PARTY, true))).ToList();
+
     public async Task<Client> Create(Client client, IClientSessionHandle? session = null)
     {
-        client.Id = ObjectId.GenerateNewId();
+        client.Id = ObjectId.GenerateNewId().ToString();
 
         try { await (session == null ? _clientCollection.InsertOneAsync(client) : _clientCollection.InsertOneAsync(session, client)); }
         catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
@@ -29,17 +32,17 @@ public class ClientRepository : IClientRepository
         return client;
     }
 
-    public async Task<Client?> RetrieveById(ObjectId clientId) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", clientId))).FirstOrDefault<Client?>();
+    public async Task<Client?> RetrieveById(string clientId) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId)))).FirstOrDefault<Client?>();
 
     public async Task<Client?> RetrieveBySecret(string secret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.SECRET, secret))).FirstOrDefault<Client?>();
 
-    public async Task<Client?> RetrieveByIdAndSecret(ObjectId clientId, string hashedSecret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)))).FirstOrDefault<Client?>();
+    public async Task<Client?> RetrieveByIdAndSecret(string clientId, string hashedSecret) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId)), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret)))).FirstOrDefault<Client?>();
 
-    public async Task<Client?> RetrieveByIdAndRedirectUrl(ObjectId clientId, string redirectUrl) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
+    public async Task<Client?> RetrieveByIdAndRedirectUrl(string clientId, string redirectUrl) => (await _clientCollection.FindAsync(Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId)), Builders<Client>.Filter.Eq(Client.REDIRECT_URL, redirectUrl)))).FirstOrDefault<Client?>();
 
-    public async Task<bool> UpdateRedirectUrl(string redirectUrl, ObjectId clientId, string hashedSecret)
+    public async Task<bool> UpdateRedirectUrl(string redirectUrl, string clientId, string hashedSecret)
     {
-        var filter = Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", clientId), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret));
+        var filter = Builders<Client>.Filter.And(Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId)), Builders<Client>.Filter.Eq(Client.SECRET, hashedSecret));
         var update = Builders<Client>.Update.Set(Client.REDIRECT_URL, redirectUrl).Set<Client, DateTime>(Client.UPDATED_AT, DateTime.UtcNow);
 
         UpdateResult r;
@@ -60,16 +63,16 @@ public class ClientRepository : IClientRepository
         return r.IsAcknowledged && r.DeletedCount == 1;
     }
 
-    public async Task<bool> DeleteById(ObjectId clientId, IClientSessionHandle? session = null)
+    public async Task<bool> DeleteById(string clientId, IClientSessionHandle? session = null)
     {
         DeleteResult r;
-        try { r = await (session == null ? _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq("_id", clientId)) : _clientCollection.DeleteOneAsync(session, Builders<Client>.Filter.Eq("_id", clientId))); }
+        try { r = await (session == null ? _clientCollection.DeleteOneAsync(Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId))) : _clientCollection.DeleteOneAsync(session, Builders<Client>.Filter.Eq("_id", ObjectId.Parse(clientId)))); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         return r.IsAcknowledged && r.DeletedCount == 1;
     }
 
-    public async Task<bool?> ClientExposed(ObjectId clientId, string hashedSecret, string newHashedSecret, IClientSessionHandle? session = null)
+    public async Task<bool?> ClientExposed(string clientId, string hashedSecret, string newHashedSecret, IClientSessionHandle? session = null)
     {
         Client? client = await RetrieveByIdAndSecret(clientId, hashedSecret);
         if (client == null) return null;

@@ -3,7 +3,6 @@ using user_management.Services.Data;
 using user_management.Dtos.User;
 using user_management.Utilities;
 using System.Net.Mail;
-using MongoDB.Bson;
 using user_management.Services.Data.User;
 using user_management.Controllers.Services;
 using user_management.Models;
@@ -20,7 +19,7 @@ public class UserManagement : IUserManagement
     private readonly IAuthHelper _authHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IAuthHelper authHelper)
+    public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IAuthHelper authHelper, IClientRepository clientRepository)
     {
         _authHelper = authHelper;
         _dateTimeProvider = dateTimeProvider;
@@ -91,7 +90,7 @@ public class UserManagement : IUserManagement
 
         if (!_stringHelper.DoesHashMatch(user.Password, activatingUser.Password)) throw new InvalidPasswordException();
 
-        bool r = await _userRepository.Verify((ObjectId)user.Id) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.Verify(user.Id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
@@ -129,10 +128,8 @@ public class UserManagement : IUserManagement
         return new() { Jwt = jwt, UserId = user.Id.ToString() };
     }
 
-    public async Task Logout(string identifier)
+    public async Task Logout(string id)
     {
-        if (!ObjectId.TryParse(identifier, out ObjectId id)) throw new ArgumentException();
-
         bool r = await _userRepository.Logout(id) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
@@ -190,38 +187,25 @@ public class UserManagement : IUserManagement
 
     public async Task RemoveClient(string clientId, string userId, string authorId, bool forClients)
     {
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException(null, nameof(userId));
-        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException(null, nameof(authorId));
-        if (!ObjectId.TryParse(clientId, out ObjectId clientObjectId)) throw new ArgumentException(null, nameof(clientId));
-
-        bool r = await _userRepository.RemoveClient(userObjectId, clientObjectId, authorObjectId, forClients) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.RemoveClient(userId, clientId, authorId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task RemoveClients(string userId, string authorId, bool forClients)
     {
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) throw new ArgumentException(null, nameof(userId));
-        if (!ObjectId.TryParse(authorId, out ObjectId authorObjectId)) throw new ArgumentException(null, nameof(authorId));
-
-        bool r = await _userRepository.RemoveAllClients(userObjectId, authorObjectId, forClients) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.RemoveAllClients(userId, authorId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task<PartialUser> RetrieveById(string actorId, string userId, bool forClients)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
-        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
-
-        PartialUser user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
+        PartialUser user = await _userRepository.RetrieveById(actorId, userId, forClients) ?? throw new DataNotFoundException();
         return user;
     }
 
     public async Task<IEnumerable<AuthorizedClientRetrieveDto>> RetrieveClientsById(string actorId, string userId, bool forClients)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
-        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
-
-        PartialUser user = await _userRepository.RetrieveById(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
+        PartialUser user = await _userRepository.RetrieveById(actorId, userId, forClients) ?? throw new DataNotFoundException();
 
         if (!user.IsAuthorizedClientsTouched()) throw new UnauthorizedAccessException();
 
@@ -230,27 +214,20 @@ public class UserManagement : IUserManagement
 
     public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
-
-        return await _userRepository.Retrieve(actorObjectId, logicsString, limit, iteration, sortBy, ascending, forClients);
+        return await _userRepository.Retrieve(actorId, logicsString, limit, iteration, sortBy, ascending, forClients);
     }
 
     public async Task Update(string actorId, UserPatchDto userPatchDto, bool forClients)
     {
         if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") throw new ArgumentException(null, nameof(userPatchDto));
 
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
-
-        bool r = await _userRepository.Update(actorObjectId, userPatchDto.FiltersString, userPatchDto.UpdatesString, forClients) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.Update(actorId, userPatchDto.FiltersString, userPatchDto.UpdatesString, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 
     public async Task Delete(string actorId, string userId, bool forClients)
     {
-        if (!ObjectId.TryParse(actorId, out ObjectId actorObjectId)) throw new ArgumentException(null, nameof(actorId));
-        if (!ObjectId.TryParse(userId, out ObjectId objectId)) throw new ArgumentException(null, nameof(userId));
-
-        bool r = await _userRepository.Delete(actorObjectId, objectId, forClients) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.Delete(actorId, userId, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 }

@@ -19,15 +19,15 @@ public interface IUserRepository
 
     public Task<User?> RetrieveByPhoneNumberForExistenceCheck(string phoneNumber);
 
-    public Task<User?> RetrieveById(ObjectId id);
+    public Task<User?> RetrieveById(string id);
 
-    public Task<PartialUser?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false);
+    public Task<PartialUser?> RetrieveById(string actorId, string id, bool forClients = false);
 
-    public Task<List<PartialUser>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
+    public Task<List<PartialUser>> Retrieve(string actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
 
-    public Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId);
+    public Task<User?> RetrieveByIdForAuthenticationHandling(string userId);
 
-    public Task<User?> RetrieveByIdForAuthorizationHandling(ObjectId id);
+    public Task<User?> RetrieveByIdForAuthorizationHandling(string id);
 
     public Task<User?> RetrieveUserByLoginCredentials(string? email, string? username);
 
@@ -39,14 +39,14 @@ public interface IUserRepository
 
     public Task<User?> RetrieveUserForPhoneNumberChange(string email);
 
-    public Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code);
+    public Task<User?> RetrieveByClientIdAndCode(string clientId, string code);
 
     public Task<User?> RetrieveByRefreshTokenValue(string value);
 
     public Task<User?> RetrieveByTokenValue(string value);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Login(ObjectId userId);
+    public Task<bool?> Login(string userId);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
@@ -58,7 +58,7 @@ public interface IUserRepository
     public Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Verify(ObjectId id);
+    public Task<bool?> Verify(string id);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<User?> RetrieveUserForUnverifiedEmailChange(string email);
@@ -79,33 +79,33 @@ public interface IUserRepository
     public Task<bool?> ChangeEmail(string email, string newEmail);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Logout(ObjectId id);
+    public Task<bool?> Logout(string id);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient);
+    public Task<bool?> RemoveClient(string userId, string clientId, string authorId, bool isClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient);
+    public Task<bool?> RemoveAllClients(string userId, string authorId, bool isClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
+    public Task<bool?> AddTokenPrivilegesToUser(string userId, string authorId, string clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateAuthorizingClient(ObjectId userId, AuthorizingClient authorizingClient);
+    public Task<bool?> UpdateAuthorizingClient(string userId, AuthorizingClient authorizingClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddAuthorizedClient(ObjectId userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null);
+    public Task<bool?> AddAuthorizedClient(string userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateToken(ObjectId userId, ObjectId clientObjectId, Token token);
+    public Task<bool?> UpdateToken(string userId, string clientObjectId, Token token);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPermissions userPrivileges);
+    public Task<bool?> UpdateUserPrivileges(string authorId, string userId, UserPermissions userPrivileges);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false);
+    public Task<bool?> Update(string actorId, string filtersString, string updatesString, bool forClients = false);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false);
+    public Task<bool?> Delete(string actorId, string id, bool forClients = false);
 }

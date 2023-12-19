@@ -10,9 +10,10 @@ namespace user_management.Models;
 /// </summary>
 public class AuthorizedClient : IEquatable<AuthorizedClient>
 {
+    [BsonRepresentation(BsonType.ObjectId)]
     [BsonElement(CLIENT_ID)]
     [BsonRequired]
-    public ObjectId ClientId { get; set; }
+    public string ClientId { get; set; } = null!;
     public const string CLIENT_ID = "client_id";
 
     [BsonElement(REFRESH_TOKEN)]

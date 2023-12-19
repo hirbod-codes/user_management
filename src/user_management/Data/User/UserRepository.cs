@@ -22,17 +22,6 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> Create(User user)
     {
-        user.Id = ObjectId.GenerateNewId();
-
-        user.UserPermissions = new()
-        {
-            Readers = new Reader[] { new Reader() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = User.GetReadableFields().ToArray() } },
-            AllReaders = new AllReaders() { ArePermitted = false },
-            Updaters = new Updater[] { new Updater() { Author = Updater.USER, AuthorId = user.Id, IsPermitted = true, Fields = User.GetUpdatableFields().ToArray() } },
-            AllUpdaters = new AllUpdaters() { ArePermitted = false },
-            Deleters = new Deleter[] { new Deleter() { Author = Deleter.USER, AuthorId = user.Id, IsPermitted = true } }
-        };
-
         DateTime dt = DateTime.UtcNow;
         user.UpdatedAt = dt;
         user.CreatedAt = dt;
@@ -64,14 +53,14 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveByPhoneNumberForExistenceCheck(string phoneNumber) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.PHONE_NUMBER, phoneNumber))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveById(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveById(string id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)))).FirstOrDefault<User?>();
 
-    public async Task<PartialUser?> RetrieveById(ObjectId actorId, ObjectId id, bool forClients = false)
+    public async Task<PartialUser?> RetrieveById(string actorId, string id, bool forClients = false)
     {
         return (
             await RetrievePipeline(
                 _partialUserCollection.Aggregate()
-                .Match(Builders<PartialUser>.Filter.And(Builders<PartialUser>.Filter.Eq("_id", id), GetReaderFilterDefinitionForReads(actorId, forClients)))
+                .Match(Builders<PartialUser>.Filter.And(Builders<PartialUser>.Filter.Eq("_id", ObjectId.Parse(id)), GetReaderFilterDefinitionForReads(actorId, forClients)))
                 .As<BsonDocument>(), actorId
             )
             .As<PartialUser>()
@@ -80,7 +69,7 @@ public class UserRepository : IUserRepository
         .FirstOrDefault<PartialUser>();
     }
 
-    public async Task<List<PartialUser>> Retrieve(ObjectId actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false)
+    public async Task<List<PartialUser>> Retrieve(string actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false)
     {
         if (limit <= 0) limit = 5;
 
@@ -120,9 +109,9 @@ public class UserRepository : IUserRepository
         .ToListAsync();
     }
 
-    public async Task<User?> RetrieveByIdForAuthenticationHandling(ObjectId userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", userId)))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByIdForAuthenticationHandling(string userId) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.IS_EMAIL_VERIFIED, true), Builders<User>.Filter.Eq<DateTime?>(User.LOGGED_OUT_AT, null), Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId))))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByIdForAuthorizationHandling(ObjectId id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", id))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByIdForAuthorizationHandling(string id) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveUserByLoginCredentials(string? email, string? username) => (await _userCollection.FindAsync(Builders<User>.Filter.Or(Builders<User>.Filter.Eq(User.EMAIL, email), Builders<User>.Filter.Eq(User.USERNAME, username)))).FirstOrDefault<User?>();
 
@@ -136,16 +125,16 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> RetrieveUserForPhoneNumberChange(string email) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.EMAIL, email))).FirstOrDefault<User?>();
 
-    public async Task<User?> RetrieveByClientIdAndCode(ObjectId clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CLIENT_ID, clientId), Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CODE, code)))).FirstOrDefault<User?>();
+    public async Task<User?> RetrieveByClientIdAndCode(string clientId, string code) => (await _userCollection.FindAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CLIENT_ID, ObjectId.Parse(clientId)), Builders<User>.Filter.Eq(User.AUTHORIZING_CLIENT + "." + AuthorizingClient.CODE, code)))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByRefreshTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.REFRESH_TOKEN + "." + RefreshToken.VALUE, value))).FirstOrDefault<User?>();
 
     public async Task<User?> RetrieveByTokenValue(string value) => (await _userCollection.FindAsync(Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "." + AuthorizedClient.TOKEN + "." + Token.VALUE, value))).FirstOrDefault<User?>();
 
-    public async Task<bool?> Login(ObjectId userId)
+    public async Task<bool?> Login(string userId)
     {
         UpdateResult result;
-        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null)); }
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)), Builders<User>.Update.Set<DateTime?>(User.LOGGED_OUT_AT, null)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
@@ -186,10 +175,10 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> Verify(ObjectId id)
+    public async Task<bool?> Verify(string id)
     {
         UpdateResult result;
-        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<bool>(User.IS_EMAIL_VERIFIED, true)); }
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)), Builders<User>.Update.Set<bool>(User.IS_EMAIL_VERIFIED, true)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
@@ -250,11 +239,11 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> Logout(ObjectId id)
+    public async Task<bool?> Logout(string id)
     {
         UpdateResult result;
 
-        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", id), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow)); }
+        try { result = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)), Builders<User>.Update.Set<DateTime>(User.LOGGED_OUT_AT, DateTime.UtcNow)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
@@ -262,12 +251,12 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> RemoveClient(ObjectId userId, ObjectId clientId, ObjectId authorId, bool isClient)
+    public async Task<bool?> RemoveClient(string userId, string clientId, string authorId, bool isClient)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(
             GetReaderFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
             GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
-            Builders<User>.Filter.Eq("_id", userId)
+            Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId))
         );
 
         UpdateDefinition<User> update = Builders<User>.Update
@@ -284,11 +273,11 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> RemoveAllClients(ObjectId userId, ObjectId authorId, bool isClient)
+    public async Task<bool?> RemoveAllClients(string userId, string authorId, bool isClient)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(
             GetUpdaterFilterDefinition(authorId, isClient, new List<Field>() { new Field() { IsPermitted = true, Name = User.AUTHORIZED_CLIENTS } }),
-            Builders<User>.Filter.Eq("_id", userId)
+            Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId))
         );
 
         UpdateDefinition<User> update = Builders<User>.Update
@@ -305,11 +294,10 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount == 1 && result.ModifiedCount == 1;
     }
 
-    public async Task<bool?> AddTokenPrivilegesToUser(ObjectId userId, ObjectId authorId, ObjectId clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null)
+    public async Task<bool?> AddTokenPrivilegesToUser(string userId, string authorId, string clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null)
     {
-        string clientIdString = clientId.ToString();
         FilterDefinition<User> filterDefinition = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq("_id", userId),
+            Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)),
             GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PERMISSIONS } }),
             GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PERMISSIONS } })
         );
@@ -334,7 +322,7 @@ public class UserRepository : IUserRepository
                                 'as': 'item',
                                 'cond': {{ 
                                     '$ne': [
-                                        '$$item.{Reader.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                        '$$item.{Reader.AUTHOR_ID}', ObjectId('{clientId}')
                                     ]
                                 }}
                             }}
@@ -346,7 +334,7 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.READERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.READERS}',
                                 [
                                     {{
-                                        '{Reader.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Reader.AUTHOR_ID}': ObjectId('{clientId}'),
                                         '{Reader.AUTHOR}': '{Reader.CLIENT}',
                                         '{Reader.IS_PERMITTED}': true,
                                         '{Reader.FIELDS}': {fields}
@@ -375,7 +363,7 @@ public class UserRepository : IUserRepository
                                 'as': 'item',
                                 'cond': {{ 
                                     '$ne': [
-                                        '$$item.{Updater.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                        '$$item.{Updater.AUTHOR_ID}', ObjectId('{clientId}')
                                     ]
                                 }}
                             }}
@@ -387,7 +375,7 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.UPDATERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.UPDATERS}',
                                 [
                                     {{
-                                        '{Updater.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Updater.AUTHOR_ID}': ObjectId('{clientId}'),
                                         '{Updater.AUTHOR}': '{Updater.CLIENT}',
                                         '{Updater.IS_PERMITTED}': true,
                                         '{Updater.FIELDS}': {fields}
@@ -412,7 +400,7 @@ public class UserRepository : IUserRepository
                                 'as': 'item',
                                 'cond': {{ 
                                     '$ne': [
-                                        '$$item.{Deleter.AUTHOR_ID}', ObjectId('{clientIdString}')
+                                        '$$item.{Deleter.AUTHOR_ID}', ObjectId('{clientId}')
                                     ]
                                 }}
                             }}
@@ -424,7 +412,7 @@ public class UserRepository : IUserRepository
                         '{User.USER_PERMISSIONS}.{UserPermissions.DELETERS}': {{ $concatArrays: [ '${User.USER_PERMISSIONS}.{UserPermissions.DELETERS}',
                                 [
                                     {{
-                                        '{Deleter.AUTHOR_ID}': ObjectId('{clientIdString}'),
+                                        '{Deleter.AUTHOR_ID}': ObjectId('{clientId}'),
                                         '{Deleter.AUTHOR}': '{Deleter.CLIENT}',
                                         '{Deleter.IS_PERMITTED}': true
                                     }}
@@ -462,10 +450,10 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task<bool?> UpdateAuthorizingClient(ObjectId userId, AuthorizingClient authorizingClient)
+    public async Task<bool?> UpdateAuthorizingClient(string userId, AuthorizingClient authorizingClient)
     {
         UpdateResult r;
-        try { r = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Set<AuthorizingClient>(User.AUTHORIZING_CLIENT, authorizingClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)); }
+        try { r = await _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)), Builders<User>.Update.Set<AuthorizingClient>(User.AUTHORIZING_CLIENT, authorizingClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow)); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.MatchedCount == 0) return null;
@@ -473,14 +461,14 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
     }
 
-    public async Task<bool?> AddAuthorizedClient(ObjectId userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null)
+    public async Task<bool?> AddAuthorizedClient(string userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null)
     {
         UpdateResult r;
         try
         {
             r = await (session == null
-                ? _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
-                : _userCollection.UpdateOneAsync(session, Builders<User>.Filter.Eq("_id", userId), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+                ? _userCollection.UpdateOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
+                : _userCollection.UpdateOneAsync(session, Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)), Builders<User>.Update.Push<AuthorizedClient>(User.AUTHORIZED_CLIENTS, authorizedClient).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow))
             );
         }
         catch (Exception) { throw new DatabaseServerException(); }
@@ -490,11 +478,11 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
     }
 
-    public async Task<bool?> UpdateToken(ObjectId userId, ObjectId clientObjectId, Token token)
+    public async Task<bool?> UpdateToken(string userId, string clientId, Token token)
     {
         FilterDefinition<User> filter = Builders<User>.Filter.And(new FilterDefinition<User>[] {
-            Builders<User>.Filter.Eq("_id", userId),
-            Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "."+AuthorizedClient.CLIENT_ID, clientObjectId)
+            Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)),
+            Builders<User>.Filter.Eq(User.AUTHORIZED_CLIENTS + "."+AuthorizedClient.CLIENT_ID, ObjectId.Parse(clientId))
         });
 
         UpdateDefinition<User> update = Builders<User>.Update.Set<Token>(x => x.AuthorizedClients.FirstMatchingElement().Token, token).Set<User, DateTime>(User.UPDATED_AT, DateTime.UtcNow);
@@ -508,10 +496,10 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.MatchedCount == 1 && r.ModifiedCount == 1;
     }
 
-    public async Task<bool?> UpdateUserPrivileges(ObjectId authorId, ObjectId userId, UserPermissions userPrivileges)
+    public async Task<bool?> UpdateUserPrivileges(string authorId, string userId, UserPermissions userPrivileges)
     {
         FilterDefinition<User> filters = Builders<User>.Filter.And(
-            Builders<User>.Filter.Eq("_id", userId),
+            Builders<User>.Filter.Eq("_id", ObjectId.Parse(userId)),
             GetReaderFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PERMISSIONS } }),
             GetUpdaterFilterDefinition(authorId, false, new() { new() { IsPermitted = true, Name = User.USER_PERMISSIONS } })
         );
@@ -525,7 +513,7 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.ModifiedCount == 1 && r.MatchedCount == 1;
     }
 
-    public async Task<bool?> Update(ObjectId actorId, string filtersString, string updatesString, bool forClients = false)
+    public async Task<bool?> Update(string actorId, string filtersString, string updatesString, bool forClients = false)
     {
         List<FilterDefinition<User>>? filters = new List<FilterDefinition<User>>();
 
@@ -566,10 +554,10 @@ public class UserRepository : IUserRepository
         return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
     }
 
-    public async Task<bool?> Delete(ObjectId actorId, ObjectId id, bool forClients = false)
+    public async Task<bool?> Delete(string actorId, string id, bool forClients = false)
     {
         DeleteResult r;
-        try { r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", id), GetDeleterFilterDefinition(actorId, forClients))); }
+        try { r = await _userCollection.DeleteOneAsync(Builders<User>.Filter.And(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)), GetDeleterFilterDefinition(actorId, forClients))); }
         catch (Exception) { throw new DatabaseServerException(); }
 
         if (r.IsAcknowledged && r.DeletedCount == 0) return null;
@@ -577,7 +565,7 @@ public class UserRepository : IUserRepository
         return r.IsAcknowledged && r.DeletedCount == 1;
     }
 
-    private IAggregateFluent<BsonDocument> RetrievePipeline(IAggregateFluent<BsonDocument> pipe, ObjectId actorId) =>
+    private IAggregateFluent<BsonDocument> RetrievePipeline(IAggregateFluent<BsonDocument> pipe, string actorId) =>
         pipe
             .AppendStage<BsonDocument>(@$"{{
                 $addFields: {{
@@ -587,7 +575,7 @@ public class UserRepository : IUserRepository
                         {{
                             $indexOfArray: [
                             '${PartialUser.USER_PERMISSIONS}.{UserPermissions.READERS}.{Reader.AUTHOR_ID}',
-                            ObjectId('{actorId.ToString()}'),
+                            ObjectId('{actorId}'),
                             ],
                         }},
                         ],
@@ -637,12 +625,12 @@ public class UserRepository : IUserRepository
             .Unwind("docs")
             .ReplaceRoot<BsonDocument>("$docs");
 
-    private FilterDefinition<PartialUser> GetReaderFilterDefinitionForReads(ObjectId actorId, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
+    private FilterDefinition<PartialUser> GetReaderFilterDefinitionForReads(string actorId, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
     {
         FilterDefinitionBuilder<PartialUser> builder = Builders<PartialUser>.Filter;
         List<FilterDefinition<PartialUser>> filters = new() {
             builder.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
-            builder.Eq(Reader.AUTHOR_ID, actorId),
+            builder.Eq(Reader.AUTHOR_ID, ObjectId.Parse(actorId)),
             builder.Eq(Reader.IS_PERMITTED, true)
         };
 
@@ -671,12 +659,12 @@ public class UserRepository : IUserRepository
                 );
     }
 
-    private FilterDefinition<User> GetReaderFilterDefinition(ObjectId actorId, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
+    private FilterDefinition<User> GetReaderFilterDefinition(string actorId, bool isClient, List<Field>? requiredFields = null, List<Field>? optionalFields = null)
     {
         FilterDefinitionBuilder<User> builder = Builders<User>.Filter;
         List<FilterDefinition<User>> filters = new() {
             builder.Eq(Reader.AUTHOR, isClient ? Reader.CLIENT : Reader.USER),
-            builder.Eq(Reader.AUTHOR_ID, actorId),
+            builder.Eq(Reader.AUTHOR_ID, ObjectId.Parse(actorId)),
             builder.Eq(Reader.IS_PERMITTED, true)
         };
 
@@ -705,19 +693,19 @@ public class UserRepository : IUserRepository
                 );
     }
 
-    private FilterDefinition<User> GetUpdaterFilterDefinition(ObjectId actorId, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
+    private FilterDefinition<User> GetUpdaterFilterDefinition(string actorId, bool isClient, List<Field>? fields = null) => Builders<User>.Filter.Or(
                     Builders<User>.Filter.And(
                         Builders<User>.Filter.SizeGt(User.USER_PERMISSIONS + "." + UserPermissions.UPDATERS, 0),
                         Builders<User>.Filter.ElemMatch(User.USER_PERMISSIONS + "." + UserPermissions.UPDATERS,
                         (fields == null || fields.Count == 0) ?
                         Builders<User>.Filter.And(
                             Builders<User>.Filter.Eq(Updater.AUTHOR, isClient ? Updater.CLIENT : Updater.USER),
-                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, actorId),
+                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, ObjectId.Parse(actorId)),
                             Builders<User>.Filter.Eq(Updater.IS_PERMITTED, true)
                         ) :
                         Builders<User>.Filter.And(
                             Builders<User>.Filter.Eq(Updater.AUTHOR, isClient ? Updater.CLIENT : Updater.USER),
-                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, actorId),
+                            Builders<User>.Filter.Eq(Updater.AUTHOR_ID, ObjectId.Parse(actorId)),
                             Builders<User>.Filter.Eq(Updater.IS_PERMITTED, true),
                             Builders<User>.Filter.All(Updater.FIELDS, fields)
                         ))
@@ -730,12 +718,12 @@ public class UserRepository : IUserRepository
                     )
                 );
 
-    private FilterDefinition<User> GetDeleterFilterDefinition(ObjectId actorId, bool isClient) => Builders<User>.Filter.And(
+    private FilterDefinition<User> GetDeleterFilterDefinition(string actorId, bool isClient) => Builders<User>.Filter.And(
                     Builders<User>.Filter.SizeGt(User.USER_PERMISSIONS + "." + UserPermissions.DELETERS, 0),
                     Builders<User>.Filter.ElemMatch(User.USER_PERMISSIONS + "." + UserPermissions.DELETERS,
                         Builders<User>.Filter.And(
                             Builders<User>.Filter.Eq(Deleter.AUTHOR, isClient ? Deleter.CLIENT : Deleter.USER),
-                            Builders<User>.Filter.Eq(Deleter.AUTHOR_ID, actorId),
+                            Builders<User>.Filter.Eq(Deleter.AUTHOR_ID, ObjectId.Parse(actorId)),
                             Builders<User>.Filter.Eq(Deleter.IS_PERMITTED, true)
                         )
                     )

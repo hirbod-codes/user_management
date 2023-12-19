@@ -19,7 +19,7 @@ public class User : IEquatable<User>
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [BsonRequired]
-    public ObjectId Id { get; set; }
+    public string Id { get; set; } = null!;
 
     [BsonElement(PRIVILEGES)]
     [BsonRequired]
@@ -102,7 +102,7 @@ public class User : IEquatable<User>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public const string CREATED_AT = "created_at";
 
-    public static List<object> GetReadables(List<User> users, ObjectId actorId, IMapper IMapper, bool forClients = false)
+    public static List<object> GetReadables(List<User> users, string actorId, IMapper IMapper, bool forClients = false)
     {
         if (users == null || users.Count == 0)
             return new List<object>() { };
@@ -112,7 +112,7 @@ public class User : IEquatable<User>
         return rawUsers.Where<object>(o => o != null).ToList();
     }
 
-    public object GetReadable(ObjectId actorId, IMapper IMapper, bool forClients = false)
+    public object GetReadable(string actorId, IMapper IMapper, bool forClients = false)
     {
         var userRetrieveDto = new ExpandoObject() as IDictionary<string, Object?>;
         List<Field>? fields = new List<Field>() { };
@@ -272,7 +272,7 @@ public class User : IEquatable<User>
 
         User user = new()
         {
-            Id = ObjectId.GenerateNewId(),
+            Id = ObjectId.GenerateNewId().ToString(),
             FirstName = faker.Random.Bool(0.6f) ? faker.Name.FirstName() : null,
             MiddleName = faker.Random.Bool(0.6f) ? faker.Name.FirstName() : null,
             LastName = faker.Random.Bool(0.6f) ? faker.Name.LastName() : null,
@@ -418,7 +418,7 @@ public class User : IEquatable<User>
 
     public static User GetAdminUser(string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
     {
-        ObjectId adminId = ObjectId.GenerateNewId();
+        string adminId = ObjectId.GenerateNewId().ToString();
         Faker faker = new();
 
         return new()

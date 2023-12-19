@@ -27,7 +27,7 @@ class UserProfile : Profile
 
     private void MapUserPrivilegesRetrieveDto()
     {
-        CreateMap<UserPermissions, UserPrivilegesRetrieveDto>().ConvertUsing<UserPrivilegesRetrieveConverter>();
+        CreateMap<UserPermissions, UserPrivilegesRetrieveDto>();
 
         CreateMap<Reader, ReaderRetrieveDto>();
         CreateMap<Updater, UpdaterRetrieveDto>();
@@ -36,7 +36,7 @@ class UserProfile : Profile
 
     private void MapUserPrivilegesPatchDto()
     {
-        CreateMap<UserPrivilegesPatchDto, UserPermissions>().ConvertUsing<UserPrivilegesPatchConverter>();
+        CreateMap<UserPrivilegesPatchDto, UserPermissions>();
 
         CreateMap<ReaderPatchDto, Reader>();
         CreateMap<ReaderPatchDto[], Reader[]>();
@@ -45,28 +45,4 @@ class UserProfile : Profile
         CreateMap<DeleterPatchDto, Deleter>();
         CreateMap<DeleterPatchDto[], Deleter[]>();
     }
-}
-
-public class UserPrivilegesRetrieveConverter : ITypeConverter<UserPermissions, UserPrivilegesRetrieveDto>
-{
-    public UserPrivilegesRetrieveDto Convert(UserPermissions s, UserPrivilegesRetrieveDto d, ResolutionContext context) => new UserPrivilegesRetrieveDto()
-    {
-        Readers = s.Readers.ToList().ConvertAll<ReaderRetrieveDto>(o => new ReaderRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllReaders = s.AllReaders,
-        Updaters = s.Updaters.ToList().ConvertAll<UpdaterRetrieveDto>(o => new UpdaterRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllUpdaters = s.AllUpdaters,
-        Deleters = s.Deleters.ToList().ConvertAll<DeleterRetrieveDto>(o => new DeleterRetrieveDto() { Author = o.Author, AuthorId = o.AuthorId.ToString(), IsPermitted = o.IsPermitted }).ToArray(),
-    };
-}
-
-public class UserPrivilegesPatchConverter : ITypeConverter<UserPrivilegesPatchDto, UserPermissions>
-{
-    public UserPermissions Convert(UserPrivilegesPatchDto s, UserPermissions d, ResolutionContext context) => new UserPermissions()
-    {
-        Readers = s.Readers == null ? new Reader[] { } : s.Readers.ToList().ConvertAll<Reader>(o => new Reader() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllReaders = s.AllReaders,
-        Updaters = s.Updaters == null ? new Updater[] { } : s.Updaters.ToList().ConvertAll<Updater>(o => new Updater() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted, Fields = o.Fields }).ToArray(),
-        AllUpdaters = s.AllUpdaters,
-        Deleters = s.Deleters == null ? new Deleter[] { } : s.Deleters.ToList().ConvertAll<Deleter>(o => new Deleter() { Author = o.Author, AuthorId = ObjectId.Parse(o.AuthorId), IsPermitted = o.IsPermitted }).ToArray(),
-    };
 }

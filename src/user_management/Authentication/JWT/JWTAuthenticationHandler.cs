@@ -52,9 +52,7 @@ public class JWTAuthenticationHandler : AuthenticationHandler<JWTAuthenticationO
         catch (ArgumentNullException) { return AuthenticateResult.Fail("Subject is not provided."); }
         catch (InvalidOperationException) { return AuthenticateResult.Fail("Invalid subject provided."); }
 
-        if (!ObjectId.TryParse(userId, out ObjectId userObjectId)) return AuthenticateResult.Fail("This JWT token is not valid.");
-
-        User? user = await _userRepository.RetrieveByIdForAuthenticationHandling(userObjectId);
+        User? user = await _userRepository.RetrieveByIdForAuthenticationHandling(userId);
         if (user == null) return AuthenticateResult.Fail("This JWT token is no longer valid.");
 
         _authenticatedByJwt.SetAuthenticated(user);

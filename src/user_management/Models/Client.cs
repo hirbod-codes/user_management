@@ -11,7 +11,12 @@ public class Client
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [BsonRequired]
-    public ObjectId Id { get; set; }
+    public string Id { get; set; } = null!;
+
+    [BsonElement(IS_FIRST_PARTY)]
+    [BsonRequired]
+    public bool IsFirstParty { get; set; } = false;
+    public const string IS_FIRST_PARTY = "is_first_party";
 
     [BsonElement(SECRET)]
     [BsonRequired]
@@ -47,7 +52,7 @@ public class Client
     {
         if (clients == null) clients = new Client[] { };
         if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
-        ObjectId id = ObjectId.GenerateNewId();
+        string id = ObjectId.GenerateNewId().ToString();
 
         Faker faker = new Faker("en");
 
