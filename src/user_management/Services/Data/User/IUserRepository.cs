@@ -6,6 +6,8 @@ using user_management.Models;
 
 public interface IUserRepository
 {
+    public string GenerateId();
+
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<User?> Create(User user);

@@ -7,6 +7,8 @@ using user_management.Models;
 
 public interface IClientRepository
 {
+    public Task<IEnumerable<Client>> RetrieveFirstPartyClients();
+
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<Client> Create(Client client, IClientSessionHandle? session = null);

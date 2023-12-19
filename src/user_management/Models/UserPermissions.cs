@@ -2,6 +2,7 @@ namespace user_management.Models;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using user_management.Services.Client;
 
 [BsonIgnoreExtraElements]
 public class UserPermissions : IEquatable<UserPermissions>
@@ -30,6 +31,33 @@ public class UserPermissions : IEquatable<UserPermissions>
     [BsonRequired]
     public Deleter[] Deleters { get; set; } = Array.Empty<Deleter>();
     public const string DELETERS = "deleters";
+
+    public static async Task<UserPermissions> GetDefault(string authorId, IClientRepository clientRepository)
+    {
+        IEnumerable<Reader> readers = new Reader[] { new() { Author = Reader.USER, AuthorId = authorId, IsPermitted = true, Fields = User.GetReadableFields().ToArray() } };
+        IEnumerable<Updater> updaters = new Updater[] { new() { Author = Updater.USER, AuthorId = authorId, IsPermitted = true, Fields = User.GetUpdatableFields().ToArray() } };
+        IEnumerable<Deleter> deleters = new Deleter[] { new() { Author = Deleter.USER, AuthorId = authorId, IsPermitted = true } };
+
+        IEnumerable<Client> firstPartyClients = await clientRepository.RetrieveFirstPartyClients();
+
+        for (int i = 0; i < firstPartyClients.Count(); i++)
+        {
+            readers = readers.Append(new() { Author = Reader.USER, AuthorId = authorId, IsPermitted = true, Fields = User.GetReadableFields().ToArray() });
+            updaters = updaters.Append(new() { Author = Reader.USER, AuthorId = authorId, IsPermitted = true, Fields = User.GetUpdatableFields().ToArray() });
+            deleters = deleters.Append(new() { Author = Reader.USER, AuthorId = authorId, IsPermitted = true });
+        }
+
+        UserPermissions userPermissions = new()
+        {
+            AllReaders = new AllReaders() { ArePermitted = false },
+            AllUpdaters = new AllUpdaters() { ArePermitted = false },
+            Readers = readers.ToArray(),
+            Updaters = updaters.ToArray(),
+            Deleters = deleters.ToArray()
+        };
+
+        return userPermissions;
+    }
 
     public bool Equals(UserPermissions? other)
     {

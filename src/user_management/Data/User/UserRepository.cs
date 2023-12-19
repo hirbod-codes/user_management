@@ -20,6 +20,8 @@ public class UserRepository : IUserRepository
         _partialUserCollection = mongoCollections.PartialUsers;
     }
 
+    public string GenerateId() => ObjectId.GenerateNewId().ToString();
+
     public async Task<User?> Create(User user)
     {
         DateTime dt = DateTime.UtcNow;

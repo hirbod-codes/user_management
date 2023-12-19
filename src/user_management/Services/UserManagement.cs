@@ -6,6 +6,7 @@ using System.Net.Mail;
 using user_management.Services.Data.User;
 using user_management.Controllers.Services;
 using user_management.Models;
+using user_management.Services.Client;
 
 namespace user_management.Services;
 
@@ -18,6 +19,7 @@ public class UserManagement : IUserManagement
     private readonly INotificationHelper _notificationHelper;
     private readonly IAuthHelper _authHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IClientRepository _clientRepository;
 
     public UserManagement(IDateTimeProvider dateTimeProvider, INotificationHelper notificationHelper, IStringHelper stringHelper, IUserRepository userRepository, IMapper mapper, IAuthHelper authHelper, IClientRepository clientRepository)
     {
@@ -26,6 +28,7 @@ public class UserManagement : IUserManagement
         _notificationHelper = notificationHelper;
         _stringHelper = stringHelper;
         _userRepository = userRepository;
+        _clientRepository = clientRepository;
         _mapper = mapper;
     }
 
@@ -47,6 +50,8 @@ public class UserManagement : IUserManagement
         await Notify(userDto.Email, verificationMessage);
 
         User? unverifiedUser = _mapper.Map<User>(userDto);
+        unverifiedUser.Id = _userRepository.GenerateId();
+        unverifiedUser.UserPermissions = await UserPermissions.GetDefault(unverifiedUser.Id, _clientRepository);
         unverifiedUser.Password = _stringHelper.Hash(userDto.Password);
         unverifiedUser.VerificationSecret = verificationMessage;
         unverifiedUser.VerificationSecretUpdatedAt = _dateTimeProvider.ProvideUtcNow();
