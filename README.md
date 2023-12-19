@@ -33,7 +33,8 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_integration_test:latest -f ./tests/user_management_integration_tests/Dockerfile.integration_test . && \
+    sudo TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_integration_test:latest docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
 ## In IntegrationTest Environment (Linux/WSL) with sharded mongodb cluster as the database, run
@@ -43,7 +44,8 @@ cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
     ./generate_certificates.sh --projectRootDirectory . && \
-    sudo docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_integration_test:latest -f ./tests/user_management_integration_tests/Dockerfile.integration_test . && \
+    sudo TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_integration_test:latest docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
 ## For UnitTest (Linux/WSL)
@@ -52,7 +54,8 @@ cd path-to-project-root-directory/ && \
 cd path-to-project-root-directory/ && \
     sudo chmod ug+x ./*.sh ./mongodb/*.sh && \
     ./prepare_environment_variables.sh --projectRootDirectory . --reset && \
-    sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
+    sudo docker build --tag ghcr.io/hirbod-codes/user_management_unit_test:latest -f ./tests/user_management_unit_tests/Dockerfile.unit_test . && \
+    sudo TESTING_IMAGE=ghcr.io/hirbod-codes/user_management_unit_test:latest docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 ```
 
 ## For docker compose only with sharded mongodb cluster (so you can run the dotnet application outside docker container)
@@ -137,3 +140,5 @@ Set host name localhost and port of the primary server in Server property of Mon
 **Unset Servers property in MongoClient, because mongodb replica set uses dns names and they are only available in docker compose network.**
 
 **Do not use MongoDB standalone container because integration tests need atomic transactions.**
+
+a change to test github actions 456

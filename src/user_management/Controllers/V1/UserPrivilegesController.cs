@@ -1,4 +1,4 @@
-namespace user_management.Controllers;
+namespace user_management.Controllers.V1;
 
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,6 +12,7 @@ using user_management.Services;
 using user_management.Services.Data;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/[controller]")]
 public class UserPrivilegesController : ControllerBase
 {

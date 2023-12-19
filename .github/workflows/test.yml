@@ -1,34 +1,127 @@
+name: test
+
 on:
-    push:
+    pull_request:
         branches:
             - main
+            - dev
     workflow_dispatch:
 
 jobs:
-    test:
+    build-test-images:
+      name: Build Image for Testing
+      runs-on: ubuntu-latest
+
+      permissions:
+        packages: write
+
+      steps:
+        -
+            uses: actions/checkout@v3
+
+        -
+            name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+
+        -
+            name: Login to ghcr.io registry
+            uses: docker/login-action@v3
+            with:
+                registry: ghcr.io
+                username: ${{ github.actor }}
+                password: ${{ secrets.GITHUB_TOKEN }}
+
+        -
+            name: Build unit test docker image and push to GHCR
+            uses: docker/build-push-action@v5
+            with:
+                push: true
+                context: ./
+                file: ./tests/user_management_unit_tests/Dockerfile.unit_test
+                tags: ghcr.io/${{github.repository}}_unit_test:${{ github.run_id }}
+                cache-from: type=gha
+                cache-to: type=gha,mode=max
+                platforms: linux/amd64,linux/arm64
+
+        -
+            name: Build integration test docker image and push to GHCR
+            uses: docker/build-push-action@v5
+            with:
+                push: true
+                context: ./
+                file: ./tests/user_management_integration_tests/Dockerfile.integration_test
+                tags: ghcr.io/${{github.repository}}_integration_test:${{ github.run_id }}
+                cache-from: type=gha
+                cache-to: type=gha,mode=max
+                platforms: linux/amd64,linux/arm64
+
+    unit-tests:
         runs-on: ubuntu-latest
+        needs: [build-test-images]
+
+        permissions:
+            packages: read
 
         steps:
-            - uses: actions/checkout@v3
+            -
+                uses: actions/checkout@v3
 
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v2
-              with:
-                  dotnet-version: 7.0.x
+            -
+                name: Login to ghcr.io registry
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Prepare environment variables and certificates
-              run: |
-                ls -al
-                chmod u+x ./*.sh
-                chmod u+x ./mongodb/*.sh
-                ./prepare_environment_variables.sh --projectRootDirectory ./
-                ./generate_certificates.sh --projectRootDirectory .
+            -
+                name: Prepare environment variables and certificates
+                run: |
+                    ls -al
+                    chmod u+x ./*.sh
+                    chmod u+x ./mongodb/*.sh
+                    ./prepare_environment_variables.sh --projectRootDirectory ./
+                    ./generate_certificates.sh --projectRootDirectory .
 
-            - name: Run unit tests
-              run: |
-                sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
+            -
+                name: Run unit tests
+                run: |
+                    export TESTING_IMAGE=ghcr.io/${{github.repository}}_unit_test:"$GITHUB_RUN_ID"
+                    echo Testing image: "$TESTING_IMAGE"
+                    sudo docker compose -f ./docker-compose.unit_test.yml --env-file ./.env.unit_test up --build --remove-orphans -V --exit-code-from user_management
 
-            - name: Run integration tests
-              run: |
-                docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
-                docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+
+    integration-tests:
+        runs-on: ubuntu-latest
+        needs: [build-test-images, unit-tests]
+
+        permissions:
+            packages: read
+
+        steps:
+            -
+                uses: actions/checkout@v3
+
+            -
+                name: Login to ghcr.io registry
+                uses: docker/login-action@v3
+                with:
+                    registry: ghcr.io
+                    username: ${{ github.actor }}
+                    password: ${{ secrets.GITHUB_TOKEN }}
+
+            -
+                name: Prepare environment variables and certificates
+                run: |
+                    ls -al
+                    chmod u+x ./*.sh
+                    chmod u+x ./mongodb/*.sh
+                    ./prepare_environment_variables.sh --projectRootDirectory ./
+                    ./generate_certificates.sh --projectRootDirectory .
+            -
+                name: Run integration tests
+                run: |
+                    export TESTING_IMAGE=ghcr.io/${{github.repository}}_integration_test:"$GITHUB_RUN_ID"
+                    echo Testing image: "$TESTING_IMAGE"
+                    docker compose -f ./docker-compose.mongodb.base.yml -f ./docker-compose.mongodb.integration_test.yml --env-file ./.env.mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
+                    docker compose -f ./docker-compose.sharded_mongodb.base.yml -f ./docker-compose.sharded_mongodb.integration_test.yml --env-file ./.env.sharded_mongodb.integration_test up --build --remove-orphans -V --exit-code-from user_management
