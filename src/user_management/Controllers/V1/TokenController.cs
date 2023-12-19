@@ -130,6 +130,21 @@ public class TokenController : ControllerBase
         catch (DuplicationException) { return Problem("Internal server error encountered."); }
     }
 
+    /// <summary>
+    /// First-party clients can directly ask for access and refresh tokens for read access
+    /// </summary>
+    [HttpPost(PATH_GET_TOKENS)]
+    [SwaggerResponse(statusCode: 200, type: typeof(TokenRetrieveDto))]
+    [SwaggerResponse(statusCode: 404, type: typeof(string))]
+    [SwaggerResponse(statusCode: 403, type: typeof(string))]
+    public async Task<IActionResult> RetrieveTokens([FromQuery] FirstPartyTokens firstPartyTokens)
+    {
+        try { return Ok(await _tokenManagement.RetrieveTokens(firstPartyTokens.TargetUserId, firstPartyTokens.ClientId, firstPartyTokens.ClientSecret)); }
+        catch (DataNotFoundException) { return NotFound("No user found."); }
+        catch (UnauthorizedAccessException) { return StatusCode(403); }
+    }
+
+    public const string PATH_GET_TOKENS = "tokens";
     public const string PATH_POST_AUTHORIZE = "auth";
     public const string PATH_POST_TOKEN_VERIFICATION = "token";
     public const string PATH_POST_RETOKEN = "retoken";

@@ -218,4 +218,23 @@ public class TokenManagement : ITokenManagement
 
         return tokenValue;
     }
+
+    public async Task<TokenRetrieveDto?> RetrieveTokens(string userId, string clientId, string clientSecret)
+    {
+        Models.Client client = await _clientRepository.RetrieveByIdAndSecret(clientId, _stringHelper.HashWithoutSalt(clientSecret)!) ?? throw new DataNotFoundException(nameof(clientId));
+
+        if (!client.IsFirstParty)
+            throw new UnauthorizedAccessException(message: nameof(clientId));
+
+        User user = await _userRepository.RetrieveById(userId) ?? throw new DataNotFoundException(nameof(user));
+
+        Reader reader = user.UserPermissions.Readers.FirstOrDefault(o => o.Author == Reader.CLIENT && o.IsPermitted && o.AuthorId == clientId) ?? throw new UnauthorizedAccessException(message: nameof(userId));
+        AuthorizedClient authorizedClient = user.AuthorizedClients.FirstOrDefault(o => o.ClientId == clientId) ?? throw new UnauthorizedAccessException(message: nameof(userId));
+
+        return new()
+        {
+            RefreshToken = authorizedClient.RefreshToken.Value,
+            Token = authorizedClient.Token.Value
+        };
+    }
 }

@@ -75,4 +75,9 @@ public interface ITokenManagement
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     public Task<string> ReToken(string clientId, string secret, string refreshToken);
+
+    /// <summary>
+    /// Retrieve access and refresh tokens for first-party clients
+    /// </summary>
+    public Task<TokenRetrieveDto?> RetrieveTokens(string userId, string clientId, string clientSecret);
 }
