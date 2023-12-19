@@ -25,19 +25,6 @@ public class TokenManagementTest
     public static Faker Faker = new("en");
 
     [Fact]
-    public async void Authorize_clientId_Failure()
-    {
-        ArgumentException argumentException = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Authorize(
-                "clientId",
-                "redirectUrl",
-                "codeChallenge",
-                "codeChallengeMethod",
-                new()
-            ));
-        Assert.Equal("clientId", argumentException.Message);
-    }
-
-    [Fact]
     public async void Authorize_authentication_Failure()
     {
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Throws<AuthenticationException>();
@@ -54,7 +41,7 @@ public class TokenManagementTest
     public async void Authorize_clientExistenceAndExposure_Failure()
     {
         User user = new();
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string redirectUrl = "redirectUrl";
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(user));
@@ -84,7 +71,7 @@ public class TokenManagementTest
     public async void Authorize_tokenPrivileges_Failure()
     {
         User user = new() { Privileges = Faker.PickRandom<Privilege>(StaticData.Privileges, 1).ToArray() };
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string redirectUrl = "redirectUrl";
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(user));
@@ -103,7 +90,7 @@ public class TokenManagementTest
     public async void Authorize_codeGeneration_Failure()
     {
         User user = new() { Privileges = Faker.PickRandom<Privilege>(StaticData.Privileges, 1).ToArray() };
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string redirectUrl = "redirectUrl";
         TokenPrivileges scope = new() { Privileges = StaticData.Privileges.Where(p => p.Name == user.Privileges[0].Name).ToArray() };
 
@@ -124,7 +111,7 @@ public class TokenManagementTest
     public async void Authorize_database_Failure()
     {
         User user = new() { Privileges = Faker.PickRandom<Privilege>(StaticData.Privileges, 1).ToArray() };
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string redirectUrl = "redirectUrl";
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(user));
@@ -177,7 +164,7 @@ public class TokenManagementTest
     public async void Authorize()
     {
         User user = new() { Privileges = Faker.PickRandom<Privilege>(StaticData.Privileges, 1).ToArray() };
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string redirectUrl = "redirectUrl";
 
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(user));
@@ -210,15 +197,9 @@ public class TokenManagementTest
     }
 
     [Fact]
-    public async void VerifyAndGenerateTokens_clientId_Failure()
-    {
-        await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().VerifyAndGenerateTokens(new() { ClientId = "clientId" }));
-    }
-
-    [Fact]
     public async void VerifyAndGenerateTokens_client_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         TokenCreateDto dto = new() { ClientId = clientId.ToString(), RedirectUrl = Faker.Internet.Url() };
         Fixture.IClientRepository.Setup(o => o.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl)).Returns(Task.FromResult<Client?>(null));
 
@@ -234,7 +215,7 @@ public class TokenManagementTest
     [Fact]
     public async void VerifyAndGenerateTokens_verification_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         TokenCreateDto dto = new() { ClientId = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Code = "code" };
         Client client = new() { Id = clientId };
         Fixture.IClientRepository.Setup(o => o.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl)).Returns(Task.FromResult<Client?>(client));
@@ -248,7 +229,7 @@ public class TokenManagementTest
         Fixture.IUserRepository.Setup(o => o.RetrieveByClientIdAndCode(clientId, dto.Code)).Returns(Task.FromResult<User?>(user));
         dataNotFoundException = await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
         Assert.Equal("clientId", dataNotFoundException.Message);
-        user.AuthorizingClient = new() { ClientId = ObjectId.GenerateNewId() };
+        user.AuthorizingClient = new() { ClientId = ObjectId.GenerateNewId().ToString() };
         Fixture.IUserRepository.Setup(o => o.RetrieveByClientIdAndCode(clientId, dto.Code)).Returns(Task.FromResult<User?>(user));
         dataNotFoundException = await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
         Assert.Equal("clientId", dataNotFoundException.Message);
@@ -283,7 +264,7 @@ public class TokenManagementTest
         string token = "token";
         string? hashedToken = "hashedToken";
         TokenPrivileges tokenPrivileges = new();
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         TokenCreateDto dto = new() { ClientId = clientId.ToString(), Code = code, CodeVerifier = codeVerifier, RedirectUrl = Faker.Internet.Url() };
         User user = new()
         {
@@ -374,7 +355,7 @@ public class TokenManagementTest
         string token = "token";
         string? hashedToken = "hashedToken";
         TokenPrivileges tokenPrivileges = new();
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         TokenCreateDto dto = new() { ClientId = clientId.ToString(), Code = code, CodeVerifier = codeVerifier, RedirectUrl = Faker.Internet.Url() };
         User user = new()
         {
@@ -422,15 +403,6 @@ public class TokenManagementTest
     }
 
     [Fact]
-    public async void ReToken_ClientId_Failure()
-    {
-        string clientIdStr = "clientIdStr";
-        string secret = "secret";
-        string refreshToken = "refreshToken";
-        await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().ReToken(clientIdStr, secret, refreshToken));
-    }
-
-    [Fact]
     public async void ReToken_secretHash_Failure()
     {
         string clientIdStr = ObjectId.GenerateNewId().ToString();
@@ -444,7 +416,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_clientValidity_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string secret = "secret";
         string refreshToken = "refreshToken";
@@ -462,7 +434,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_refreshTokenHash_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string secret = "secret";
         string refreshToken = "refreshToken";
@@ -477,7 +449,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_userRetrieval_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string secret = "secret";
         string refreshToken = "refreshToken";
@@ -494,7 +466,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_refreshTokenValidity_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string secret = "secret";
         string refreshToken = "refreshToken";
@@ -528,7 +500,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_uniqueTokenGeneration_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string token = "token";
         string? hashedToken = "hashedToken";
@@ -563,7 +535,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken_database_Failure()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string token = "token";
         string? hashedToken = "hashedToken";
@@ -607,7 +579,7 @@ public class TokenManagementTest
     [Fact]
     public async void ReToken()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string clientIdStr = clientId.ToString();
         string token = "token";
         string? hashedToken = "hashedToken";

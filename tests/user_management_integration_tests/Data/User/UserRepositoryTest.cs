@@ -73,11 +73,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             user_management.Models.User? createdUser = await _userRepository.Create(user1);
 
             Assert.NotNull(createdUser);
-            Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", createdUser.Id))).FirstOrDefault<user_management.Models.User?>());
+            Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(createdUser.Id)))).FirstOrDefault<user_management.Models.User?>());
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id)); }
+        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id))); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         await _userCollection.InsertOneAsync(user2);
 
@@ -88,8 +88,8 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user2.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user2.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -109,7 +109,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         await Assert.ThrowsAsync<ArgumentException>(async () => await _userRepository.RetrieveByFullNameForExistenceCheck(null, null, null));
     }
@@ -129,7 +129,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -147,7 +147,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -165,7 +165,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -176,14 +176,14 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         try
         {
-            user_management.Models.User? user = await _userRepository.RetrieveById((ObjectId)user1.Id);
+            user_management.Models.User? user = await _userRepository.RetrieveById(user1.Id);
 
             Assert.NotNull(user);
             Assert.Equal(user1.Id.ToString(), user.Id.ToString());
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -195,14 +195,14 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         var readers = user.UserPermissions.Readers.Where(r => r.AuthorId != readerUser.Id).ToList();
         user_management.Models.Field[] targetFieldsToRead = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), Faker.Random.Int(2, 4)).ToArray();
-        readers.Add(new user_management.Models.Reader() { Author = user_management.Models.Reader.USER, AuthorId = (ObjectId)readerUser.Id, IsPermitted = true, Fields = targetFieldsToRead });
+        readers.Add(new user_management.Models.Reader() { Author = user_management.Models.Reader.USER, AuthorId = readerUser.Id, IsPermitted = true, Fields = targetFieldsToRead });
         user.UserPermissions.Readers = readers.ToArray();
 
         await _userCollection.InsertOneAsync(user);
 
         try
         {
-            user_management.Models.PartialUser? retrievedUser = await _userRepository.RetrieveById((ObjectId)readerUser.Id, (ObjectId)user.Id);
+            user_management.Models.PartialUser? retrievedUser = await _userRepository.RetrieveById(readerUser.Id, user.Id);
 
             Assert.NotNull(retrievedUser);
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
@@ -243,8 +243,8 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
         // Assert user deletion
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", readerUser.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(readerUser.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -277,7 +277,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             readers.Add(new user_management.Models.Reader()
             {
                 Author = user_management.Models.Reader.USER,
-                AuthorId = (ObjectId)readerUser.Id,
+                AuthorId = readerUser.Id,
                 IsPermitted = true,
                 Fields = targetFieldsToRead
             });
@@ -337,7 +337,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             readers.Add(new user_management.Models.Reader()
             {
                 Author = user_management.Models.Reader.USER,
-                AuthorId = (ObjectId)readerUser.Id,
+                AuthorId = readerUser.Id,
                 IsPermitted = true,
                 Fields = targetFieldsToRead
             });
@@ -397,7 +397,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             readers.Add(new user_management.Models.Reader()
             {
                 Author = user_management.Models.Reader.USER,
-                AuthorId = (ObjectId)readerUser.Id,
+                AuthorId = readerUser.Id,
                 IsPermitted = true,
                 Fields = targetFieldsToRead
             });
@@ -479,7 +479,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
         user.IsEmailVerified = true;
@@ -495,7 +495,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         user.IsEmailVerified = false;
         user.LoggedOutAt = null;
@@ -510,7 +510,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -530,7 +530,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveByIdForAuthorizationHandling(user.Id));
     }
 
@@ -551,7 +551,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForPasswordChange(user.Email));
     }
 
@@ -572,7 +572,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForUsernameChange(user.Email));
     }
 
@@ -593,7 +593,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForEmailChange(user.Email));
     }
 
@@ -614,7 +614,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveUserForPhoneNumberChange(user.Email));
     }
 
@@ -623,7 +623,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
     public async void RetrieveByClientIdAndCode(user_management.Models.User user)
     {
         string code = "code";
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         DateTime codeExpiresAt = default;
         user.AuthorizingClient = new() { ClientId = clientId, Code = code, CodeChallenge = "CodeChallenge", CodeChallengeMethod = "SHA512", CodeExpiresAt = codeExpiresAt };
 
@@ -638,11 +638,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             Assert.Equal(user.Id.ToString(), retrievedUser.Id.ToString());
             Assert.Equal(user.AuthorizingClient.ClientId, retrievedUser.AuthorizingClient!.ClientId);
             Assert.Equal(user.AuthorizingClient.Code, retrievedUser.AuthorizingClient.Code);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.LOGGED_OUT_AT, null } });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First(), new() { { user_management.Models.User.LOGGED_OUT_AT, null } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveByClientIdAndCode(clientId, code));
     }
 
@@ -666,7 +666,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveByRefreshTokenValue(token));
     }
 
@@ -690,7 +690,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         Assert.Null(await _userRepository.RetrieveByTokenValue(token));
     }
 
@@ -708,11 +708,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Login(user.Id);
 
             Assert.True(result);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.LOGGED_OUT_AT, null } });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First(), new() { { user_management.Models.User.LOGGED_OUT_AT, null } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -729,12 +729,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateVerificationSecret(VerificationSecret, user.Email);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { user_management.Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -754,12 +754,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateVerificationSecretForActivation(VerificationSecret, user.Email);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { user_management.Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         // Failure
         user.IsEmailVerified = true;
@@ -773,11 +773,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateVerificationSecretForActivation(VerificationSecret, user.Email);
 
             Assert.Null(result);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First(), new() { });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -794,12 +794,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateVerificationSecretForPasswordChange(VerificationSecret, user.Email);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.VERIFICATION_SECRET, retrievedUser.VerificationSecret }, { user_management.Models.User.VERIFICATION_SECRET_UPDATED_AT, retrievedUser.VerificationSecretUpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -816,11 +816,11 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Verify(user.Id);
 
             Assert.True(result);
-            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First(), new() { { user_management.Models.User.IS_EMAIL_VERIFIED, true } });
+            AssertFieldsExpectedValues(user, (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First(), new() { { user_management.Models.User.IS_EMAIL_VERIFIED, true } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -836,12 +836,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.ChangePassword(user.Email, hashedPassword);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.PASSWORD, hashedPassword }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -857,12 +857,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.ChangeUsername(user.Email, username);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USERNAME, username }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -878,12 +878,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.ChangePhoneNumber(user.Email, phoneNumber);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.PHONE_NUMBER, phoneNumber }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -899,12 +899,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.ChangeEmail(user.Email, newEmail);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.EMAIL, newEmail }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -922,12 +922,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Logout(user.Id);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.LOGGED_OUT_AT, user.LoggedOutAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -963,12 +963,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.RemoveClient(user.Id, user.AuthorizedClients[0].ClientId, actor.Id, false);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients.Where(uc => uc.ClientId != user.AuthorizedClients[0].ClientId).ToArray() }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1004,12 +1004,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.RemoveAllClients(user.Id, user.Id, false);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, new user_management.Models.AuthorizedClient[] { } }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1022,7 +1022,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPermissions.AllUpdaters = new() { };
         user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.AuthorizedClients[0].ClientId;
+        string clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1033,13 +1033,13 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddTokenPrivilegesToUser(user.Id, actor.Id, clientId, tokenPrivileges);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1052,7 +1052,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPermissions.AllUpdaters = new() { };
         user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { UpdatesFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
-        ObjectId clientId = user.AuthorizedClients[0].ClientId;
+        string clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1063,13 +1063,13 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddTokenPrivilegesToUser(user.Id, actor.Id, clientId, tokenPrivileges);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1082,7 +1082,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         user.UserPermissions.AllUpdaters = new() { };
         user.UserPermissions.Deleters = new user_management.Models.Deleter[] { };
         user_management.Models.TokenPrivileges tokenPrivileges = new() { DeletesUser = true };
-        ObjectId clientId = user.AuthorizedClients[0].ClientId;
+        string clientId = user.AuthorizedClients[0].ClientId;
 
         // Success
         await _userCollection.InsertOneAsync(user);
@@ -1093,21 +1093,21 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddTokenPrivilegesToUser(user.Id, actor.Id, clientId, tokenPrivileges);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             Assert.True(retrievedUser.UserPermissions.Deleters[0].AuthorId == clientId && retrievedUser.UserPermissions.Deleters[0].IsPermitted);
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_userAlreadyPrivileged(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.AuthorizedClients[0].ClientId;
+        string clientId = user.AuthorizedClients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new() { ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray() };
 
         user.UserPermissions.Readers = new user_management.Models.Reader[] { new() { Author = user_management.Models.Reader.USER, AuthorId = clientId, IsPermitted = true, Fields = new user_management.Models.Field[] { } }, new() { Author = user_management.Models.Reader.USER, AuthorId = actor.Id, IsPermitted = true, Fields = new user_management.Models.Field[] { new() { IsPermitted = true, Name = user_management.Models.User.USER_PERMISSIONS } } } };
@@ -1125,20 +1125,20 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddTokenPrivilegesToUser(user.Id, actor.Id, clientId, tokenPrivileges);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
     [MemberData(nameof(TwoUsers))]
     public async void AddTokenPrivilegesToUser_allCases(user_management.Models.User user, user_management.Models.User actor)
     {
-        ObjectId clientId = user.AuthorizedClients[0].ClientId;
+        string clientId = user.AuthorizedClients[0].ClientId;
         user_management.Models.TokenPrivileges tokenPrivileges = new()
         {
             ReadsFields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetReadableFields(), (int)(Faker.Random.Int(1, 5))).ToArray(),
@@ -1163,24 +1163,24 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddTokenPrivilegesToUser(user.Id, actor.Id, clientId, tokenPrivileges);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
         finally
         {
-            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id));
+            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)));
+            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)));
         }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
     [MemberData(nameof(OneUser))]
     public async void UpdateAuthorizingClient(user_management.Models.User user)
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string code = "code";
         user_management.Models.AuthorizingClient authorizingClient = new()
         {
@@ -1201,19 +1201,19 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateAuthorizingClient(user.Id, authorizingClient);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZING_CLIENT, authorizingClient }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id))); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
     [MemberData(nameof(OneUser))]
     public async void AddAuthorizedClient(user_management.Models.User user)
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         user_management.Models.AuthorizedClient authorizedClient = new()
         {
             ClientId = clientId,
@@ -1241,19 +1241,19 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id))); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
     [MemberData(nameof(OneUser))]
     public async void UpdateToken(user_management.Models.User user)
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         DateTime? expirationDate = DateTime.UtcNow;
         user_management.Models.Token token = new() { ExpirationDate = expirationDate, Value = "newValue", IsRevoked = false };
         user.AuthorizedClients = new user_management.Models.AuthorizedClient[] {
@@ -1282,12 +1282,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateToken(user.Id, clientId, token);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.AUTHORIZED_CLIENTS, user.AuthorizedClients }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id))); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1301,7 +1301,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         await _userCollection.InsertOneAsync(user);
 
         user.UserPermissions.Updaters = new user_management.Models.Updater[] { new() {
-            Author = user_management.Models.Updater.USER, AuthorId = ObjectId.GenerateNewId(),
+            Author = user_management.Models.Updater.USER, AuthorId = ObjectId.GenerateNewId().ToString(),
             IsPermitted = true,
             Fields = Faker.PickRandom<user_management.Models.Field>(user_management.Models.User.GetUpdatableFields(), (int)Faker.Random.Int(1,3)).ToArray()
         }};
@@ -1311,12 +1311,12 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.UpdateUserPrivileges(actor.Id, user.Id, user.UserPermissions);
 
             Assert.True(result);
-            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).First();
+            user_management.Models.User retrievedUser = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
             AssertFieldsExpectedValues(user, retrievedUser, new() { { user_management.Models.User.USER_PERMISSIONS, user.UserPermissions }, { user_management.Models.User.UPDATED_AT, retrievedUser.UpdatedAt } });
         }
-        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id)); }
+        finally { await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id))); }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1344,7 +1344,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Update(actor.Id, "empty", "first_name::Set::test_first_name::string");
 
             Assert.True(result);
-            List<user_management.Models.User> retrievedUsers = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Ne("_id", actor.Id))).ToList();
+            List<user_management.Models.User> retrievedUsers = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Ne("_id", ObjectId.Parse(actor.Id)))).ToList();
             for (int i = 0; i < retrievedUsers.Count; i++)
             {
                 user_management.Models.User retrievedUser = retrievedUsers[i];
@@ -1354,7 +1354,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
         }
         finally { await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty); }
 
-        Assert.Empty((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Ne("_id", actor.Id))).ToList());
+        Assert.Empty((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Ne("_id", ObjectId.Parse(actor.Id)))).ToList());
     }
 
     [Theory]
@@ -1370,16 +1370,16 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
             bool? result = await _userRepository.Delete(actor.Id, user.Id);
 
             Assert.True(result);
-            Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
+            Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
         }
         finally
         {
-            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id));
-            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id));
+            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)));
+            await _userCollection.DeleteOneAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)));
         }
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     [Theory]
@@ -1391,8 +1391,8 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         Assert.Null(result);
 
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", actor.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.Null((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(actor.Id)))).FirstOrDefault<user_management.Models.User?>());
     }
 
     private static void AssertFieldsExpectedValues(object oldObject, object newObject, Dictionary<string, object?>? changedFields = null)

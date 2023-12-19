@@ -21,7 +21,7 @@ public class ClientManagementTest
     [Fact]
     public async void Register()
     {
-        Client client = new() { Id = ObjectId.GenerateNewId() };
+        Client client = new() { Id = ObjectId.GenerateNewId().ToString() };
         string secret = "secret";
         string? hashedSecret = "hashedSecret";
 
@@ -46,13 +46,9 @@ public class ClientManagementTest
     [Fact]
     public async void RetrieveClientPublicInfo()
     {
-        string id = "ObjectId.GenerateNewId().ToString()";
-
-        await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveClientPublicInfo(id));
-
-        id = ObjectId.GenerateNewId().ToString();
-        Client client = new() { Id = ObjectId.Parse(id) };
-        Fixture.IClientRepository.Setup<Task<Client?>>(o => o.RetrieveById(ObjectId.Parse(id))).Returns(Task.FromResult<Client?>(client));
+        string id = ObjectId.GenerateNewId().ToString();
+        Client client = new() { Id = id };
+        Fixture.IClientRepository.Setup<Task<Client?>>(o => o.RetrieveById(id)).Returns(Task.FromResult<Client?>(client));
 
         Client? retrievedClient = await InstantiateService().RetrieveClientPublicInfo(id);
 
@@ -70,7 +66,7 @@ public class ClientManagementTest
         await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveBySecret(secret));
 
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(secret, "SHA512")).Returns(hashedSecret);
-        Client? client = new() { Id = ObjectId.GenerateNewId() };
+        Client? client = new() { Id = ObjectId.GenerateNewId().ToString() };
         Fixture.IClientRepository.Setup<Task<Client?>>(o => o.RetrieveBySecret(hashedSecret)).Returns(Task.FromResult<Client?>(client));
 
         Client? retrievedClient = await InstantiateService().RetrieveBySecret(secret);
@@ -86,20 +82,17 @@ public class ClientManagementTest
         string secret = "null";
         string redirectUrl = "null";
 
-        ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
-        Assert.Equal("clientId", ex.ParamName);
-
         id = ObjectId.GenerateNewId().ToString();
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: null);
-        ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
+        ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
         Assert.Equal("clientSecret", ex.ParamName);
 
         string? hashedSecret = "hashedSecret";
         Fixture.IStringHelper.Setup<string?>(o => o.HashWithoutSalt(secret, "SHA512")).Returns(value: hashedSecret);
-        Fixture.IClientRepository.Setup<Task<bool>>(o => o.UpdateRedirectUrl(redirectUrl, ObjectId.Parse(id), hashedSecret)).Returns(Task.FromResult<bool>(false));
+        Fixture.IClientRepository.Setup<Task<bool>>(o => o.UpdateRedirectUrl(redirectUrl, id, hashedSecret)).Returns(Task.FromResult<bool>(false));
         await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl));
 
-        Fixture.IClientRepository.Setup<Task<bool>>(o => o.UpdateRedirectUrl(redirectUrl, ObjectId.Parse(id), hashedSecret)).Returns(Task.FromResult<bool>(true));
+        Fixture.IClientRepository.Setup<Task<bool>>(o => o.UpdateRedirectUrl(redirectUrl, id, hashedSecret)).Returns(Task.FromResult<bool>(true));
         await InstantiateService().UpdateRedirectUrl(id, secret, redirectUrl);
     }
 
@@ -124,7 +117,7 @@ public class ClientManagementTest
     [Fact]
     public async void UpdateExposedClient()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         string secret = "secret";
         string? hashedSecret = "hashedSecret";
         string? newSecret = "newSecret";

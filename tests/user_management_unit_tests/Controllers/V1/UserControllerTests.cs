@@ -140,7 +140,7 @@ public class UserControllerTests
     public async void Register_Ok()
     {
         UserCreateDto dto = new() { };
-        ObjectId id = ObjectId.GenerateNewId();
+        string id = ObjectId.GenerateNewId().ToString();
         User user = new() { Id = id };
 
         Fixture.IUserManagement.Setup<Task<User>>(um => um.Register(dto)).Returns(Task.FromResult(user));
@@ -831,7 +831,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
 
-        ObjectId id = ObjectId.GenerateNewId();
+        string id = ObjectId.GenerateNewId().ToString();
         var responseObject = new ExpandoObject() as IDictionary<string, object?>;
         responseObject.Add("_id", id.ToString());
         Fixture.IUserManagement.Setup<Task<PartialUser>>(um => um.RetrieveById(actorId, userId, forClients)).Returns(Task.FromResult(new PartialUser() { Id = id }));
@@ -881,7 +881,7 @@ public class UserControllerTests
     public async void RetrieveClients_Ok()
     {
         AuthorizedClient[] clients = new AuthorizedClient[] { };
-        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId(), AuthorizedClients = clients };
+        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId().ToString(), AuthorizedClients = clients };
         string userId = "userId";
         bool forClients = false;
         IEnumerable<AuthorizedClientRetrieveDto> authorizedClients = Array.Empty<AuthorizedClientRetrieveDto>();
@@ -932,7 +932,7 @@ public class UserControllerTests
     public async void RetrieveClients_Unauthorized()
     {
         AuthorizedClient[] clients = new AuthorizedClient[] { };
-        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId() };
+        PartialUser user = new PartialUser() { Id = ObjectId.GenerateNewId().ToString() };
         string userId = "userId";
         bool forClients = false;
 
@@ -954,7 +954,7 @@ public class UserControllerTests
         bool ascending = true;
         string actorId = ObjectId.GenerateNewId().ToString();
         bool forClients = false;
-        ObjectId id = ObjectId.GenerateNewId();
+        string id = ObjectId.GenerateNewId().ToString();
         List<PartialUser> users = new List<PartialUser>() { new PartialUser() { Id = id } };
         var retrievedUser = new ExpandoObject() as IDictionary<string, object?>;
         retrievedUser.Add("_id", id.ToString());

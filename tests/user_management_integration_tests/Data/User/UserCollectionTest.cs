@@ -1,5 +1,6 @@
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Data;
 
@@ -170,9 +171,9 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
 
         await _userCollection.InsertManyAsync(users);
 
-        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user1.Id))).FirstOrDefault<user_management.Models.User?>());
-        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user2.Id))).FirstOrDefault<user_management.Models.User?>());
-        if (user3 != null) Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", user3.Id))).FirstOrDefault<user_management.Models.User?>());
+        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user1.Id)))).FirstOrDefault<user_management.Models.User?>());
+        Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user2.Id)))).FirstOrDefault<user_management.Models.User?>());
+        if (user3 != null) Assert.NotNull((await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Eq("_id", ObjectId.Parse(user3.Id)))).FirstOrDefault<user_management.Models.User?>());
 
         await _userCollection.DeleteManyAsync(Builders<user_management.Models.User>.Filter.Empty);
     }

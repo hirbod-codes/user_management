@@ -56,7 +56,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         Client client = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).First();
         TokenAuthDto dto = new()
         {
-            ClientId = client.Id.ToString(),
+            ClientId = client.Id,
             CodeChallenge = _faker.Random.String2(128),
             CodeChallengeMethod = "SHA512",
             RedirectUrl = client.RedirectUrl,
@@ -75,7 +75,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         User user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(loginResult.UserId)))).First();
         Assert.NotNull(user.AuthorizingClient);
-        Assert.Equal(user.AuthorizingClient.ClientId.ToString(), dto.ClientId);
+        Assert.Equal(user.AuthorizingClient.ClientId, dto.ClientId);
         Assert.NotEqual(0, user.AuthorizingClient.Code.Length);
         Assert.Equal(user.AuthorizingClient.CodeChallenge, dto.CodeChallenge);
         Assert.Equal(user.AuthorizingClient.CodeChallengeMethod, dto.CodeChallengeMethod);
@@ -94,7 +94,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.EXPOSED_COUNT, 0))).ToList();
 
         User user = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
-        user.AuthorizedClients = user.AuthorizedClients.Where(ac => ac.ClientId.ToString() != clients[0].Id.ToString()).ToArray();
+        user.AuthorizedClients = user.AuthorizedClients.Where(ac => ac.ClientId != clients[0].Id).ToArray();
         user.AuthorizingClient = new()
         {
             ClientId = clients[0].Id,
@@ -108,7 +108,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         TokenCreateDto dto = new()
         {
-            ClientId = clients[0].Id.ToString(),
+            ClientId = clients[0].Id,
             Code = code,
             CodeVerifier = codeVerifier,
             GrantType = "authorization_code",
@@ -126,8 +126,8 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         TokenRetrieveDto? responseData = await response.Content.ReadFromJsonAsync<TokenRetrieveDto>();
         Assert.NotNull(responseData);
 
-        user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).First();
-        AuthorizedClient? userAuthorizedClient = user.AuthorizedClients.FirstOrDefault(ac => ac != null && ac.ClientId.ToString() == clients[0].Id.ToString());
+        user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
+        AuthorizedClient? userAuthorizedClient = user.AuthorizedClients.FirstOrDefault(ac => ac != null && ac.ClientId == clients[0].Id);
         Assert.NotNull(userAuthorizedClient);
         Assert.True(userAuthorizedClient.RefreshToken.TokenPrivileges.DeletesUser);
         Assert.Equal(userAuthorizedClient.RefreshToken.Value, new StringHelper().HashWithoutSalt(responseData.RefreshToken));
@@ -177,14 +177,14 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         user.AuthorizedClients = user.AuthorizedClients
             .Append(authorizedClient)
             .ToArray();
-        ReplaceOneResult replaceOneResult = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", user.Id), user);
+        ReplaceOneResult replaceOneResult = await _userCollection.ReplaceOneAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)), user);
         Assert.True(replaceOneResult.IsAcknowledged);
         Assert.Equal(1, replaceOneResult.MatchedCount);
         Assert.Equal(1, replaceOneResult.ModifiedCount);
 
         ReTokenDto dto = new()
         {
-            ClientId = client.Id.ToString(),
+            ClientId = client.Id,
             ClientSecret = secret,
             RefreshToken = refreshTokenValue
         };
@@ -201,12 +201,12 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
 
         Assert.NotEqual(newTokenValue, tokenValue);
 
-        User updatedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).First();
+        User updatedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).First();
 
-        Assert.Equal(new StringHelper().HashWithoutSalt(newTokenValue), updatedUser.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.Value);
+        Assert.Equal(new StringHelper().HashWithoutSalt(newTokenValue), updatedUser.AuthorizedClients.First(c => c.ClientId == authorizedClient.ClientId).Token.Value);
         Assert.NotEqual(
-            user.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate,
-            updatedUser.AuthorizedClients.First(c => c.ClientId.ToString() == authorizedClient.ClientId.ToString()).Token.ExpirationDate
+            user.AuthorizedClients.First(c => c.ClientId == authorizedClient.ClientId).Token.ExpirationDate,
+            updatedUser.AuthorizedClients.First(c => c.ClientId == authorizedClient.ClientId).Token.ExpirationDate
         );
     }
 }

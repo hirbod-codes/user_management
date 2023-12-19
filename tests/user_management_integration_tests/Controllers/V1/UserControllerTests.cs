@@ -267,7 +267,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         // Then
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.NotEqual(user.VerificationSecret, retrievedUser.VerificationSecret);
         Assert.NotEqual(user.VerificationSecretUpdatedAt, retrievedUser.VerificationSecretUpdatedAt);
@@ -279,7 +279,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Given
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         User user = (await _userCollection.FindAsync(fb.And(fb.Ne<string?>(User.VERIFICATION_SECRET, null), fb.Eq(User.IS_EMAIL_VERIFIED, false)))).First();
-        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", user.Id), Builders<User>.Update.Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
+        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", ObjectId.Parse(user.Id)), Builders<User>.Update.Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
         Assert.True(updateResult.IsAcknowledged && updateResult.ModifiedCount == 1);
 
         Activation dto = new() { Email = user.Email, Password = UserSeeder.USERS_PASSWORDS, VerificationSecret = user.VerificationSecret! };
@@ -292,7 +292,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         // Then
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.True(retrievedUser.IsEmailVerified);
     }
@@ -324,7 +324,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The password changed successfully.", message);
-        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.True(new StringHelper().DoesHashMatch(retrievedUser.Password, newPassword));
         Assert.NotEqual(user.UpdatedAt, retrievedUser.UpdatedAt);
@@ -348,7 +348,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(user.Id.ToString(), loginResult.UserId);
         Assert.IsType<string>(loginResult.Jwt);
 
-        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Null(retrievedUser.LoggedOutAt);
     }
@@ -423,7 +423,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The email changed successfully.", message);
-        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Equal(newEmail, retrievedUser.Email);
     }
@@ -460,7 +460,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The username changed successfully.", message);
-        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Equal(newUsername, retrievedUser.Username);
     }
@@ -498,7 +498,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The phone number changed successfully.", message);
-        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Equal(newPhoneNumber, retrievedUser.PhoneNumber);
     }
@@ -535,7 +535,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The email changed successfully.", message);
-        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Equal(newEmail, retrievedUser.Email);
     }
@@ -568,7 +568,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("The client removed successfully.", message);
 
-        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(fb.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Null(retrievedUser.AuthorizedClients.FirstOrDefault(uc => uc != null && uc.ClientId == user.AuthorizedClients[0].ClientId));
     }
@@ -601,7 +601,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         string message = (await response.Content.ReadAsStringAsync()).TrimStart('\"').TrimEnd('\"');
         Assert.Equal("All of the clients removed successfully.", message);
 
-        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", user.Id))).FirstOrDefault();
+        User? retrievedUser = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault();
         Assert.NotNull(retrievedUser);
         Assert.Empty(retrievedUser.AuthorizedClients);
     }
@@ -625,7 +625,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         readers.Add(new() { Author = Reader.USER, AuthorId = user.Id, IsPermitted = true, Fields = targetFieldsToRead });
         user.UserPermissions.Readers = readers.ToArray();
 
-        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", user.Id), Builders<User>.Update.Set(User.USER_PERMISSIONS, user.UserPermissions));
+        UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", ObjectId.Parse(user.Id)), Builders<User>.Update.Set(User.USER_PERMISSIONS, user.UserPermissions));
         Assert.True(updateResult.IsAcknowledged && updateResult.MatchedCount == 1 && updateResult.ModifiedCount <= 1);
 
         LoginResult loginResult = await Login(client, user: user);
@@ -876,6 +876,6 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         // Then
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Null((await _userCollection.FindAsync(fbu.Eq("_id", user.Id))).FirstOrDefault());
+        Assert.Null((await _userCollection.FindAsync(fbu.Eq("_id", ObjectId.Parse(user.Id)))).FirstOrDefault());
     }
 }

@@ -155,7 +155,7 @@ public class ClientControllerTests
     [Fact]
     public async void Update_BadRequest()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
@@ -170,7 +170,7 @@ public class ClientControllerTests
     [Fact]
     public async void Update_Problem()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
@@ -185,7 +185,7 @@ public class ClientControllerTests
     [Fact]
     public async void Update_Ok()
     {
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientPatchDto dto = new() { Id = clientId.ToString(), RedirectUrl = Faker.Internet.Url(), Secret = Faker.Random.String2(60) };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IAuthenticatedByJwt.Setup(o => o.GetAuthenticated()).Returns(Task.FromResult<User>(new() { AuthorizedClients = new AuthorizedClient[] { new() { ClientId = clientId } } }));
@@ -232,7 +232,7 @@ public class ClientControllerTests
     public async void UpdateExposedClient_Unauthenticated()
     {
         string secret = "secret";
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientExposedDto dto = new() { ClientId = clientId.ToString(), Secret = secret };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: false);
         HttpAsserts.IsUnauthenticated(await InstantiateController().UpdateExposedClient(dto));
@@ -246,7 +246,7 @@ public class ClientControllerTests
     public async void UpdateExposedClient_Unauthorized()
     {
         string secret = "secret";
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientExposedDto dto = new() { ClientId = clientId.ToString(), Secret = secret };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
 
@@ -258,7 +258,7 @@ public class ClientControllerTests
     public async void UpdateExposedClient_Problem()
     {
         string secret = "secret";
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientExposedDto dto = new() { ClientId = clientId.ToString(), Secret = secret };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
 
@@ -277,7 +277,7 @@ public class ClientControllerTests
     {
         string newSecret = "newSecret";
         string secret = "secret";
-        ObjectId clientId = ObjectId.GenerateNewId();
+        string clientId = ObjectId.GenerateNewId().ToString();
         ClientExposedDto dto = new() { ClientId = clientId.ToString(), Secret = secret };
         Fixture.IAuthenticatedByJwt.Setup(o => o.IsAuthenticated()).Returns(value: true);
         Fixture.IClientManagement.Setup(o => o.UpdateExposedClient(clientId.ToString(), secret)).Returns(Task.FromResult(newSecret));

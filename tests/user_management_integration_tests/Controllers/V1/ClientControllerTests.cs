@@ -48,6 +48,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
+        // httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
         ClientCreateDto dto = new() { RedirectUrl = _faker.Internet.Url() };
 
@@ -87,7 +88,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         Client client = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).First();
 
-        string url = "api/" + ClientController.PATH_GET_PUBLIC_INFO.Replace("{id}", client.Id.ToString());
+        string url = "api/" + ClientController.PATH_GET_PUBLIC_INFO.Replace("{id}", client.Id);
 
         // When
         HttpResponseMessage response = await httpClient.GetAsync(url);
@@ -165,7 +166,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         ClientPatchDto dto = new()
         {
-            Id = client.Id.ToString(),
+            Id = client.Id,
             Secret = secret,
             RedirectUrl = _faker.Internet.Url()
         };
@@ -179,7 +180,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.NotNull((await _clientCollection.FindAsync(fb.And(
-            fb.Eq("_id", client.Id),
+            fb.Eq("_id", ObjectId.Parse(client.Id)),
             fb.Eq(Client.REDIRECT_URL, dto.RedirectUrl),
             fb.Eq(Client.SECRET, client.Secret)
         ))).FirstOrDefault());
@@ -209,7 +210,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         ClientDeleteDto dto = new()
         {
-            Id = client.Id.ToString(),
+            Id = client.Id,
             Secret = secret,
         };
 
@@ -222,7 +223,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         Assert.Null((await _clientCollection.FindAsync(fb.And(
-            fb.Eq("_id", client.Id),
+            fb.Eq("_id", ObjectId.Parse(client.Id)),
             fb.Eq(Client.SECRET, client.Secret)
         ))).FirstOrDefault());
     }
@@ -251,7 +252,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         ClientExposedDto dto = new()
         {
-            ClientId = client.Id.ToString(),
+            ClientId = client.Id,
             Secret = secret,
         };
         var t = JsonContent.Create(dto);

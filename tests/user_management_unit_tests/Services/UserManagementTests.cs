@@ -16,7 +16,7 @@ public class UserManagementTests
 
     public UserManagementTests(ServiceFixture serviceFixture) => Fixture = serviceFixture;
 
-    private UserManagement InstantiateService() => new UserManagement(Fixture.IDateTimeProvider.Object, Fixture.INotificationHelper.Object, Fixture.IStringHelper.Object, Fixture.IUserRepository.Object, Fixture.IMapper.Object, Fixture.IAuthHelper.Object);
+    private UserManagement InstantiateService() => new UserManagement(Fixture.IDateTimeProvider.Object, Fixture.INotificationHelper.Object, Fixture.IStringHelper.Object, Fixture.IUserRepository.Object, Fixture.IMapper.Object, Fixture.IAuthHelper.Object, Fixture.IClientRepository.Object);
 
     public static Faker Faker = new("en");
 
@@ -135,7 +135,7 @@ public class UserManagementTests
                     Password = "password"
                 } ,
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
@@ -156,7 +156,7 @@ public class UserManagementTests
 
         Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify((ObjectId)user.Id)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify(user.Id)).Returns(Task.FromResult<bool?>(true));
 
         await InstantiateService().Activate(dto);
     }
@@ -180,7 +180,7 @@ public class UserManagementTests
                     Password = "password"
                 } ,
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
@@ -195,7 +195,7 @@ public class UserManagementTests
                     Password = "password"
                 } ,
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
@@ -210,7 +210,7 @@ public class UserManagementTests
                     Password = "password"
                 } ,
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
@@ -254,13 +254,13 @@ public class UserManagementTests
             Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
             Fixture.IDateTimeProvider.Setup<DateTime>(o => o.ProvideUtcNow()).Returns(now);
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify((ObjectId)user.Id)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify(user.Id)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Activate(dto));
 
             Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveUserByLoginCredentials(dto.Email, null)).Returns(Task.FromResult<User?>(user));
             Fixture.IDateTimeProvider.Setup<DateTime>(o => o.ProvideUtcNow()).Returns(now);
             Fixture.IStringHelper.Setup<bool>(o => o.DoesHashMatch(user.Password, dto.Password)).Returns(true);
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify((ObjectId)user.Id)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Verify(user.Id)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Activate(dto));
         }
     }
@@ -276,7 +276,7 @@ public class UserManagementTests
                     Password = "password"
                 },
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
                     Password = "hashedPassword"
@@ -329,7 +329,7 @@ public class UserManagementTests
                     Password = "password"
                 },
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-6),
                     VerificationSecret = "code",
@@ -345,7 +345,7 @@ public class UserManagementTests
                     Password = "password"
                 },
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-7),
                     VerificationSecret = "code",
@@ -361,7 +361,7 @@ public class UserManagementTests
                     Password = "password"
                 },
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = false,
                     VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(-5),
                     VerificationSecret = "code",
@@ -419,7 +419,7 @@ public class UserManagementTests
                     Password = "password"
                 },
                 new User() {
-                    Id = ObjectId.GenerateNewId(),
+                    Id = ObjectId.GenerateNewId().ToString(),
                     IsEmailVerified = true,
                     Password = "hashedPassword"
                 }
@@ -535,16 +535,13 @@ public class UserManagementTests
     [MemberData(nameof(Logout_Ok_Data))]
     public async void Logout_Ok(string identifier)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(ObjectId.Parse(identifier))).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(identifier)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().Logout(identifier);
     }
 
     public static IEnumerable<object?[]> Logout_NotOk_Data =>
         new List<object?[]>
         {
-            new object?[] {
-                "id"
-            },
             new object?[] {
                 ObjectId.GenerateNewId().ToString()
             }
@@ -554,15 +551,11 @@ public class UserManagementTests
     [MemberData(nameof(Logout_NotOk_Data))]
     public async void Logout_NotOk(string identifier)
     {
-        if (identifier == "id") await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Logout(identifier));
-        else
-        {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(ObjectId.Parse(identifier))).Returns(Task.FromResult<bool?>(null));
-            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Logout(identifier));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(identifier)).Returns(Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Logout(identifier));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(ObjectId.Parse(identifier))).Returns(Task.FromResult<bool?>(false));
-            await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Logout(identifier));
-        }
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Logout(identifier)).Returns(Task.FromResult<bool?>(false));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Logout(identifier));
     }
 
     public static IEnumerable<object?[]> ChangeUnverifiedEmail_Ok_Data =>
@@ -993,31 +986,13 @@ public class UserManagementTests
     [MemberData(nameof(RemoveClient_Ok_Data))]
     public async void RemoveClient_Ok(string clientId, string userId, string authorId, bool forClients)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(ObjectId.Parse(userId), ObjectId.Parse(clientId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(userId, clientId, authorId, forClients)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().RemoveClient(clientId, userId, authorId, forClients);
     }
 
     public static IEnumerable<object?[]> RemoveClient_NotOk_Data =>
         new List<object?[]>
         {
-            new object?[] {
-                "id",
-                ObjectId.GenerateNewId().ToString(),
-                ObjectId.GenerateNewId().ToString(),
-                false
-            },
-            new object?[] {
-                ObjectId.GenerateNewId().ToString(),
-                "id",
-                ObjectId.GenerateNewId().ToString(),
-                false
-            },
-            new object?[] {
-                ObjectId.GenerateNewId().ToString(),
-                ObjectId.GenerateNewId().ToString(),
-                "id",
-                false
-            },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
                 ObjectId.GenerateNewId().ToString(),
@@ -1030,21 +1005,11 @@ public class UserManagementTests
     [MemberData(nameof(RemoveClient_NotOk_Data))]
     public async void RemoveClient_NotOk(string clientId, string userId, string authorId, bool forClients)
     {
-        if (userId == "id" || clientId == "id" || authorId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
-            if (clientId == "id") Assert.Equal("clientId", ex.ParamName);
-            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
-            if (userId == "id") Assert.Equal("userId", ex.ParamName);
-        }
-        else
-        {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(ObjectId.Parse(userId), ObjectId.Parse(clientId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(null));
-            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(userId, clientId, authorId, forClients)).Returns(Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(ObjectId.Parse(userId), ObjectId.Parse(clientId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(false));
-            await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
-        }
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveClient(userId, clientId, authorId, forClients)).Returns(Task.FromResult<bool?>(false));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().RemoveClient(clientId, userId, authorId, forClients));
     }
 
     public static IEnumerable<object?[]> RemoveClients_Ok_Data =>
@@ -1061,23 +1026,13 @@ public class UserManagementTests
     [MemberData(nameof(RemoveClients_Ok_Data))]
     public async void RemoveClients_Ok(string userId, string authorId, bool forClients)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(ObjectId.Parse(userId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(userId, authorId, forClients)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().RemoveClients(userId, authorId, forClients);
     }
 
     public static IEnumerable<object?[]> RemoveClients_NotOk_Data =>
         new List<object?[]>
         {
-            new object?[] {
-                ObjectId.GenerateNewId().ToString(),
-                "id",
-                false
-            },
-            new object?[] {
-                "id",
-                ObjectId.GenerateNewId().ToString(),
-                false
-            },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
                 ObjectId.GenerateNewId().ToString(),
@@ -1089,20 +1044,11 @@ public class UserManagementTests
     [MemberData(nameof(RemoveClients_NotOk_Data))]
     public async void RemoveClients_NotOk(string userId, string authorId, bool forClients)
     {
-        if (userId == "id" || authorId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
-            if (authorId == "id") Assert.Equal("authorId", ex.ParamName);
-            else Assert.Equal("userId", ex.ParamName);
-        }
-        else
-        {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(ObjectId.Parse(userId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(null));
-            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(userId, authorId, forClients)).Returns(Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(ObjectId.Parse(userId), ObjectId.Parse(authorId), forClients)).Returns(Task.FromResult<bool?>(false));
-            await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
-        }
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.RemoveAllClients(userId, authorId, forClients)).Returns(Task.FromResult<bool?>(false));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().RemoveClients(userId, authorId, forClients));
     }
 
     public static IEnumerable<object?[]> RetrieveById_Ok_Data =>
@@ -1120,25 +1066,13 @@ public class UserManagementTests
     [MemberData(nameof(RetrieveById_Ok_Data))]
     public async void RetrieveById_Ok(string actorId, string userId, bool forClients, PartialUser user)
     {
-        Fixture.IUserRepository.Setup<Task<PartialUser?>>(o => o.RetrieveById(ObjectId.Parse(actorId), ObjectId.Parse(userId), forClients)).Returns(Task.FromResult<PartialUser?>(user));
+        Fixture.IUserRepository.Setup<Task<PartialUser?>>(o => o.RetrieveById(actorId, userId, forClients)).Returns(Task.FromResult<PartialUser?>(user));
         Assert.Equal<PartialUser>(user, await InstantiateService().RetrieveById(actorId, userId, forClients));
     }
 
     public static IEnumerable<object?[]> RetrieveById_NotOk_Data =>
         new List<object?[]>
         {
-            new object?[] {
-                "id",
-                ObjectId.GenerateNewId().ToString(),
-                false,
-                new PartialUser()
-            },
-            new object?[] {
-                ObjectId.GenerateNewId().ToString(),
-                "id",
-                false,
-                new PartialUser()
-            },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
                 ObjectId.GenerateNewId().ToString(),
@@ -1151,21 +1085,8 @@ public class UserManagementTests
     [MemberData(nameof(RetrieveById_NotOk_Data))]
     public async void RetrieveById_NotOk(string actorId, string userId, bool forClients, PartialUser? user)
     {
-        if (actorId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.ParamName);
-        }
-        else if (userId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-            Assert.Equal("userId", ex.ParamName);
-        }
-        else
-        {
-            Fixture.IUserRepository.Setup<Task<PartialUser?>>(o => o.RetrieveById(ObjectId.Parse(actorId), ObjectId.Parse(userId), false)).Returns(Task.FromResult<PartialUser?>(user));
-            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
-        }
+        Fixture.IUserRepository.Setup<Task<PartialUser?>>(o => o.RetrieveById(actorId, userId, false)).Returns(Task.FromResult<PartialUser?>(user));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().RetrieveById(actorId, userId, forClients));
     }
 
     public static IEnumerable<object?[]> Retrieve_Ok_Data =>
@@ -1186,28 +1107,8 @@ public class UserManagementTests
     [MemberData(nameof(Retrieve_Ok_Data))]
     public async void Retrieve_Ok(List<PartialUser> users, string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
-        Fixture.IUserRepository.Setup<Task<List<PartialUser>>>(o => o.Retrieve(ObjectId.Parse(actorId), logicsString, limit, iteration, sortBy, ascending, forClients)).Returns(Task.FromResult<List<PartialUser>>(users));
+        Fixture.IUserRepository.Setup<Task<List<PartialUser>>>(o => o.Retrieve(actorId, logicsString, limit, iteration, sortBy, ascending, forClients)).Returns(Task.FromResult<List<PartialUser>>(users));
         Assert.Equal<List<PartialUser>>(users, await InstantiateService().Retrieve(actorId, forClients, logicsString, limit, iteration, sortBy, ascending));
-    }
-
-    public static IEnumerable<object?[]> Retrieve_NotOk_Data =>
-        new List<object?[]>
-        {
-            new object?[] {
-                "id",
-                false,
-                "",
-                0,
-                0,
-                null
-            }
-        };
-
-    [Theory]
-    [MemberData(nameof(Retrieve_NotOk_Data))]
-    public async void Retrieve_NotOk(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
-    {
-        if (actorId == "id") await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Retrieve(actorId, forClients, logicsString, limit, iteration, sortBy, ascending));
     }
 
     public static IEnumerable<object?[]> Update_Ok_Data =>
@@ -1224,7 +1125,7 @@ public class UserManagementTests
     [MemberData(nameof(Update_Ok_Data))]
     public async void Update_Ok(string actorId, UserPatchDto dto, bool forClients)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(ObjectId.Parse(actorId), dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().Update(actorId, dto, forClients);
     }
 
@@ -1274,9 +1175,9 @@ public class UserManagementTests
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(ObjectId.Parse(actorId), dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(ObjectId.Parse(actorId), dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Update(actorId, dto, forClients));
         }
     }
@@ -1295,23 +1196,13 @@ public class UserManagementTests
     [MemberData(nameof(Delete_Ok_Data))]
     public async void Delete_Ok(string actorId, string userId, bool forClients)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(ObjectId.Parse(actorId), ObjectId.Parse(userId), forClients)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(actorId, userId, forClients)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().Delete(actorId, userId, forClients);
     }
 
     public static IEnumerable<object?[]> Delete_NotOk_Data =>
         new List<object?[]>
         {
-            new object?[] {
-                "id",
-                ObjectId.GenerateNewId().ToString(),
-                false
-            },
-            new object?[] {
-                ObjectId.GenerateNewId().ToString(),
-                "id",
-                false
-            },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
                 ObjectId.GenerateNewId().ToString(),
@@ -1323,22 +1214,9 @@ public class UserManagementTests
     [MemberData(nameof(Delete_NotOk_Data))]
     public async void Delete_NotOk(string actorId, string userId, bool forClients)
     {
-        if (actorId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("actorId", ex.ParamName);
-        }
-        else if (userId == "id")
-        {
-            ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Assert.Equal("userId", ex.ParamName);
-        }
-        else
-        {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(ObjectId.Parse(actorId), ObjectId.Parse(userId), forClients)).Returns(Task.FromResult<bool?>(null));
-            await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(ObjectId.Parse(actorId), ObjectId.Parse(userId), forClients)).Returns(Task.FromResult<bool?>(false));
-            await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
-        }
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(actorId, userId, forClients)).Returns(Task.FromResult<bool?>(null));
+        await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Delete(actorId, userId, forClients)).Returns(Task.FromResult<bool?>(false));
+        await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Delete(actorId, userId, forClients));
     }
 }

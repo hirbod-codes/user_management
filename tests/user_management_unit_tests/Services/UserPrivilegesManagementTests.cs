@@ -32,7 +32,7 @@ public class UserPrivilegesManagementTests
     [MemberData(nameof(UpdateReaders_Ok_Data))]
     public async void UpdateReaders_Ok(string authorId, UserPrivilegesPatchDto dto, User user)
     {
-        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
         List<Reader> mappedReaders = new() { };
         for (int i = 0; i < dto.Readers!.Length; i++)
@@ -44,7 +44,7 @@ public class UserPrivilegesManagementTests
         }
         user.UserPermissions.Readers = mappedReaders.ToArray();
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().UpdateReaders(authorId, dto);
     }
 
@@ -100,17 +100,17 @@ public class UserPrivilegesManagementTests
         }
         else if (user == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateReaders(authorId, dto));
         }
         else if (user != null && user.UserPermissions == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateReaders(authorId, dto));
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
             List<Reader> mappedReaders = new() { };
             for (int i = 0; i < dto.Readers!.Length; i++)
@@ -122,10 +122,10 @@ public class UserPrivilegesManagementTests
             }
             user!.UserPermissions.Readers = mappedReaders.ToArray();
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateReaders(authorId, dto));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateReaders(authorId, dto));
         }
     }
@@ -144,13 +144,13 @@ public class UserPrivilegesManagementTests
     [MemberData(nameof(UpdateAllReaders_Ok_Data))]
     public async void UpdateAllReaders_Ok(string authorId, UserPrivilegesPatchDto dto, User user)
     {
-        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
         AllReaders mappedAllReaders = new() { };
         Fixture.IMapper.Setup<AllReaders>(o => o.Map<AllReaders>(dto.AllReaders)).Returns(mappedAllReaders);
         user.UserPermissions.AllReaders = mappedAllReaders;
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().UpdateAllReaders(authorId, dto);
     }
 
@@ -206,26 +206,26 @@ public class UserPrivilegesManagementTests
         }
         else if (user == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateAllReaders(authorId, dto));
         }
         else if (user != null && user.UserPermissions == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateAllReaders(authorId, dto));
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
             AllReaders mappedAllReaders = new() { };
             Fixture.IMapper.Setup<AllReaders>(o => o.Map<AllReaders>(dto.AllReaders)).Returns(mappedAllReaders);
             user!.UserPermissions.AllReaders = mappedAllReaders;
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateAllReaders(authorId, dto));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateAllReaders(authorId, dto));
         }
     }
@@ -244,7 +244,7 @@ public class UserPrivilegesManagementTests
     [MemberData(nameof(UpdateUpdaters_Ok_Data))]
     public async void UpdateUpdaters_Ok(string authorId, UserPrivilegesPatchDto dto, User user)
     {
-        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
         List<Updater> mappedUpdaters = new() { };
         for (int i = 0; i < dto.Updaters!.Length; i++)
@@ -256,7 +256,7 @@ public class UserPrivilegesManagementTests
         }
         user.UserPermissions.Updaters = mappedUpdaters.ToArray();
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().UpdateUpdaters(authorId, dto);
     }
 
@@ -312,17 +312,17 @@ public class UserPrivilegesManagementTests
         }
         else if (user == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateUpdaters(authorId, dto));
         }
         else if (user != null && user.UserPermissions == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateUpdaters(authorId, dto));
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
             List<Updater> mappedUpdaters = new() { };
             for (int i = 0; i < dto.Updaters!.Length; i++)
@@ -334,10 +334,10 @@ public class UserPrivilegesManagementTests
             }
             user!.UserPermissions.Updaters = mappedUpdaters.ToArray();
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateUpdaters(authorId, dto));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateUpdaters(authorId, dto));
         }
     }
@@ -356,13 +356,13 @@ public class UserPrivilegesManagementTests
     [MemberData(nameof(UpdateAllUpdaters_Ok_Data))]
     public async void UpdateAllUpdaters_Ok(string authorId, UserPrivilegesPatchDto dto, User user)
     {
-        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
         AllUpdaters mappedAllReaders = new() { };
         Fixture.IMapper.Setup<AllUpdaters>(o => o.Map<AllUpdaters>(dto.AllUpdaters)).Returns(mappedAllReaders);
         user.UserPermissions.AllUpdaters = mappedAllReaders;
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().UpdateAllUpdaters(authorId, dto);
     }
 
@@ -418,26 +418,26 @@ public class UserPrivilegesManagementTests
         }
         else if (user == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateAllUpdaters(authorId, dto));
         }
         else if (user != null && user.UserPermissions == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateAllUpdaters(authorId, dto));
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
             AllUpdaters mappedAllReaders = new() { };
             Fixture.IMapper.Setup<AllUpdaters>(o => o.Map<AllUpdaters>(dto.AllUpdaters)).Returns(mappedAllReaders);
             user!.UserPermissions.AllUpdaters = mappedAllReaders;
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateAllUpdaters(authorId, dto));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateAllUpdaters(authorId, dto));
         }
     }
@@ -456,7 +456,7 @@ public class UserPrivilegesManagementTests
     [MemberData(nameof(UpdateDeleters_Ok_Data))]
     public async void UpdateDeleters_Ok(string authorId, UserPrivilegesPatchDto dto, User user)
     {
-        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+        Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
         List<Deleter> mappedDeleters = new() { };
         for (int i = 0; i < dto.Deleters!.Length; i++)
@@ -468,7 +468,7 @@ public class UserPrivilegesManagementTests
         }
         user.UserPermissions.Deleters = mappedDeleters.ToArray();
 
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user.UserPermissions)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().UpdateDeleters(authorId, dto);
     }
 
@@ -524,17 +524,17 @@ public class UserPrivilegesManagementTests
         }
         else if (user == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateDeleters(authorId, dto));
         }
         else if (user != null && user.UserPermissions == null)
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateDeleters(authorId, dto));
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(ObjectId.Parse(dto.UserId))).Returns(Task.FromResult<User?>(user));
+            Fixture.IUserRepository.Setup<Task<User?>>(o => o.RetrieveById(dto.UserId)).Returns(Task.FromResult<User?>(user));
 
             List<Deleter> mappedDeleters = new() { };
             for (int i = 0; i < dto.Deleters!.Length; i++)
@@ -546,10 +546,10 @@ public class UserPrivilegesManagementTests
             }
             user!.UserPermissions.Deleters = mappedDeleters.ToArray();
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().UpdateDeleters(authorId, dto));
 
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(ObjectId.Parse(authorId), ObjectId.Parse(dto.UserId), user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.UpdateUserPrivileges(authorId, dto.UserId, user!.UserPermissions)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().UpdateDeleters(authorId, dto));
         }
     }
