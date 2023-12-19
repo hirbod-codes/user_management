@@ -32,6 +32,15 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// Check authentication
+    /// </summary>
+    [Authorize]
+    [HttpGet(PATH_GET_IS_AUTHENTICATED)]
+    [SwaggerResponse(statusCode: 204, type: typeof(string), description: "This full name already exists, therefor not available.")]
+    [SwaggerResponse(statusCode: 401, type: typeof(string), description: "This full name does not exist, therefor available.")]
+    public IActionResult IsAuthenticated() => NoContent();
+
+    /// <summary>
     /// Full name existence
     /// </summary>
     /// <remarks>
@@ -458,6 +467,7 @@ public class UserController : ControllerBase
         return Ok();
     }
 
+    public const string PATH_GET_IS_AUTHENTICATED = "is-authenticated";
     public const string PATH_GET_FULL_NAME_EXISTENCE_CHECK = "full-name-existence-check";
     public const string PATH_GET_USERNAME_EXISTENCE_CHECK = "username-existence-check/{username}";
     public const string PATH_GET_EMAIL_EXISTENCE_CHECK = "email-existence-check/{email}";
