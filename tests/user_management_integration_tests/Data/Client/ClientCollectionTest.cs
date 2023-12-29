@@ -1,7 +1,9 @@
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
 using MongoDB.Driver;
-using user_management.Data;
+using user_management.Data.MongoDB;
+using user_management.Data.Seeders;
 
 namespace user_management_integration_tests.Data.Client;
 
@@ -32,7 +34,7 @@ public class ClientCollectionTest : IClassFixture<CustomWebApplicationFactory<Pr
         IEnumerable<user_management.Models.Client> clients = Array.Empty<user_management.Models.Client>();
 
         for (int i = 0; i < count; i++)
-            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients));
+            clients = clients.Append(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients));
 
         return clients;
     }

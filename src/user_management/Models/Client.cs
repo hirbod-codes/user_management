@@ -1,16 +1,19 @@
 namespace user_management.Models;
 
-using Bogus;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using user_management.Utilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.ComponentModel.DataAnnotations;
 
+[EntityTypeConfiguration(typeof(Client))]
 [BsonIgnoreExtraElements]
-public class Client
+public class Client : IEntityTypeConfiguration<Client>
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
     [BsonRequired]
+    [Key]
     public string Id { get; set; } = null!;
 
     [BsonElement(IS_FIRST_PARTY)]
@@ -48,33 +51,5 @@ public class Client
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public const string UPDATED_AT = "updated_at";
 
-    public static Client FakeClient(out string secret, IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
-    {
-        if (clients == null) clients = new Client[] { };
-        if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
-        string id = ObjectId.GenerateNewId().ToString();
-
-        Faker faker = new Faker("en");
-
-        int safety = 0;
-        string redirectUrl;
-        string? hashedSecret;
-        do
-        {
-            secret = (new StringHelper()).GenerateRandomString(128);
-            hashedSecret = (new StringHelper()).HashWithoutSalt(secret);
-            redirectUrl = faker.Internet.Url();
-
-            if (
-                clients.FirstOrDefault<Client?>(c => c != null && c.Secret == hashedSecret) == null
-                && clients.FirstOrDefault<Client?>(c => c != null && c.RedirectUrl == redirectUrl) == null
-                && clients.FirstOrDefault<Client?>(c => c != null && c.Id == id) == null
-            )
-                break;
-
-            safety++;
-        } while (safety < 200);
-
-        return new Client() { Id = id, Secret = hashedSecret!, RedirectUrl = redirectUrl, CreatedAt = (DateTime)creationDateTime, UpdatedAt = (DateTime)creationDateTime };
-    }
+    public void Configure(EntityTypeBuilder<Client> builder) => builder.Property(o => o.Id).HasConversion(v => int.Parse(v), v => v.ToString());
 }

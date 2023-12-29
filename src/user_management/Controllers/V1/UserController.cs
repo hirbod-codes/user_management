@@ -17,6 +17,10 @@ using System.Security.Authentication;
 using user_management.Data;
 using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Cors;
+using System.Text.Json;
+using user_management.Data.InMemory.Logics;
+using user_management.Data.Logics;
+using SQLitePCL;
 
 [ApiController]
 [ApiVersion("1.0")]
@@ -381,9 +385,7 @@ public class UserController : ControllerBase
     /// <remarks>
     /// Retrieve list of users with filters and pagination
     /// </remarks> 
-    /// <param name="logicsString">
-    ///     <include file='./docs/xml.xml' path='user_management/Data/Logics/Filter/FilterLogicsGeneric/BuildILogic/logicsString' />
-    /// </param>
+    /// <param name="filters">filters</param>
     /// <param name="limit">The number of users per page.</param>
     /// <param name="iteration">Page number starting from 0.</param>
     /// <param name="sortBy">Name of the field to sort users based of.</param>
@@ -394,15 +396,33 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
-    public async Task<IActionResult> Retrieve([FromRoute] string logicsString, [FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true)
+    public async Task<IActionResult> Retrieve([FromRoute] string filtersString, [FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        List<PartialUser>? users = null;
-        try { users = await _userManagement.Retrieve(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT", logicsString, limit, iteration, sortBy, ascending); }
+        Filter? filters;
+        try { filters = JsonSerializer.Deserialize<Filter>(filtersString); }
+        catch (Exception) { return BadRequest(); }
+
+        MassReadable massReadable = new();
+        ValidationResult? validationResult = massReadable.GetValidationResult(filters, new ValidationContext(filters));
+        if (validationResult is not null)
+            return BadRequest(validationResult);
+        // List<ValidationResult> results = new();
+        // if (!Validator.TryValidateObject(filters, new ValidationContext(filters), results))
+        //     return BadRequest(results);
+
+        List<PartialUser>? users;
+        try { users = await _userManagement.Retrieve(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT", filters, limit, iteration, sortBy, ascending); }
         catch (ArgumentException) { return BadRequest(); }
 
         return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
+    }
+
+    [HttpGet("userss")]
+    public IActionResult Test([FromQuery] string? a = null, [FromQuery] string? c = null, [FromQuery] string? b = null)
+    {
+        return Ok($"{{a.Name}} == {{a.IsPermitted}} ||| b: {b} ||| c: {c}");
     }
 
     /// <summary>
@@ -418,7 +438,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> Update([FromBody] UserPatchDto userPatchDto)
     {
-        if (String.IsNullOrWhiteSpace(userPatchDto.UpdatesString) || String.IsNullOrWhiteSpace(userPatchDto.FiltersString) || userPatchDto.FiltersString == "empty") return BadRequest();
+        if (!userPatchDto.Updates!.Any()) return BadRequest();
 
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
@@ -486,7 +506,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_REMOVE_CLIENTS = "remove-clients";
     public const string PATH_GET_USER = "user/{userId}";
     public const string PATH_GET_USER_AUTHORIZED_CLIENTS = "user/authorized-clients";
-    public const string PATH_GET_USERS = "users/{logicsString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
+    public const string PATH_GET_USERS = "users/{filtersString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
     public const string PATH_PATCH_USERS = "users";
     public const string PATH_GET_USER_MASS_UPDATABLE_PROPERTIES = "user/mass-updatable-properties";
     public const string PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES = "user/mass-update-protected-properties";

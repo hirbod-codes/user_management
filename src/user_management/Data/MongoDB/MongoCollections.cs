@@ -1,6 +1,6 @@
 using MongoDB.Driver;
 
-namespace user_management.Data;
+namespace user_management.Data.MongoDB;
 
 public class MongoCollections
 {

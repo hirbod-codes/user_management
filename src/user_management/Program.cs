@@ -13,7 +13,6 @@ using user_management.Services;
 using user_management.Controllers.Services;
 using user_management.Authentication;
 using DotNetEnv.Configuration;
-using MongoDB.Driver;
 using user_management.Configuration.Providers.DockerSecrets;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -118,7 +117,7 @@ builder.Services.AddScoped<IUserPrivilegesManagement, UserPrivilegesManagement>(
 builder.Services.AddScoped<IClientManagement, ClientManagement>();
 builder.Services.AddScoped<ITokenManagement, TokenManagement>();
 
-DatabaseManagement.ResolveDatabase(builder);
+DatabaseManagement.ResolveDatabase(builder.Services, builder.Configuration);
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -175,19 +174,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-await DatabaseManagement.InitializeDatabase(app);
+await DatabaseManagement.InitializeDatabase(app.Services, app.Configuration);
 
-await DatabaseManagement.SeedDatabase(
-    app.Services.GetService<IMongoClient>()!,
-    app.Services.GetService<MongoCollections>()!,
-    app.Configuration["ENVIRONMENT"]!,
-    app.Configuration["DB_NAME"]!,
-    app.Configuration["DB_OPTIONS:DatabaseName"]!,
-    app.Configuration["ADMIN_USERNAME"]!,
-    app.Configuration["ADMIN_PASSWORD"]!,
-    app.Configuration["ADMIN_EMAIL"]!,
-    app.Configuration["ADMIN_PHONE_NUMBER"]
-    );
+await DatabaseManagement.SeedDatabase(app.Services, app.Configuration);
 
 if (!app.Environment.IsDevelopment())
 {

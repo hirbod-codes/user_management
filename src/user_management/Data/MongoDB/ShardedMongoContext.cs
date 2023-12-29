@@ -1,14 +1,14 @@
-namespace user_management.Data;
+namespace user_management.Data.MongoDB;
 
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.Core.Configuration;
+using global::MongoDB.Bson;
+using global::MongoDB.Driver;
+using global::MongoDB.Driver.Core.Configuration;
 using user_management.Models;
-using user_management.Data.Client;
-using user_management.Data.User;
-using user_management.Services.Client;
+using user_management.Data.MongoDB.Client;
+using user_management.Data.MongoDB.User;
+using user_management.Services.Data.Client;
 using user_management.Services.Data.User;
 
 public class ShardedMongoContext
@@ -117,28 +117,24 @@ public class ShardedMongoContext
     });
 
     public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.ClearCollections(mongoDatabase);
-}
 
-
-public static class ShardedMongoContextExtensions
-{
-    public static void ConfigureShardedMongodb(this WebApplicationBuilder builder)
+    public static void ConfigureShardedMongodb(IServiceCollection services, IConfiguration configuration)
     {
         ShardedMongoContext dbContext = new();
 
-        builder.Configuration.GetSection("DB_OPTIONS").Bind(dbContext);
-        builder.Services.AddSingleton(dbContext);
+        configuration.GetSection("DB_OPTIONS").Bind(dbContext);
+        services.AddSingleton(dbContext);
 
         MongoClient dbClient = dbContext.GetClient();
-        builder.Services.AddSingleton<IMongoClient>(dbClient);
+        services.AddSingleton<IMongoClient>(dbClient);
 
-        builder.Services.AddSingleton(dbClient.GetDatabase(dbContext.DatabaseName));
+        services.AddSingleton(dbClient.GetDatabase(dbContext.DatabaseName));
 
         MongoCollections mongoCollections = new();
         mongoCollections.InitializeCollections(dbClient.GetDatabase(dbContext.DatabaseName));
-        builder.Services.AddSingleton(mongoCollections);
+        services.AddSingleton(mongoCollections);
 
-        builder.Services.AddSingleton<IUserRepository, UserRepository>();
-        builder.Services.AddSingleton<IClientRepository, ClientRepository>();
+        services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddSingleton<IClientRepository, ClientRepository>();
     }
 }

@@ -1,15 +1,13 @@
 using System.Security.Authentication;
 using Bogus;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using Moq;
 using user_management.Data;
 using user_management.Dtos.Token;
 using user_management.Models;
 using user_management.Services;
-using user_management.Services.Client;
-using user_management.Services.Data;
 using user_management.Services.Data.Client;
+using user_management.Services.Data;
 
 namespace user_management_unit_tests.Services;
 
@@ -20,7 +18,7 @@ public class TokenManagementTest
 
     public TokenManagementTest(ServiceFixture serviceFixture) => Fixture = serviceFixture;
 
-    private TokenManagement InstantiateService() => new TokenManagement(Fixture.IStringHelper.Object, Fixture.IClientRepository.Object, Fixture.IUserRepository.Object, Fixture.IDateTimeProvider.Object, Fixture.IMongoClient.Object, Fixture.IAuthenticatedByJwt.Object);
+    private TokenManagement InstantiateService() => new TokenManagement(Fixture.IStringHelper.Object, Fixture.IClientRepository.Object, Fixture.IUserRepository.Object, Fixture.IDateTimeProvider.Object, Fixture.IAuthenticatedByJwt.Object);
 
     public static Faker Faker = new("en");
 
@@ -287,21 +285,19 @@ public class TokenManagementTest
         Fixture.IClientRepository.Setup(o => o.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl)).Returns(Task.FromResult<Client?>(new() { Id = user.AuthorizingClient.ClientId }));
         Fixture.IUserRepository.Setup(o => o.RetrieveByClientIdAndCode(clientId, dto.Code)).Returns(Task.FromResult<User?>(user));
 
-        Mock<IClientSessionHandle> sessionMock = new Mock<IClientSessionHandle>();
-        sessionMock.Setup(o => o.StartTransaction(new(default, default, WriteConcern.WMajority, default)));
-        sessionMock.Setup(o => o.AbortTransactionAsync(default));
-        sessionMock.Setup(o => o.Dispose());
-        IClientSessionHandle session = sessionMock.Object;
-        Fixture.IMongoClient.Setup(o => o.StartSessionAsync(null, default)).Returns(Task.FromResult<IClientSessionHandle?>(session));
-
-        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUser(user.Id, user.Id, clientId, tokenPrivileges, session)).Returns(Task.FromResult<bool?>(null));
+        Fixture.IUserRepository.Setup(o => o.StartTransaction());
+        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUserWithTransaction(user.Id, user.Id, clientId, tokenPrivileges)).Returns(Task.FromResult<bool?>(null));
         DataNotFoundException dataNotFoundException = await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
+        Fixture.IUserRepository.Setup(o => o.AbortTransaction());
         Assert.Equal("user", dataNotFoundException.Message);
 
-        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUser(user.Id, user.Id, clientId, tokenPrivileges, session)).Returns(Task.FromResult<bool?>(false));
+        Fixture.IUserRepository.Setup(o => o.StartTransaction());
+        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUserWithTransaction(user.Id, user.Id, clientId, tokenPrivileges)).Returns(Task.FromResult<bool?>(false));
+        Fixture.IUserRepository.Setup(o => o.AbortTransaction());
         await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
 
-        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUser(user.Id, user.Id, clientId, tokenPrivileges, session)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup(o => o.StartTransaction());
+        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUserWithTransaction(user.Id, user.Id, clientId, tokenPrivileges)).Returns(Task.FromResult<bool?>(true));
         Fixture.IStringHelper.Setup(o => o.GenerateRandomString(128)).Returns(token);
 
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(token, "SHA512")).Returns<string?>(null);
@@ -316,7 +312,7 @@ public class TokenManagementTest
         Fixture.IStringHelper.SetupSequence(o => o.GenerateRandomString(128)).Returns(token).Returns(refreshToken);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(refreshToken, "SHA512")).Returns(hashedRefreshToken);
 
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClientWithTransaction(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -324,12 +320,12 @@ public class TokenManagementTest
             && uc.Token.IsRevoked == false
             && uc.Token.Value == hashedToken
             && uc.Token.ExpirationDate == now.AddMonths(TokenManagement.TOKEN_EXPIRATION_MONTHS)
-        ), session)).Returns(Task.FromResult<bool?>(null));
+        ))).Returns(Task.FromResult<bool?>(null));
         dataNotFoundException = await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
         Assert.Equal("user", dataNotFoundException.Message);
 
         Fixture.IStringHelper.SetupSequence(o => o.GenerateRandomString(128)).Returns(token).Returns(refreshToken);
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClientWithTransaction(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -337,7 +333,7 @@ public class TokenManagementTest
             && uc.Token.IsRevoked == false
             && uc.Token.Value == hashedToken
             && uc.Token.ExpirationDate == now.AddMonths(TokenManagement.TOKEN_EXPIRATION_MONTHS)
-        ), session)).Returns(Task.FromResult<bool?>(false));
+        ))).Returns(Task.FromResult<bool?>(false));
         await Assert.ThrowsAsync<DatabaseServerException>(async () => await InstantiateService().VerifyAndGenerateTokens(dto));
     }
 
@@ -378,19 +374,14 @@ public class TokenManagementTest
         Fixture.IClientRepository.Setup(o => o.RetrieveByIdAndRedirectUrl(clientId, dto.RedirectUrl)).Returns(Task.FromResult<Client?>(new() { Id = user.AuthorizingClient.ClientId }));
         Fixture.IUserRepository.Setup(o => o.RetrieveByClientIdAndCode(clientId, dto.Code)).Returns(Task.FromResult<User?>(user));
 
-        Mock<IClientSessionHandle> sessionMock = new Mock<IClientSessionHandle>();
-        sessionMock.Setup(o => o.StartTransaction(new(default, default, WriteConcern.WMajority, default)));
-        sessionMock.Setup(o => o.AbortTransactionAsync(default));
-        sessionMock.Setup(o => o.Dispose());
-        IClientSessionHandle session = sessionMock.Object;
-        Fixture.IMongoClient.Setup(o => o.StartSessionAsync(null, default)).Returns(Task.FromResult<IClientSessionHandle?>(session));
+        Fixture.IUserRepository.Setup(o => o.StartTransaction());
 
-        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUser(user.Id, user.Id, clientId, tokenPrivileges, session)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup(o => o.AddTokenPrivilegesToUserWithTransaction(user.Id, user.Id, clientId, tokenPrivileges)).Returns(Task.FromResult<bool?>(true));
         Fixture.IStringHelper.SetupSequence(o => o.GenerateRandomString(128)).Returns(token).Returns(refreshToken);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(token, "SHA512")).Returns(hashedToken);
         Fixture.IStringHelper.Setup(o => o.HashWithoutSalt(refreshToken, "SHA512")).Returns(hashedRefreshToken);
 
-        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClient(user.Id, It.Is<AuthorizedClient>(uc =>
+        Fixture.IUserRepository.Setup(o => o.AddAuthorizedClientWithTransaction(user.Id, It.Is<AuthorizedClient>(uc =>
             uc.ClientId.ToString() == clientId.ToString()
             && uc.RefreshToken.TokenPrivileges == tokenPrivileges
             && uc.RefreshToken.Value == hashedRefreshToken
@@ -398,7 +389,7 @@ public class TokenManagementTest
             && uc.Token.IsRevoked == false
             && uc.Token.Value == hashedToken
             && uc.Token.ExpirationDate == now.AddMonths(TokenManagement.TOKEN_EXPIRATION_MONTHS)
-        ), session)).Returns(Task.FromResult<bool?>(true));
+        ))).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().VerifyAndGenerateTokens(dto);
     }
 

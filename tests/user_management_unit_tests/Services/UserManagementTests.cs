@@ -1,6 +1,7 @@
 using System.Dynamic;
 using Bogus;
 using MongoDB.Bson;
+using user_management.Data.Logics;
 using user_management.Dtos.User;
 using user_management.Models;
 using user_management.Services;
@@ -1096,7 +1097,7 @@ public class UserManagementTests
                 new List<PartialUser>(),
                 ObjectId.GenerateNewId().ToString(),
                 false,
-                "",
+                null,
                 0,
                 0,
                 null
@@ -1105,7 +1106,7 @@ public class UserManagementTests
 
     [Theory]
     [MemberData(nameof(Retrieve_Ok_Data))]
-    public async void Retrieve_Ok(List<PartialUser> users, string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
+    public async void Retrieve_Ok(List<PartialUser> users, string actorId, bool forClients, Filter? logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
     {
         Fixture.IUserRepository.Setup<Task<List<PartialUser>>>(o => o.Retrieve(actorId, logicsString, limit, iteration, sortBy, ascending, forClients)).Returns(Task.FromResult<List<PartialUser>>(users));
         Assert.Equal<List<PartialUser>>(users, await InstantiateService().Retrieve(actorId, forClients, logicsString, limit, iteration, sortBy, ascending));
@@ -1116,7 +1117,7 @@ public class UserManagementTests
         {
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { FiltersString = "filter", UpdatesString = "update" },
+                new UserPatchDto() { Filters = new Filter(){}, Updates = Array.Empty<Update>() },
                 false
             }
         };
@@ -1125,7 +1126,7 @@ public class UserManagementTests
     [MemberData(nameof(Update_Ok_Data))]
     public async void Update_Ok(string actorId, UserPatchDto dto, bool forClients)
     {
-        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(true));
+        Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.Filters!, dto.Updates!, forClients)).Returns(Task.FromResult<bool?>(true));
         await InstantiateService().Update(actorId, dto, forClients);
     }
 
@@ -1134,17 +1135,17 @@ public class UserManagementTests
         {
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { UpdatesString = "update" },
+                new UserPatchDto() { Updates = Array.Empty<Update>() },
                 false
             },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { FiltersString = "filter" },
+                new UserPatchDto() { Filters = new Filter(){} },
                 false
             },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { FiltersString = "empty" },
+                new UserPatchDto() { Filters = null },
                 false
             },
             new object?[] {
@@ -1154,7 +1155,7 @@ public class UserManagementTests
             },
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { FiltersString = "filter", UpdatesString = "update" },
+                new UserPatchDto() { Filters = new Filter(){}, Updates = Array.Empty<Update>() },
                 false
             }
         };
@@ -1163,7 +1164,7 @@ public class UserManagementTests
     [MemberData(nameof(Update_NotOk_Data))]
     public async void Update_NotOk(string actorId, UserPatchDto dto, bool forClients)
     {
-        if (dto.UpdatesString == null || dto.FiltersString == null || dto.FiltersString == "empty")
+        if (dto.Updates == null || dto.Filters == null)
         {
             ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
             Assert.Equal("userPatchDto", ex.ParamName);
@@ -1175,9 +1176,9 @@ public class UserManagementTests
         }
         else
         {
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(null));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.Filters!, dto.Updates!, forClients)).Returns(Task.FromResult<bool?>(null));
             await Assert.ThrowsAsync<DataNotFoundException>(async () => await InstantiateService().Update(actorId, dto, forClients));
-            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.FiltersString!, dto.UpdatesString!, forClients)).Returns(Task.FromResult<bool?>(false));
+            Fixture.IUserRepository.Setup<Task<bool?>>(o => o.Update(actorId, dto.Filters!, dto.Updates!, forClients)).Returns(Task.FromResult<bool?>(false));
             await Assert.ThrowsAsync<OperationException>(async () => await InstantiateService().Update(actorId, dto, forClients));
         }
     }

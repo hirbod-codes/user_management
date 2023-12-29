@@ -1,6 +1,6 @@
-namespace user_management.Data;
+namespace user_management.Data.MongoDB;
 
-using user_management.Data.Seeders;
+using user_management.Data.MongoDB.Seeders;
 
 public class MongoSeeder
 {
@@ -17,17 +17,17 @@ public class MongoSeeder
     {
         System.Console.WriteLine("\nSeeding...");
 
-        await ClientSeeder.Seed(_mongoCollections, _rootPath, count: 10);
-        await UserSeeder.Seed(_mongoCollections, _rootPath, count: 50);
+        await new ClientSeeder(_mongoCollections, _rootPath).Seed(count: 10);
+        await new UserSeeder(_mongoCollections, _rootPath).Seed(count: 50);
 
         System.Console.WriteLine("Seeded...\n");
     }
 
-    public async  Task SeedAdmin(string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
+    public async Task SeedAdmin(string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
     {
         System.Console.WriteLine("\nSeeding Admin...");
 
-        await UserSeeder.SeedAdmin(_mongoCollections, _rootPath, adminUsername, adminPassword, adminEmail, adminPhoneNumber);
+        await new UserSeeder(_mongoCollections, _rootPath).SeedAdmin(adminUsername, adminPassword, adminEmail, adminPhoneNumber);
 
         System.Console.WriteLine("Seeded Admin...\n");
     }

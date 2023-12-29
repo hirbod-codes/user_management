@@ -7,6 +7,8 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Controllers.V1;
 using user_management.Data;
+using user_management.Data.MongoDB;
+using user_management.Data.Seeders;
 using user_management.Dtos.Token;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -21,6 +23,8 @@ public class TokenControllerTestsCollectionDefinition { }
 
 public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    public const string USERS_PASSWORDS = "Pass%w0rd!99";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
     private Faker _faker = new();
     private IMongoCollection<User> _userCollection;
@@ -43,7 +47,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User u = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         u.VerificationSecret = _faker.Random.String2(40);
         u.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
         u.IsEmailVerified = true;
@@ -93,7 +97,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         string codeChallenge = new StringHelper().Base64Encode(new StringHelper().HashWithoutSalt(codeVerifier, codeChallengeMethod)!);
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Eq(Client.EXPOSED_COUNT, 0))).ToList();
 
-        User user = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients, password: USERS_PASSWORDS);
         user.AuthorizedClients = user.AuthorizedClients.Where(ac => ac.ClientId != clients[0].Id).ToArray();
         user.AuthorizingClient = new()
         {
@@ -140,7 +144,7 @@ public class TokenControllerTests : IClassFixture<CustomWebApplicationFactory<Pr
         // Given
         var fbu = Builders<User>.Filter;
         var fbc = Builders<Client>.Filter;
-        Client client = Client.FakeClient(out string secret, (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        Client client = new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, (await _clientCollection.FindAsync(fbc.Empty)).ToList());
         client.ExposedCount = 0;
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);

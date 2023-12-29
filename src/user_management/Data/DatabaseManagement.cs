@@ -1,62 +1,73 @@
 using MongoDB.Driver;
+using user_management.Data.InMemory;
+using user_management.Data.MongoDB;
 
 namespace user_management.Data;
 
 public static class DatabaseManagement
 {
-    public static void ResolveDatabase(WebApplicationBuilder builder)
+    public static void ResolveDatabase(IServiceCollection services, IConfiguration configuration)
     {
-        if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS:IsSharded").Value == "true")
-            builder.ConfigureShardedMongodb();
-        else if (builder.Configuration.GetSection("DB_NAME").Value! == "mongodb" && builder.Configuration.GetSection("DB_OPTIONS:IsSharded").Value != "true")
-            builder.ConfigureMongodb();
+        if (configuration["DB_NAME"]! == "mongodb" && configuration["DB_OPTIONS:IsSharded"]! == "true")
+            ShardedMongoContext.ConfigureShardedMongodb(services, configuration);
+        else if (configuration["DB_NAME"]! == "mongodb" && configuration["DB_OPTIONS:IsSharded"]! != "true")
+            MongoContext.ConfigureMongodb(services, configuration);
+        else if (configuration["DB_NAME"]! == "in_memory")
+            InMemoryContext.ConfigureInMemory(services, configuration);
         else throw new MissingDatabaseConfiguration();
     }
 
-    public static async Task InitializeDatabase(WebApplication app)
+    public static async Task InitializeDatabase(IServiceProvider services, IConfiguration configuration)
     {
         if (
-            app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Configuration.GetSection("DB_OPTIONS:IsSharded").Value == "true"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS:DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            configuration["DB_NAME"]! == "mongodb"
+            && configuration["DB_OPTIONS:IsSharded"]! == "true"
+            && services.GetService<IMongoClient>()!.GetDatabase(configuration["DB_OPTIONS:DatabaseName"]!).GetCollection<Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
         )
-            await app.Services.GetService<ShardedMongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
+            await services.GetService<ShardedMongoContext>()!.Initialize(services.GetService<MongoCollections>()!, services.GetService<IMongoDatabase>()!);
         else if (
-            app.Configuration.GetSection("DB_NAME").Value! == "mongodb"
-            && app.Configuration.GetSection("DB_OPTIONS:IsSharded").Value != "true"
-            && app.Services.GetService<IMongoClient>()!.GetDatabase(app.Configuration.GetSection("DB_OPTIONS:DatabaseName").Value!).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
+            configuration["DB_NAME"]! == "mongodb"
+            && configuration["DB_OPTIONS:IsSharded"]! != "true"
+            && services.GetService<IMongoClient>()!.GetDatabase(configuration["DB_OPTIONS:DatabaseName"]!).GetCollection<Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
         )
-            await app.Services.GetService<MongoContext>()!.Initialize(app.Services.GetService<MongoCollections>()!, app.Services.GetService<IMongoDatabase>()!);
+            await services.GetService<MongoContext>()!.Initialize(services.GetService<MongoCollections>()!, services.GetService<IMongoDatabase>()!);
     }
 
-    public static async Task SeedDatabase(IMongoClient client, MongoCollections mongoCollections, string environment, string dbName, string dbOptionsDatabaseName, string adminUsername, string adminPassword, string adminEmail, string? adminPhoneNumber)
+    public static async Task SeedDatabase(IServiceProvider services, IConfiguration configuration)
     {
-        if (
-            environment == "Development"
-            && dbName == "mongodb"
-            && (
-                client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
-                || client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.Client>(MongoCollections.CLIENTS).EstimatedDocumentCount() == 0
-            )
-        )
+        if (configuration["DB_NAME"]! == "mongodb")
         {
-            await mongoCollections.ClearCollections(client.GetDatabase(dbOptionsDatabaseName));
-            await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+            IMongoClient client = services.GetRequiredService<IMongoClient>();
+            MongoCollections mongoCollections = services.GetRequiredService<MongoCollections>();
 
-            // Add admin user
-            await new MongoSeeder(mongoCollections, Program.RootPath).SeedAdmin(adminUsername, adminPassword, adminEmail, adminPhoneNumber);
-        }
-        else if (
-            environment == "IntegrationTest"
-            && dbName == "mongodb"
-            && (
-                client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.User>(MongoCollections.USERS).EstimatedDocumentCount() == 0
-                || client.GetDatabase(dbOptionsDatabaseName).GetCollection<user_management.Models.Client>(MongoCollections.CLIENTS).EstimatedDocumentCount() == 0
+            if (
+                (configuration["ENVIRONMENT"]! == "Development" || configuration["ENVIRONMENT"]! == "IntegrationTest")
+                && (
+                    await client.GetDatabase(configuration["DB_OPTIONS:DatabaseName"]!).GetCollection<Models.User>(MongoCollections.USERS).EstimatedDocumentCountAsync() == 0
+                    || await client.GetDatabase(configuration["DB_OPTIONS:DatabaseName"]!).GetCollection<Models.Client>(MongoCollections.CLIENTS).EstimatedDocumentCountAsync() == 0
+                )
             )
-        )
+            {
+                await mongoCollections.ClearCollections(client.GetDatabase(configuration["DB_OPTIONS:DatabaseName"]!));
+                await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+
+                await new MongoSeeder(mongoCollections, Program.RootPath).SeedAdmin(configuration["ADMIN_USERNAME"]!, configuration["ADMIN_PASSWORD"]!, configuration["ADMIN_EMAIL"]!, configuration["ADMIN_PHONE_NUMBER"]!);
+            }
+        }
+        else if (configuration["DB_NAME"]! == "in_memory")
         {
-            await mongoCollections.ClearCollections(client.GetDatabase(dbOptionsDatabaseName));
-            await new MongoSeeder(mongoCollections, Program.RootPath).Seed();
+            InMemoryContext inMemoryContext = services.GetRequiredService<InMemoryContext>();
+            if (
+                (configuration["ENVIRONMENT"]! == "Development" || configuration["ENVIRONMENT"]! == "IntegrationTest")
+                && (!inMemoryContext.Users.Any()
+                    || !inMemoryContext.Clients.Any())
+            )
+            {
+                await inMemoryContext.ClearDatabase();
+                await new InMemorySeeder(Program.RootPath, inMemoryContext).Seed();
+
+                await new InMemorySeeder(Program.RootPath, inMemoryContext).SeedAdmin(configuration["ADMIN_USERNAME"]!, configuration["ADMIN_PASSWORD"]!, configuration["ADMIN_EMAIL"]!, configuration["ADMIN_PHONE_NUMBER"]!);
+            }
         }
     }
 }

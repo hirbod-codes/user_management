@@ -1,12 +1,10 @@
 using user_management.Utilities;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
 using user_management.Controllers.Services;
 using user_management.Services.Data.User;
 using user_management.Dtos.Token;
 using user_management.Models;
 using user_management.Services.Data;
-using MongoDB.Driver;
-using user_management.Services.Data.Client;
 using user_management.Authentication;
 using user_management.Data;
 
@@ -20,17 +18,15 @@ public class TokenManagement : ITokenManagement
     private readonly IAuthenticatedByJwt _authenticatedByJwt;
     private readonly IClientRepository _clientRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IMongoClient _mongoClient;
     private readonly IStringHelper _stringHelper;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TokenManagement(IStringHelper stringHelper, IClientRepository clientRepository, IUserRepository userRepository, IDateTimeProvider dateTimeProvider, IMongoClient mongoClient, IAuthenticatedByJwt authenticatedByJwt)
+    public TokenManagement(IStringHelper stringHelper, IClientRepository clientRepository, IUserRepository userRepository, IDateTimeProvider dateTimeProvider, IAuthenticatedByJwt authenticatedByJwt)
     {
         _stringHelper = stringHelper;
         _clientRepository = clientRepository;
         _userRepository = userRepository;
         _dateTimeProvider = dateTimeProvider;
-        _mongoClient = mongoClient;
         _authenticatedByJwt = authenticatedByJwt;
     }
 
@@ -98,78 +94,75 @@ public class TokenManagement : ITokenManagement
 
         string tokenValue = null!;
         string refreshToken = null!;
-        using (IClientSessionHandle session = await _mongoClient.StartSessionAsync())
-        {
-            session.StartTransaction(new(writeConcern: WriteConcern.WMajority));
+        await _userRepository.StartTransaction();
 
-            bool? userResult = await _userRepository.AddTokenPrivilegesToUser(user.Id, user.Id, client.Id, user.AuthorizingClient.TokenPrivileges, session);
-            if (userResult == null)
+        bool? userResult = await _userRepository.AddTokenPrivilegesToUser(user.Id, user.Id, client.Id, user.AuthorizingClient.TokenPrivileges);
+        if (userResult == null)
+        {
+            await _userRepository.AbortTransaction();
+            throw new DataNotFoundException("user");
+        }
+        if (userResult == false)
+        {
+            await _userRepository.AbortTransaction();
+            throw new DatabaseServerException();
+        }
+
+        AuthorizedClient authorizedClient = new()
+        {
+            ClientId = dto.ClientId,
+            RefreshToken = new()
             {
-                await session.AbortTransactionAsync();
+                TokenPrivileges = user.AuthorizingClient.TokenPrivileges,
+            },
+            Token = new()
+            {
+                IsRevoked = false
+            }
+        };
+
+        bool? authorizedClientResult;
+        int safety = 0;
+        do
+        {
+            tokenValue = _stringHelper.GenerateRandomString(128);
+            string? hashedTokenValue = _stringHelper.HashWithoutSalt(tokenValue);
+            if (hashedTokenValue == null) throw new OperationException();
+
+            refreshToken = _stringHelper.GenerateRandomString(128);
+            string? hashedRefreshToken = _stringHelper.HashWithoutSalt(refreshToken);
+            if (hashedRefreshToken == null) throw new OperationException();
+
+            authorizedClient.RefreshToken.Value = hashedRefreshToken;
+            authorizedClient.RefreshToken.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS_MONTHS);
+            authorizedClient.Token.Value = hashedTokenValue;
+            authorizedClient.Token.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS);
+
+            try { authorizedClientResult = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient); }
+            catch (DuplicationException) { safety++; continue; }
+
+            if (authorizedClientResult == true) break;
+
+            if (authorizedClientResult == null)
+            {
+                await _userRepository.AbortTransaction();
                 throw new DataNotFoundException("user");
             }
-            if (userResult == false)
+
+            if (authorizedClientResult == false)
             {
-                await session.AbortTransactionAsync();
+                await _userRepository.AbortTransaction();
                 throw new DatabaseServerException();
             }
+        } while (safety < 200);
 
-            AuthorizedClient authorizedClient = new()
-            {
-                ClientId = dto.ClientId,
-                RefreshToken = new()
-                {
-                    TokenPrivileges = user.AuthorizingClient.TokenPrivileges,
-                },
-                Token = new()
-                {
-                    IsRevoked = false
-                }
-            };
-
-            bool? authorizedClientResult;
-            int safety = 0;
-            do
-            {
-                tokenValue = _stringHelper.GenerateRandomString(128);
-                string? hashedTokenValue = _stringHelper.HashWithoutSalt(tokenValue);
-                if (hashedTokenValue == null) throw new OperationException();
-
-                refreshToken = _stringHelper.GenerateRandomString(128);
-                string? hashedRefreshToken = _stringHelper.HashWithoutSalt(refreshToken);
-                if (hashedRefreshToken == null) throw new OperationException();
-
-                authorizedClient.RefreshToken.Value = hashedRefreshToken;
-                authorizedClient.RefreshToken.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(REFRESH_TOKEN_EXPIRATION_MONTHS_MONTHS);
-                authorizedClient.Token.Value = hashedTokenValue;
-                authorizedClient.Token.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS);
-
-                try { authorizedClientResult = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient, session); }
-                catch (DuplicationException) { safety++; continue; }
-
-                if (authorizedClientResult == true) break;
-
-                if (authorizedClientResult == null)
-                {
-                    await session.AbortTransactionAsync();
-                    throw new DataNotFoundException("user");
-                }
-
-                if (authorizedClientResult == false)
-                {
-                    await session.AbortTransactionAsync();
-                    throw new DatabaseServerException();
-                }
-            } while (safety < 200);
-
-            if (safety >= 200)
-            {
-                await session.AbortTransactionAsync();
-                throw new DuplicationException();
-            }
-
-            await session.CommitTransactionAsync();
+        if (safety >= 200)
+        {
+            await _userRepository.AbortTransaction();
+            throw new DuplicationException();
         }
+
+        await _userRepository.CommitTransaction();
 
         return new() { RefreshToken = refreshToken, Token = tokenValue };
     }

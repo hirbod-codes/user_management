@@ -2,12 +2,15 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Bogus;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Moq;
 using user_management.Data;
+using user_management.Data.Logics;
+using user_management.Data.MongoDB;
 using user_management.Data.Seeders;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -21,8 +24,10 @@ public class UserControllerTestsCollectionDefinition { }
 [Collection("UserControllerTests")]
 public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    public const string USERS_PASSWORDS = "Pass%w0rd!99";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
-    private Faker _faker = new();
+    private readonly Faker _faker = new();
     private IMongoCollection<User> _userCollection;
     private IMongoCollection<Client> _clientCollection;
 
@@ -282,7 +287,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         UpdateResult updateResult = await _userCollection.UpdateOneAsync(fb.Eq("_id", ObjectId.Parse(user.Id)), Builders<User>.Update.Set(User.VERIFICATION_SECRET_UPDATED_AT, DateTime.UtcNow));
         Assert.True(updateResult.IsAcknowledged && updateResult.ModifiedCount == 1);
 
-        Activation dto = new() { Email = user.Email, Password = UserSeeder.USERS_PASSWORDS, VerificationSecret = user.VerificationSecret! };
+        Activation dto = new() { Email = user.Email, Password = USERS_PASSWORDS, VerificationSecret = user.VerificationSecret! };
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_ACTIVATE;
         HttpClient client = _factory.CreateClient(new() { AllowAutoRedirect = false });
@@ -304,7 +309,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.VerificationSecret = _faker.Random.String2(40);
         user.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
         user.IsEmailVerified = true;
@@ -334,7 +339,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
     public async Task Login_Ok()
     {
         // Given
-        User user = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = true;
         await _userCollection!.InsertOneAsync(user);
 
@@ -359,11 +364,11 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
 
         if (user == null)
         {
-            user = User.FakeUser((await userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList());
+            user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), password: USERS_PASSWORDS);
             user.IsEmailVerified = true;
             await userCollection!.InsertOneAsync(user);
         }
-        Login dto = new() { Email = user.Email, Password = password ?? UserSeeder.USERS_PASSWORDS };
+        Login dto = new() { Email = user.Email, Password = password ?? USERS_PASSWORDS };
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_LOGIN;
         HttpResponseMessage response = await client.PostAsync(url, JsonContent.Create(dto));
@@ -403,7 +408,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = false;
         await _userCollection.InsertOneAsync(user);
 
@@ -412,7 +417,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         // Make sure new email doesn't exist.
         string newEmail = "new_imaginary_email@example.com";
         await _userCollection.DeleteManyAsync(fb.Eq(User.EMAIL, newEmail));
-        ChangeUnverifiedEmail dto = new() { Email = user.Email, NewEmail = newEmail, Password = UserSeeder.USERS_PASSWORDS };
+        ChangeUnverifiedEmail dto = new() { Email = user.Email, NewEmail = newEmail, Password = USERS_PASSWORDS };
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_POST_CHANGE_UNVERIFIED_EMAIL;
 
@@ -435,7 +440,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.VerificationSecret = _faker.Random.String2(40);
         user.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
         user.IsEmailVerified = true;
@@ -472,7 +477,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.VerificationSecret = _faker.Random.String2(40);
         user.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
         user.IsEmailVerified = true;
@@ -510,7 +515,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.VerificationSecret = _faker.Random.String2(40);
         user.VerificationSecretUpdatedAt = DateTime.UtcNow.AddMinutes(2);
         user.IsEmailVerified = true;
@@ -547,7 +552,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = true;
         if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENT).Append(new() { Name = StaticData.DELETE_CLIENT, Value = true }).ToArray();
@@ -582,7 +587,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = true;
         if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENTS).Append(new() { Name = StaticData.DELETE_CLIENTS, Value = true }).ToArray();
@@ -615,7 +620,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = true;
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.READ_ACCOUNT).Append(new() { Name = StaticData.READ_ACCOUNT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(user);
@@ -658,7 +663,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fb = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fc = Builders<Client>.Filter;
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fb.Empty)).ToList(), (await _clientCollection.FindAsync(fc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.IsEmailVerified = true;
         if (user.AuthorizedClients.Length == 0) user.AuthorizedClients = user.AuthorizedClients.Append(AuthorizedClient.FakeAuthorizedClient(_faker.PickRandom((await _clientCollection.FindAsync(fc.Empty)).ToList()))).ToArray();
         user.Privileges = user.Privileges.Where(p => p.Name != StaticData.READ_CLIENTS).Append(new() { Name = StaticData.READ_CLIENTS, Value = true }).ToArray();
@@ -699,7 +704,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fbu = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fbc = Builders<Client>.Filter;
 
-        User actor = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User actor = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         actor.IsEmailVerified = true;
         actor.Privileges = new Privilege[] { new() { Name = StaticData.READ_ACCOUNT, Value = true }, new() { Name = StaticData.READ_ACCOUNTS, Value = true } };
         await _userCollection.InsertOneAsync(actor);
@@ -707,7 +712,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: actor);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User user1 = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         user1.UserPermissions.Readers = user1.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
@@ -720,7 +725,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             .ToArray();
         await _userCollection.InsertOneAsync(user1);
 
-        User user2 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User user2 = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         user2.UserPermissions.Readers = user2.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
@@ -769,7 +774,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fbu = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fbc = Builders<Client>.Filter;
 
-        User actor = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User actor = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         actor.IsEmailVerified = true;
         actor.Privileges = new Privilege[] {
             new() { Name = StaticData.READ_ACCOUNT, Value = true },
@@ -782,7 +787,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: actor);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        User user1 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User user1 = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         user1.UserPermissions.Readers = user1.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
@@ -805,7 +810,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             .ToArray();
         await _userCollection.InsertOneAsync(user1);
 
-        User user2 = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User user2 = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         user2.UserPermissions.Readers = user2.UserPermissions.Readers
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()
@@ -829,7 +834,15 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user2);
 
         string lastName = "fake_last_name";
-        UserPatchDto dto = new() { FiltersString = $"Username::Eq::{user1.Username}::string||Username::Eq::{user2.Username}::string", UpdatesString = $"LastName::Set::{lastName}::string" };
+        UserPatchDto dto = new()
+        {
+            Filters = new Filter()
+            {
+                Operation = Filter.OR,
+                Filters = new Filter[] { new() { Field = "Username", Operation = Filter.EQ, Type = Types.STRING, Value = user1.Username }, new() { Field = "Username", Operation = Filter.EQ, Type = Types.STRING, Value = user2.Username } },
+            },
+            Updates = new Update[] { new() { Field = "LastName", Operation = Update.SET, Type = Types.STRING, Value = lastName } }
+        };
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_PATCH_USERS;
 
@@ -849,7 +862,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         FilterDefinitionBuilder<User> fbu = Builders<User>.Filter;
         FilterDefinitionBuilder<Client> fbc = Builders<Client>.Filter;
 
-        User actor = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User actor = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         actor.IsEmailVerified = true;
         actor.Privileges = new Privilege[] { new() { Name = StaticData.READ_ACCOUNT, Value = true }, new() { Name = StaticData.DELETE_ACCOUNT, Value = true } };
         await _userCollection.InsertOneAsync(actor);
@@ -857,7 +870,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         LoginResult loginResult = await Login(client, user: actor);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        User user = User.FakeUser((await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList());
+        User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(fbu.Empty)).ToList(), (await _clientCollection.FindAsync(fbc.Empty)).ToList(), password: USERS_PASSWORDS);
         user.UserPermissions.Deleters = user.UserPermissions.Deleters
             .Where(r => r.AuthorId.ToString() != actor.Id.ToString())
             .Append(new()

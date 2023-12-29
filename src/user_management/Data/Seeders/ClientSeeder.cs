@@ -1,56 +1,38 @@
+using Bogus;
+using user_management.Models;
+using user_management.Utilities;
+
 namespace user_management.Data.Seeders;
 
-using System.Threading.Tasks;
-using MongoDB.Driver;
-using Newtonsoft.Json;
-using user_management.Models;
-
-public static class ClientSeeder
+public class ClientSeeder
 {
-    private static IMongoCollection<Client> _clientCollection = null!;
-    private static string? _filePath;
 
-    public static void Setup(MongoCollections mongoCollections, string? rootPath)
+    public Client FakeClient(string clientId, out string secret, IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
     {
-        SetFilePath(rootPath);
-        SetClientsCollection(mongoCollections);
-    }
-
-    public static void SetFilePath(string? rootPath)
-    {
-        if (rootPath == null) return;
-
-        var directoryPath = Path.Combine(rootPath, "Data/Seeders/Logs");
-        Directory.CreateDirectory(directoryPath);
-        _filePath = Path.Combine(directoryPath, "seeded_users.json");
-    }
-
-    public static void SetClientsCollection(MongoCollections mongoCollections) => _clientCollection = mongoCollections.Clients;
-
-    public static async Task Seed(MongoCollections mongoCollections, string? rootPath, int count = 2)
-    {
-        if (_filePath == null || _clientCollection == null) Setup(mongoCollections, rootPath);
-
-        System.Console.WriteLine("\nSeeding Clients...");
-
-        IEnumerable<Client> clients = GenerateClients(count, clients: (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
-
-        if (_filePath != null) await File.WriteAllTextAsync(_filePath!, JsonConvert.SerializeObject(clients));
-
-        await PersistClients(clients);
-
-        System.Console.WriteLine("Seeded Clients...\n");
-    }
-
-    private static async Task PersistClients(IEnumerable<Client> clients) => await _clientCollection.InsertManyAsync(clients);
-
-    public static IEnumerable<Client> GenerateClients(int count = 2, IEnumerable<Client>? clients = null, DateTime? creationDateTime = null)
-    {
-        if (clients == null) clients = new Client[] { };
+        clients ??= Array.Empty<Client>();
         if (creationDateTime == null) creationDateTime = DateTime.UtcNow;
 
-        for (int i = 0; i < count; i++)
-            clients = clients.Append(Client.FakeClient(out string secret, clients, creationDateTime));
-        return clients;
+        Faker faker = new("en");
+
+        int safety = 0;
+        string redirectUrl;
+        string? hashedSecret;
+        do
+        {
+            secret = new StringHelper().GenerateRandomString(128);
+            hashedSecret = new StringHelper().HashWithoutSalt(secret);
+            redirectUrl = faker.Internet.Url();
+
+            if (
+                clients.FirstOrDefault(c => c != null && c.Secret == hashedSecret) == null
+                && clients.FirstOrDefault(c => c != null && c.RedirectUrl == redirectUrl) == null
+                && clients.FirstOrDefault(c => c != null && c.Id == clientId) == null
+            )
+                break;
+
+            safety++;
+        } while (safety < 200);
+
+        return new Client() { Id = clientId, Secret = hashedSecret!, RedirectUrl = redirectUrl, CreatedAt = (DateTime)creationDateTime, UpdatedAt = (DateTime)creationDateTime };
     }
 }

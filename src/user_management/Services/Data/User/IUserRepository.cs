@@ -1,10 +1,9 @@
 namespace user_management.Services.Data.User;
 
-using MongoDB.Bson;
-using MongoDB.Driver;
+using user_management.Data.Logics;
 using user_management.Models;
 
-public interface IUserRepository
+public interface IUserRepository : IAtomic
 {
     public string GenerateId();
 
@@ -25,7 +24,7 @@ public interface IUserRepository
 
     public Task<PartialUser?> RetrieveById(string actorId, string id, bool forClients = false);
 
-    public Task<List<PartialUser>> Retrieve(string actorId, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
+    public Task<List<PartialUser>> Retrieve(string actorId, Filter? filters, int limit, int iteration, string? sortBy, bool ascending = true, bool forClients = false);
 
     public Task<User?> RetrieveByIdForAuthenticationHandling(string userId);
 
@@ -51,13 +50,13 @@ public interface IUserRepository
     public Task<bool?> Login(string userId);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateVerificationSecret(string VerificationSecret, string email);
+    public Task<bool?> UpdateVerificationSecret(string verificationSecret, string email);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateVerificationSecretForActivation(string VerificationSecret, string email);
+    public Task<bool?> UpdateVerificationSecretForActivation(string verificationSecret, string email);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateVerificationSecretForPasswordChange(string VerificationSecret, string email);
+    public Task<bool?> UpdateVerificationSecretForPasswordChange(string verificationSecret, string email);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> Verify(string id);
@@ -90,23 +89,29 @@ public interface IUserRepository
     public Task<bool?> RemoveAllClients(string userId, string authorId, bool isClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddTokenPrivilegesToUser(string userId, string authorId, string clientId, TokenPrivileges tokenPrivileges, IClientSessionHandle? session = null);
+    public Task<bool?> AddTokenPrivilegesToUser(string userId, string authorId, string clientId, TokenPrivileges tokenPrivileges);
+
+    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
+    public Task<bool?> AddTokenPrivilegesToUserWithTransaction(string userId, string authorId, string clientId, TokenPrivileges tokenPrivileges);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> UpdateAuthorizingClient(string userId, AuthorizingClient authorizingClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> AddAuthorizedClient(string userId, AuthorizedClient authorizedClient, IClientSessionHandle? session = null);
+    public Task<bool?> AddAuthorizedClient(string userId, AuthorizedClient authorizedClient);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> UpdateToken(string userId, string clientObjectId, Token token);
+    public Task<bool?> AddAuthorizedClientWithTransaction(string userId, AuthorizedClient authorizedClient);
+
+    /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
+    public Task<bool?> UpdateToken(string userId, string clientId, Token token);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> UpdateUserPrivileges(string authorId, string userId, UserPermissions userPrivileges);
 
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
-    public Task<bool?> Update(string actorId, string filtersString, string updatesString, bool forClients = false);
+    public Task<bool?> Update(string actorId, Filter? filters, IEnumerable<Update> updates, bool forClients = false);
 
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<bool?> Delete(string actorId, string id, bool forClients = false);

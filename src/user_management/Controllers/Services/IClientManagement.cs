@@ -1,11 +1,10 @@
-using MongoDB.Bson;
 using user_management.Models;
 
 namespace user_management.Controllers.Services;
 
 public interface IClientManagement
 {
-    /// <exception cref="user_management.Services.Client.RegistrationFailure"></exception>
+    /// <exception cref="user_management.Services.Data.Client.RegistrationFailure"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>
     public Task<(Models.Client client, string? notHashedSecret)> Register(Models.Client client);

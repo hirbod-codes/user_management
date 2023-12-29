@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using user_management.Models;
-using MongoDB.Bson;
 using user_management.Services.Data.User;
 using user_management.Authentication;
 
@@ -42,12 +41,12 @@ public class PermissionsAuthorizationHandler : AuthorizationHandler<PermissionsR
             return Task.CompletedTask;
 
         if (context.User.Identity.AuthenticationType == "JWT")
-            return AuthorizeJWT(ObjectId.Parse(id), context, requirement);
+            return AuthorizeJWT(context, requirement);
         else
             return AuthorizeBearer(id, context, requirement);
     }
 
-    private async Task AuthorizeJWT(ObjectId userId, AuthorizationHandlerContext context, PermissionsRequirement requirement)
+    private async Task AuthorizeJWT(AuthorizationHandlerContext context, PermissionsRequirement requirement)
     {
         string[] requirementTokens = requirement.Permissions.Split("|", StringSplitOptions.RemoveEmptyEntries);
         if (requirementTokens?.Any() != true) return;

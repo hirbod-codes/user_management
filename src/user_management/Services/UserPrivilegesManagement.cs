@@ -1,5 +1,4 @@
 using AutoMapper;
-using MongoDB.Bson;
 using user_management.Controllers.Services;
 using user_management.Dtos.User;
 using user_management.Models;

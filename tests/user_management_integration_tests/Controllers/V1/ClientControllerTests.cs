@@ -7,6 +7,8 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using user_management.Controllers.V1;
 using user_management.Data;
+using user_management.Data.MongoDB;
+using user_management.Data.Seeders;
 using user_management.Dtos.Client;
 using user_management.Dtos.User;
 using user_management.Models;
@@ -21,6 +23,8 @@ public class ClientControllerTestsCollectionDefinition { }
 
 public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    public const string USERS_PASSWORDS = "Pass%w0rd!99";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
     private Faker _faker = new();
     private IMongoCollection<User> _userCollection;
@@ -41,7 +45,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         var fb = Builders<Client>.Filter;
         HttpClient httpClient = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList(), password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.REGISTER_CLIENT).Append(new() { Name = StaticData.REGISTER_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -78,7 +82,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         var fb = Builders<Client>.Filter;
         HttpClient httpClient = _factory.CreateClient(new() { AllowAutoRedirect = false });
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList());
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList(), password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.READ_CLIENT).Append(new() { Name = StaticData.READ_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -113,7 +117,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients, password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.READ_CLIENT).Append(new() { Name = StaticData.READ_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -121,7 +125,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        Client client = Client.FakeClient(out string secret, clients);
+        Client client = new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients);
         client.ExposedCount = 0;
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);
@@ -151,7 +155,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients, password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.UPDATE_CLIENT).Append(new() { Name = StaticData.UPDATE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -159,7 +163,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        Client client = Client.FakeClient(out string secret, clients);
+        Client client = new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients);
         client.ExposedCount = 0;
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);
@@ -195,7 +199,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients, password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.DELETE_CLIENT).Append(new() { Name = StaticData.DELETE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -203,7 +207,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        Client client = Client.FakeClient(out string secret, clients);
+        Client client = new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients);
         client.ExposedCount = 0;
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);
@@ -237,7 +241,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
 
         List<Client> clients = (await _clientCollection.FindAsync(Builders<Client>.Filter.Empty)).ToList();
 
-        User u = User.FakeUser((await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients);
+        User u = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), (await _userCollection.FindAsync(Builders<User>.Filter.Empty)).ToList(), clients, password: USERS_PASSWORDS);
         u.IsEmailVerified = true;
         u.Privileges = u.Privileges.Where(p => p.Name != StaticData.UPDATE_CLIENT).Append(new() { Name = StaticData.UPDATE_CLIENT, Value = true }).ToArray();
         await _userCollection.InsertOneAsync(u);
@@ -245,7 +249,7 @@ public class ClientControllerTests : IClassFixture<CustomWebApplicationFactory<P
         LoginResult loginResult = await UserControllerTests.Login(httpClient, user: u);
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Jwt);
 
-        Client client = Client.FakeClient(out string secret, clients);
+        Client client = new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients);
         client.ExposedCount = 0;
         client.TokensExposedAt = null;
         await _clientCollection.InsertOneAsync(client);

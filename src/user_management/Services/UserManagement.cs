@@ -6,7 +6,8 @@ using System.Net.Mail;
 using user_management.Services.Data.User;
 using user_management.Controllers.Services;
 using user_management.Models;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
+using user_management.Data.Logics;
 
 namespace user_management.Services;
 
@@ -50,7 +51,7 @@ public class UserManagement : IUserManagement
         await Notify(userDto.Email, verificationMessage);
 
         User? unverifiedUser = _mapper.Map<User>(userDto);
-        unverifiedUser.Id = _userRepository.GenerateId();
+        // unverifiedUser.Id = _userRepository.GenerateId();
         unverifiedUser.UserPermissions = await UserPermissions.GetDefault(unverifiedUser.Id, _clientRepository);
         unverifiedUser.Password = _stringHelper.Hash(userDto.Password);
         unverifiedUser.VerificationSecret = verificationMessage;
@@ -217,16 +218,13 @@ public class UserManagement : IUserManagement
         return user.AuthorizedClients == null ? Array.Empty<AuthorizedClientRetrieveDto>() : user.AuthorizedClients.ToList().ConvertAll<AuthorizedClientRetrieveDto>(c => _mapper.Map<AuthorizedClientRetrieveDto>(c));
     }
 
-    public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true)
-    {
-        return await _userRepository.Retrieve(actorId, logicsString, limit, iteration, sortBy, ascending, forClients);
-    }
+    public async Task<List<PartialUser>> Retrieve(string actorId, bool forClients, Filter? filters, int limit, int iteration, string? sortBy, bool ascending = true) => await _userRepository.Retrieve(actorId, filters, limit, iteration, sortBy, ascending, forClients);
 
     public async Task Update(string actorId, UserPatchDto userPatchDto, bool forClients)
     {
-        if (userPatchDto.UpdatesString == null || userPatchDto.FiltersString == null || userPatchDto.FiltersString == "empty") throw new ArgumentException(null, nameof(userPatchDto));
+        if (userPatchDto.Updates == null) throw new ArgumentException(null, nameof(userPatchDto));
 
-        bool r = await _userRepository.Update(actorId, userPatchDto.FiltersString, userPatchDto.UpdatesString, forClients) ?? throw new DataNotFoundException();
+        bool r = await _userRepository.Update(actorId, userPatchDto.Filters, userPatchDto.Updates, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();
     }
 

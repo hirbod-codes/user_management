@@ -1,3 +1,4 @@
+using user_management.Data.Logics;
 using user_management.Dtos.User;
 
 namespace user_management.Controllers.Services;
@@ -93,7 +94,7 @@ public interface IUserManagement
     public Task<Models.PartialUser> RetrieveById(string actorId, string userId, bool forClients);
 
     /// <exception cref="ArgumentException"></exception>
-    public Task<List<Models.PartialUser>> Retrieve(string actorId, bool forClients, string logicsString, int limit, int iteration, string? sortBy, bool ascending = true);
+    public Task<List<Models.PartialUser>> Retrieve(string actorId, bool forClients, Filter? filters, int limit, int iteration, string? sortBy, bool ascending = true);
 
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>

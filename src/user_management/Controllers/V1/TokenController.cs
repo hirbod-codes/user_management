@@ -12,9 +12,8 @@ using user_management.Data;
 using user_management.Dtos.Token;
 using user_management.Models;
 using user_management.Services;
-using user_management.Services.Client;
-using user_management.Services.Data;
 using user_management.Services.Data.Client;
+using user_management.Services.Data;
 
 [ApiController]
 [ApiVersion("1.0")]

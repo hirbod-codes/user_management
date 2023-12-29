@@ -1,6 +1,6 @@
 using System.Runtime.Serialization;
 
-namespace user_management.Data;
+namespace user_management.Data.MongoDB;
 
 [Serializable]
 public class MissingDatabaseConfiguration : Exception

@@ -1,16 +1,15 @@
-namespace user_management.Data;
+namespace user_management.Data.MongoDB;
 
 using System.Collections.Generic;
-using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.Core.Configuration;
-using user_management.Data.Client;
-using user_management.Data.User;
+using global::MongoDB.Bson;
+using global::MongoDB.Driver;
+using global::MongoDB.Driver.Core.Configuration;
+using user_management.Data.MongoDB.Client;
+using user_management.Data.MongoDB.User;
 using user_management.Models;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
 using user_management.Services.Data.User;
 
 public class MongoServer
@@ -112,45 +111,45 @@ public class MongoContext
 
     public MongoClient GetClient() => new(settings: new()
     {
-        ReplicaSetName = ReplicaSetName,
+        // ReplicaSetName = ReplicaSetName,
         Scheme = ConnectionStringScheme.MongoDB,
-        Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
-        Credential = MongoCredential.CreateMongoX509Credential(Username),
-        UseTls = true,
-        SslSettings = new()
-        {
-            ClientCertificates = new List<X509Certificate>() { new X509Certificate2(CertificateP12.StartsWith('/') ? CertificateP12 : Program.RootPath + "/../../" + CertificateP12, "") },
-            CheckCertificateRevocation = false,
-            EnabledSslProtocols = SslProtocols.Tls12
-        },
-        RetryReads = true,
-        ReadConcern = ReadConcern.Majority,
-        ReadPreference = ReadPreference.Primary,
-        RetryWrites = true,
-        WriteConcern = WriteConcern.WMajority
+        // Servers = Servers.ConvertAll<MongoServerAddress>(x => new(x.Host, x.Port)),
+        Server = new MongoServerAddress(Servers[0].Host, Servers[0].Port),
+        // Credential = MongoCredential.CreateMongoX509Credential(Username),
+        // UseTls = true,
+        // SslSettings = new()
+        // {
+        //     ClientCertificates = new List<X509Certificate>() { new X509Certificate2(CertificateP12.StartsWith('/') ? CertificateP12 : Program.RootPath + "/../../" + CertificateP12, "") },
+        //     CheckCertificateRevocation = false,
+        //     EnabledSslProtocols = SslProtocols.Tls12
+        // },
+        // RetryReads = true,
+        // ReadConcern = ReadConcern.Majority,
+        // ReadPreference = ReadPreference.Primary,
+        // RetryWrites = true,
+        DirectConnection = true,
+        AllowInsecureTls = true,
+        // WriteConcern = WriteConcern.WMajority
     });
 
     public async Task ClearDatabase(MongoCollections mongoCollections, IMongoDatabase mongoDatabase) => await mongoCollections.ClearCollections(mongoDatabase);
-}
 
-public static class MongoContextExtensions
-{
-    public static void ConfigureMongodb(this WebApplicationBuilder builder)
+    public static void ConfigureMongodb(IServiceCollection services, IConfiguration configuration)
     {
         MongoContext dbContext = new();
-        builder.Configuration.GetSection("DB_OPTIONS").Bind(dbContext);
-        builder.Services.AddSingleton(dbContext);
+        configuration.GetSection("DB_OPTIONS").Bind(dbContext);
+        services.AddSingleton(dbContext);
 
         MongoClient dbClient = dbContext.GetClient();
-        builder.Services.AddSingleton<IMongoClient>(dbClient);
+        services.AddSingleton<IMongoClient>(dbClient);
 
-        builder.Services.AddSingleton(dbClient.GetDatabase(dbContext.DatabaseName));
+        services.AddSingleton(dbClient.GetDatabase(dbContext.DatabaseName));
 
         MongoCollections mongoCollections = new();
         mongoCollections.InitializeCollections(dbClient.GetDatabase(dbContext.DatabaseName));
-        builder.Services.AddSingleton(mongoCollections);
+        services.AddSingleton(mongoCollections);
 
-        builder.Services.AddSingleton<IUserRepository, UserRepository>();
-        builder.Services.AddSingleton<IClientRepository, ClientRepository>();
+        services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddSingleton<IClientRepository, ClientRepository>();
     }
 }

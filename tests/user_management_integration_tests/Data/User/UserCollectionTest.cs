@@ -2,7 +2,8 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using user_management.Data;
+using user_management.Data.MongoDB;
+using user_management.Data.Seeders;
 
 namespace user_management_integration_tests.Data.User;
 
@@ -12,6 +13,8 @@ public class UserCollectionTestCollectionDefinition { }
 [Collection("UserCollectionTest")]
 public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    public const string USERS_PASSWORDS = "Pass%w0rd!99";
+
     private readonly IMongoClient _mongoClient;
     private readonly IMongoCollection<user_management.Models.User> _userCollection;
     public static Faker Faker = new("en");
@@ -31,9 +34,9 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
     {
         IEnumerable<user_management.Models.Client>? clients = new user_management.Models.Client[] { };
         for (int i = 0; i < 5; i++)
-            clients = clients.Append(user_management.Models.Client.FakeClient(out string secret, clients)).ToArray();
+            clients = clients.Append(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret, clients)).ToArray();
 
-        user_management.Models.User user = user_management.Models.User.FakeUser(clients: clients);
+        user_management.Models.User user = new UserSeeder().FakeUser(ObjectId.GenerateNewId().ToString(), clients: clients, password: USERS_PASSWORDS);
 
         return user;
     }
@@ -127,9 +130,9 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
 
         if (user1.AuthorizedClients.Count() == 0 || user2.AuthorizedClients.Count() == 0 || user3.AuthorizedClients.Count() == 0)
         {
-            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret1)) };
-            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret2)) };
-            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret3)) };
+            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret1)) };
+            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret2)) };
+            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret3)) };
         }
 
         user2.AuthorizedClients[0].RefreshToken!.Value = user1.AuthorizedClients[0].RefreshToken!.Value;
@@ -144,9 +147,9 @@ public class UserCollectionTest : IClassFixture<CustomWebApplicationFactory<Prog
 
         if (user1.AuthorizedClients.Count() == 0 || user2.AuthorizedClients.Count() == 0 || user3.AuthorizedClients.Count() == 0)
         {
-            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret1)) };
-            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret2)) };
-            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(user_management.Models.Client.FakeClient(out string secret3)) };
+            user1.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret1)) };
+            user2.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret2)) };
+            user3.AuthorizedClients = new user_management.Models.AuthorizedClient[] { user_management.Models.AuthorizedClient.FakeAuthorizedClient(new ClientSeeder().FakeClient(ObjectId.GenerateNewId().ToString(), out string secret3)) };
         }
 
         user2.AuthorizedClients[0].Token!.Value = user1.AuthorizedClients[0].Token!.Value;

@@ -2,7 +2,7 @@ namespace user_management.Models;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
 
 [BsonIgnoreExtraElements]
 public class UserPermissions : IEquatable<UserPermissions>

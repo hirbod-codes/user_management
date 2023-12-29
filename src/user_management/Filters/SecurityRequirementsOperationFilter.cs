@@ -9,13 +9,15 @@ public class SecurityRequirementsFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
-        if (!context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any())
-            return;
-
-        operation.Responses.Add("401", new() { Description = "Unauthenticated access detected." });
-
         if (context.MethodInfo.GetCustomAttributes(true).OfType<PermissionsAttribute>().Any())
-            operation.Responses.Add("403", new() { Description = "Unauthorized access detected." });
+        {
+            if (!operation.Responses.TryGetValue("401", out OpenApiResponse? response401))
+                operation.Responses.Add("401", new() { Description = "Unauthenticated access detected." });
+            if (!operation.Responses.TryGetValue("403", out OpenApiResponse? response403))
+                operation.Responses.Add("403", new() { Description = "Unauthorized access detected." });
+        }
+        else if (context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any() && !operation.Responses.TryGetValue("401", out OpenApiResponse? response401))
+            operation.Responses.Add("401", new() { Description = "Unauthenticated access detected." });
 
         operation.Security.Add(new()
         {
@@ -27,6 +29,7 @@ public class SecurityRequirementsFilter : IOperationFilter
                 Array.Empty<string>()
             }
         });
+
         operation.Security.Add(new()
         {
             {

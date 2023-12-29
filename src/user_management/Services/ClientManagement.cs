@@ -1,7 +1,6 @@
 using user_management.Utilities;
 using user_management.Controllers.Services;
-using user_management.Services.Client;
-using MongoDB.Bson;
+using user_management.Services.Data.Client;
 using user_management.Services.Data;
 
 namespace user_management.Services;

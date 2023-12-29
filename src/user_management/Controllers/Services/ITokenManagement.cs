@@ -1,4 +1,3 @@
-using MongoDB.Bson;
 using user_management.Dtos.Token;
 using user_management.Models;
 
@@ -48,8 +47,8 @@ public interface ITokenManagement
     /// </summary>
     /// <returns>The generated token for refreshToken and token fields.</returns>
     /// <exception cref="user_management.Services.Data.Client.BannedClientException"></exception>
-    /// <exception cref="user_management.Services.Client.CodeExpirationException"></exception>
-    /// <exception cref="user_management.Services.Client.InvalidCodeVerifierException"></exception>
+    /// <exception cref="user_management.Services.Data.Client.CodeExpirationException"></exception>
+    /// <exception cref="user_management.Services.Data.Client.InvalidCodeVerifierException"></exception>
     /// <exception cref="user_management.Services.Data.DataNotFoundException"></exception>
     /// <exception cref="user_management.Services.Data.DuplicationException"></exception>
     /// <exception cref="user_management.Services.Data.DatabaseServerException"></exception>

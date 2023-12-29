@@ -4,7 +4,7 @@ using user_management.Models;
 using user_management.Services;
 using user_management.Dtos.Client;
 using user_management.Services.Data;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
 using System.Security.Authentication;
 
 namespace user_management_unit_tests.Controllers.V1;

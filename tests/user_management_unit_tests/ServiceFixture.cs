@@ -5,7 +5,7 @@ using MongoDB.Driver;
 using Moq;
 using user_management.Authentication;
 using user_management.Authentication.JWT;
-using user_management.Services.Client;
+using user_management.Services.Data.Client;
 using user_management.Services.Data.User;
 using user_management.Utilities;
 
