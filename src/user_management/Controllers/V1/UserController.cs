@@ -2,7 +2,6 @@ namespace user_management.Controllers.V1;
 
 using System.Net.Mail;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using user_management.Authorization.Attributes;
 using user_management.Authentication;
 using user_management.Dtos.User;
@@ -18,9 +17,9 @@ using user_management.Data;
 using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Cors;
 using System.Text.Json;
-using user_management.Data.InMemory.Logics;
 using user_management.Data.Logics;
-using SQLitePCL;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [ApiVersion("1.0")]
@@ -385,7 +384,7 @@ public class UserController : ControllerBase
     /// <remarks>
     /// Retrieve list of users with filters and pagination
     /// </remarks> 
-    /// <param name="filters">filters</param>
+    /// <param name="filtersString">json string of filters</param>
     /// <param name="limit">The number of users per page.</param>
     /// <param name="iteration">Page number starting from 0.</param>
     /// <param name="sortBy">Name of the field to sort users based of.</param>
@@ -402,27 +401,25 @@ public class UserController : ControllerBase
 
         Filter? filters;
         try { filters = JsonSerializer.Deserialize<Filter>(filtersString); }
-        catch (Exception) { return BadRequest(); }
+        catch (Exception) { return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>(new KeyValuePair<string, string[]>[] { new(nameof(filtersString), new string[] { $"Failure while trying to parse {nameof(filtersString)}" }) }))); }
 
-        MassReadable massReadable = new();
-        ValidationResult? validationResult = massReadable.GetValidationResult(filters, new ValidationContext(filters));
-        if (validationResult is not null)
-            return BadRequest(validationResult);
-        // List<ValidationResult> results = new();
-        // if (!Validator.TryValidateObject(filters, new ValidationContext(filters), results))
-        //     return BadRequest(results);
+        if (filters is not null)
+        {
+            MassReadable massReadable = new();
+            ValidationResult? validationResult = massReadable.GetValidationResult(filters, new ValidationContext(filters));
+            if (validationResult is not null)
+            {
+                ModelStateDictionary modelStateDictionary = new();
+                modelStateDictionary.AddModelError(nameof(filtersString), validationResult.ErrorMessage!);
+                return BadRequest(new ValidationProblemDetails(modelStateDictionary));
+            }
+        }
 
         List<PartialUser>? users;
         try { users = await _userManagement.Retrieve(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT", filters, limit, iteration, sortBy, ascending); }
         catch (ArgumentException) { return BadRequest(); }
 
         return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
-    }
-
-    [HttpGet("userss")]
-    public IActionResult Test([FromQuery] string? a = null, [FromQuery] string? c = null, [FromQuery] string? b = null)
-    {
-        return Ok($"{{a.Name}} == {{a.IsPermitted}} ||| b: {b} ||| c: {c}");
     }
 
     /// <summary>

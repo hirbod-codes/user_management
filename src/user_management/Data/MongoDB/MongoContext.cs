@@ -1,8 +1,6 @@
 namespace user_management.Data.MongoDB;
 
 using System.Collections.Generic;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using global::MongoDB.Bson;
 using global::MongoDB.Driver;
 using global::MongoDB.Driver.Core.Configuration;

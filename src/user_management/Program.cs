@@ -25,6 +25,7 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using user_management.Docs;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -214,7 +215,7 @@ if (!app.Environment.IsDevelopment())
         // using static System.Net.Mime.MediaTypeNames;
         context.Response.ContentType = Text.Plain;
 
-        await context.Response.WriteAsync("An exception was thrown.");
+        await context.Response.WriteAsync(JsonSerializer.Serialize(new ProblemDetails() { Status = 500, Title = "Server error encountered." }) ?? "Server error encountered.");
     }));
 }
 
