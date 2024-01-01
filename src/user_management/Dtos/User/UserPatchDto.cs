@@ -14,7 +14,7 @@ public class UserPatchDto : IExamplesProvider<UserPatchDto>
 
     public UserPatchDto GetExamples() => new()
     {
-        Filters = new() { Field = "Username", Operation = Filter.NE, Value = "mike", Type = Types.STRING },
-        Updates = new Update[] { new() { Field = "Username", Operation = Update.SET, Value = "John", Type = Types.STRING } }
+        Filters = new() { Field = "Username", Operation = Filter.NE, Value = "hirbod", Type = Types.STRING },
+        Updates = new Update[] { new() { Field = "FirstName", Operation = Update.SET, Value = "John", Type = Types.STRING } }
     };
 }

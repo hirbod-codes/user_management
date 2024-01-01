@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using user_management.Data.Logics;
 using user_management.Models;
+using user_management.Utilities;
 
 namespace user_management.Validation.Attributes;
 
@@ -27,7 +28,7 @@ public class MassUpdatable : ValidationAttribute
         if (value is not IEnumerable<Update> updates)
             return false;
 
-        if (updates.Where(u => User.GetUpdatableFields().FirstOrDefault(f => f.Name == u.Field) is null).Any())
+        if (updates.Where(u => User.GetUpdatableFields().FirstOrDefault(f => f.Name == u.Field.ToSnakeCase()) is null).Any())
         {
             InvalidField = true;
             return false;

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using user_management.Data.Logics;
 using user_management.Models;
+using user_management.Utilities;
 
 namespace user_management.Validation.Attributes;
 
@@ -27,7 +28,7 @@ public class MassReadable : ValidationAttribute
         if (value is not Filter filter)
             return false;
 
-        if (filter.GetFields().Where(f => User.GetUpdatableFields().FirstOrDefault(ff => ff.Name == f) is null).Any())
+        if (filter.GetFields().Where(f => User.GetUpdatableFields().FirstOrDefault(ff => ff.Name == f.ToSnakeCase()) is null).Any())
         {
             InvalidField = true;
             return false;

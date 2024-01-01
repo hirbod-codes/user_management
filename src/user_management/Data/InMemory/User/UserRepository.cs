@@ -250,10 +250,14 @@ public class UserRepository : InMemoryAtomicity, IUserRepository
     {
         Models.User? user = InMemoryContext.Users.ToList().FirstOrDefault(u =>
             u.Id == id
-            && u.UserPermissions.Readers.FirstOrDefault(r => r.IsPermitted && r.AuthorId == actorId && r.Author == (forClients ? Reader.CLIENT : Reader.USER) && r.Fields.Any()) != null
-            && u.UserPermissions.AllReaders != null
-            && u.UserPermissions.AllReaders.ArePermitted
-            && u.UserPermissions.AllReaders.Fields.Any()
+            && (
+                u.UserPermissions.Readers.FirstOrDefault(r => r.IsPermitted && r.AuthorId == actorId && r.Author == (forClients ? Reader.CLIENT : Reader.USER) && r.Fields.Any()) != null
+                || (
+                    u.UserPermissions.AllReaders != null
+                    && u.UserPermissions.AllReaders.ArePermitted
+                    && u.UserPermissions.AllReaders.Fields.Any()
+                )
+            )
         );
 
         if (user is null)

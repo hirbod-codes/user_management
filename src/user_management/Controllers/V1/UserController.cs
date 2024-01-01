@@ -347,7 +347,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
-    public async Task<IActionResult> RetrieveById([ObjectId] string userId)
+    public async Task<IActionResult> RetrieveById(string userId)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
@@ -397,6 +397,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> Retrieve([FromRoute] string filtersString, [FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true)
     {
+        System.Console.WriteLine(filtersString);
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
         Filter? filters;
@@ -472,7 +473,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
-    public async Task<IActionResult> Delete([FromQuery][ObjectId] string id)
+    public async Task<IActionResult> Delete([FromQuery] string id)
     {
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
