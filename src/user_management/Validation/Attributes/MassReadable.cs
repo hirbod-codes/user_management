@@ -28,7 +28,7 @@ public class MassReadable : ValidationAttribute
         if (value is not Filter filter)
             return false;
 
-        if (filter.GetFields().Where(f => User.GetUpdatableFields().FirstOrDefault(ff => ff.Name == f.ToSnakeCase()) is null).Any())
+        if (filter.GetFields().Where(f => User.GetReadableFields().FirstOrDefault(ff => ff.Name == f.ToSnakeCase()) is null).Any())
         {
             InvalidField = true;
             return false;
