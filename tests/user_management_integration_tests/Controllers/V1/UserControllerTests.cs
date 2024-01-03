@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Bogus;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
@@ -240,7 +241,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             user = (await _userCollection.FindAsync(Builders<User>.Filter.Eq("_id", ObjectId.Parse(id)))).FirstOrDefault<User?>();
             Assert.NotNull(user);
             Assert.False(user.IsEmailVerified);
-            Reader? reader = user.UserPermissions.Readers.FirstOrDefault<Reader?>(r => r != null && r.Author == Reader.USER && r.AuthorId.ToString() == id && r.IsPermitted);
+            Reader? reader = user.UserPermissions.Readers.FirstOrDefault<Reader?>(r => r != null && r.Author == Reader.USER && r.AuthorId == id && r.IsPermitted);
             Assert.NotNull(reader);
             reader.Fields.ToList().ForEach(f =>
             {
@@ -739,11 +740,11 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
         await _userCollection.InsertOneAsync(user2);
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_GET_USERS
-            .Replace("{logicsString}", Uri.EscapeDataString($"Username::Eq::{user1.Username}::string||Email::Eq::{user2.Email}::string"))
             .Replace("{limit}", Uri.EscapeDataString("5"))
             .Replace("{iteration}", Uri.EscapeDataString("0"))
             .Replace("/{sortBy?}", Uri.EscapeDataString(""))
             .Replace("/{ascending?}", Uri.EscapeDataString(""))
+            + "?filtersString=" + JsonSerializer.Serialize(new Filter() { Operation = Filter.OR, Filters = new Filter[] { new() { Field = User.USERNAME, Operation = Filter.EQ, Type = Types.STRING, Value = user1.Username }, new() { Field = User.EMAIL, Operation = Filter.EQ, Type = Types.STRING, Value = user2.Email } } })
         ;
 
         // When
@@ -795,7 +796,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
                 Author = Reader.USER,
                 AuthorId = actor.Id,
                 IsPermitted = true,
-                Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.FIRST_NAME, IsPermitted = true } }
+                Fields = new Field[] { new() { Name = User.USERNAME, IsPermitted = true }, new() { Name = User.LAST_NAME, IsPermitted = true } }
             })
             .ToArray();
         user1.UserPermissions.Updaters = user1.UserPermissions.Updaters
@@ -805,7 +806,7 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
                 Author = Updater.USER,
                 AuthorId = actor.Id,
                 IsPermitted = true,
-                Fields = new Field[] { new() { Name = User.FIRST_NAME, IsPermitted = true } }
+                Fields = new Field[] { new() { Name = User.LAST_NAME, IsPermitted = true } }
             })
             .ToArray();
         await _userCollection.InsertOneAsync(user1);
@@ -839,15 +840,16 @@ public class UserControllerTests : IClassFixture<CustomWebApplicationFactory<Pro
             Filters = new Filter()
             {
                 Operation = Filter.OR,
-                Filters = new Filter[] { new() { Field = "Username", Operation = Filter.EQ, Type = Types.STRING, Value = user1.Username }, new() { Field = "Username", Operation = Filter.EQ, Type = Types.STRING, Value = user2.Username } },
+                Filters = new Filter[] { new() { Field = User.USERNAME, Operation = Filter.EQ, Type = Types.STRING, Value = user1.Username }, new() { Field = User.USERNAME, Operation = Filter.EQ, Type = Types.STRING, Value = user2.Username } },
             },
-            Updates = new Update[] { new() { Field = "LastName", Operation = Update.SET, Type = Types.STRING, Value = lastName } }
+            Updates = new Update[] { new() { Field = User.LAST_NAME, Operation = Update.SET, Type = Types.STRING, Value = lastName } }
         };
 
         string url = "api/" + user_management.Controllers.V1.UserController.PATH_PATCH_USERS;
 
         // When
         HttpResponseMessage response = await client.PatchAsync(url, JsonContent.Create(dto));
+        var t = await response.Content.ReadAsStringAsync();
 
         // Then
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

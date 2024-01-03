@@ -1117,7 +1117,7 @@ public class UserManagementTests
         {
             new object?[] {
                 ObjectId.GenerateNewId().ToString(),
-                new UserPatchDto() { Filters = new Filter(){}, Updates = Array.Empty<Update>() },
+                new UserPatchDto() { Filters = new Filter(){}, Updates = new Update[] { new() } },
                 false
             }
         };
@@ -1164,7 +1164,7 @@ public class UserManagementTests
     [MemberData(nameof(Update_NotOk_Data))]
     public async void Update_NotOk(string actorId, UserPatchDto dto, bool forClients)
     {
-        if (dto.Updates == null || dto.Filters == null)
+        if (dto.Updates == null || !dto.Updates.Any())
         {
             ArgumentException ex = await Assert.ThrowsAsync<ArgumentException>(async () => await InstantiateService().Update(actorId, dto, forClients));
             Assert.Equal("userPatchDto", ex.ParamName);

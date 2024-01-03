@@ -51,7 +51,7 @@ public class UserManagement : IUserManagement
         await Notify(userDto.Email, verificationMessage);
 
         User? unverifiedUser = _mapper.Map<User>(userDto);
-        // unverifiedUser.Id = _userRepository.GenerateId();
+        unverifiedUser.Id = _userRepository.GenerateId();
         unverifiedUser.UserPermissions = await UserPermissions.GetDefault(unverifiedUser.Id, _clientRepository);
         unverifiedUser.Password = _stringHelper.Hash(userDto.Password);
         unverifiedUser.VerificationSecret = verificationMessage;
@@ -203,11 +203,7 @@ public class UserManagement : IUserManagement
         if (r == false) throw new OperationException();
     }
 
-    public async Task<PartialUser> RetrieveById(string actorId, string userId, bool forClients)
-    {
-        PartialUser user = await _userRepository.RetrieveById(actorId, userId, forClients) ?? throw new DataNotFoundException();
-        return user;
-    }
+    public async Task<PartialUser> RetrieveById(string actorId, string userId, bool forClients) => await _userRepository.RetrieveById(actorId, userId, forClients) ?? throw new DataNotFoundException();
 
     public async Task<IEnumerable<AuthorizedClientRetrieveDto>> RetrieveClientsById(string actorId, string userId, bool forClients)
     {
@@ -222,7 +218,7 @@ public class UserManagement : IUserManagement
 
     public async Task Update(string actorId, UserPatchDto userPatchDto, bool forClients)
     {
-        if (userPatchDto.Updates == null) throw new ArgumentException(null, nameof(userPatchDto));
+        if (userPatchDto.Updates == null || !userPatchDto.Updates.Any()) throw new ArgumentException(null, nameof(userPatchDto));
 
         bool r = await _userRepository.Update(actorId, userPatchDto.Filters, userPatchDto.Updates, forClients) ?? throw new DataNotFoundException();
         if (r == false) throw new OperationException();

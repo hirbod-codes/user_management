@@ -10,8 +10,6 @@ using user_management.Services.Data.User;
 
 using System.Dynamic;
 using System.Security.Authentication;
-using Xunit.Sdk;
-using Xunit.Abstractions;
 using user_management.Data.Logics;
 
 namespace user_management_unit_tests.Controllers.V1;
@@ -948,7 +946,6 @@ public class UserControllerTests
     [Fact]
     public async void Retrieve_Ok()
     {
-        Filter filters = new() { };
         int limit = 5;
         int iteration = 0;
         string? sortBy = null;
@@ -964,26 +961,24 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task<List<PartialUser>>>(um => um.Retrieve(actorId, forClients, filters, limit, iteration, sortBy, ascending)).Returns(Task.FromResult<List<PartialUser>>(users));
-        HttpAsserts<IEnumerable<object>>.IsOk(await InstantiateController().Retrieve(filters, limit, iteration, sortBy, ascending), new List<object>() { retrievedUser });
+        Fixture.IUserManagement.Setup(um => um.Retrieve(actorId, forClients, null, limit, iteration, sortBy, ascending)).Returns(Task.FromResult(users));
+        HttpAsserts<IEnumerable<object>>.IsOk(await InstantiateController().Retrieve(limit, iteration, sortBy, ascending), new List<object>() { retrievedUser });
     }
 
     [Fact]
     public async void Retrieve_Unauthenticated()
     {
-        Filter filters = new() { };
         int limit = 5;
         int iteration = 0;
         string? sortBy = null;
         bool ascending = true;
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(false);
-        HttpAsserts.IsUnauthenticated(await InstantiateController().Retrieve(filters, limit, iteration, sortBy, ascending));
+        HttpAsserts.IsUnauthenticated(await InstantiateController().Retrieve(limit, iteration, sortBy, ascending, null));
     }
 
     [Fact]
     public async void Retrieve_BadRequest()
     {
-        Filter filters = new() { };
         int limit = 5;
         int iteration = 0;
         string? sortBy = null;
@@ -995,14 +990,13 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task<List<PartialUser>>>(um => um.Retrieve(actorId, forClients, filters, limit, iteration, sortBy, ascending)).Throws<ArgumentException>();
-        HttpAsserts.IsBadRequest(await InstantiateController().Retrieve(filters, limit, iteration, sortBy, ascending));
+        Fixture.IUserManagement.Setup(um => um.Retrieve(actorId, forClients, null, limit, iteration, sortBy, ascending)).Throws<ArgumentException>();
+        HttpAsserts.IsBadRequest(await InstantiateController().Retrieve(limit, iteration, sortBy, ascending, null));
     }
 
     [Fact]
     public async void Retrieve_NotFound()
     {
-        Filter filters = new() { };
         int limit = 5;
         int iteration = 0;
         string? sortBy = null;
@@ -1016,8 +1010,8 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task<List<PartialUser>>>(um => um.Retrieve(actorId, forClients, filters, limit, iteration, sortBy, ascending)).Returns(Task.FromResult<List<PartialUser>>(new List<PartialUser>() { }));
-        HttpAsserts.IsNotFound(await InstantiateController().Retrieve(filters, limit, iteration, sortBy, ascending));
+        Fixture.IUserManagement.Setup(um => um.Retrieve(actorId, forClients, null, limit, iteration, sortBy, ascending)).Returns(Task.FromResult(new List<PartialUser>() { }));
+        HttpAsserts.IsNotFound(await InstantiateController().Retrieve(limit, iteration, sortBy, ascending, null));
     }
 
     [Fact]
@@ -1031,7 +1025,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Update(actorId, userPatchDto, forClients));
+        Fixture.IUserManagement.Setup(um => um.Update(actorId, userPatchDto, forClients));
         HttpAsserts.IsOk(await InstantiateController().Update(userPatchDto));
     }
 
@@ -1044,7 +1038,7 @@ public class UserControllerTests
 
         Fixture.IAuthenticated.Setup(um => um.IsAuthenticated()).Returns(false);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Update(actorId, userPatchDto, forClients)).Throws<OperationException>();
+        Fixture.IUserManagement.Setup(um => um.Update(actorId, userPatchDto, forClients)).Throws<OperationException>();
         HttpAsserts.IsUnauthenticated(await InstantiateController().Update(userPatchDto));
     }
 
@@ -1059,7 +1053,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Update(actorId, userPatchDto, forClients)).Throws<OperationException>();
+        Fixture.IUserManagement.Setup(um => um.Update(actorId, userPatchDto, forClients)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().Update(userPatchDto));
     }
 
@@ -1071,10 +1065,7 @@ public class UserControllerTests
         string actorId = "id";
 
         userPatchDto = new UserPatchDto().GetExamples();
-        HttpAsserts.IsBadRequest(await InstantiateController().Update(userPatchDto));
-
-        userPatchDto = new UserPatchDto().GetExamples();
-        userPatchDto.Filters = null;
+        userPatchDto.Updates = Array.Empty<Update>();
         HttpAsserts.IsBadRequest(await InstantiateController().Update(userPatchDto));
 
         userPatchDto = new UserPatchDto().GetExamples();
@@ -1083,7 +1074,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Update(actorId, userPatchDto, forClients)).Throws<ArgumentException>();
+        Fixture.IUserManagement.Setup(um => um.Update(actorId, userPatchDto, forClients)).Throws<ArgumentException>();
         HttpAsserts.IsBadRequest(await InstantiateController().Update(userPatchDto));
     }
 
@@ -1098,7 +1089,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Update(actorId, userPatchDto, forClients)).Throws<DataNotFoundException>();
+        Fixture.IUserManagement.Setup(um => um.Update(actorId, userPatchDto, forClients)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().Update(userPatchDto));
     }
 
@@ -1119,7 +1110,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients));
+        Fixture.IUserManagement.Setup(um => um.Delete(actorId, userId, forClients));
         HttpAsserts.IsOk(await InstantiateController().Delete(userId));
     }
 
@@ -1144,7 +1135,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients)).Throws<OperationException>();
+        Fixture.IUserManagement.Setup(um => um.Delete(actorId, userId, forClients)).Throws<OperationException>();
         HttpAsserts.IsProblem(await InstantiateController().Delete(userId));
     }
 
@@ -1159,7 +1150,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients)).Throws<ArgumentException>();
+        Fixture.IUserManagement.Setup(um => um.Delete(actorId, userId, forClients)).Throws<ArgumentException>();
         HttpAsserts.IsBadRequest(await InstantiateController().Delete(userId));
     }
 
@@ -1174,7 +1165,7 @@ public class UserControllerTests
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticationType()).Returns("JWT");
         Fixture.IAuthenticated.Setup(um => um.GetAuthenticatedIdentifier()).Returns(actorId);
 
-        Fixture.IUserManagement.Setup<Task>(um => um.Delete(actorId, userId, forClients)).Throws<DataNotFoundException>();
+        Fixture.IUserManagement.Setup(um => um.Delete(actorId, userId, forClients)).Throws<DataNotFoundException>();
         HttpAsserts.IsNotFound(await InstantiateController().Delete(userId));
     }
 }

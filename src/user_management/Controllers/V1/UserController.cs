@@ -102,15 +102,12 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> Register([FromBody] UserCreateDto userDto)
     {
-        User? unverifiedUser = null;
-        try { unverifiedUser = await _userManagement.Register(userDto); }
+        try { return Ok((await _userManagement.Register(userDto)).Id.ToString()); }
         catch (SmtpException) { return Problem("We couldn't send the verification message to your email, please try again."); }
         catch (SmtpFailureException) { return Problem("We couldn't send the verification message to your email, please try again."); }
         catch (DuplicationException) { return BadRequest("The username or email you chose is no longer unique, please choose another."); }
         catch (RegistrationException) { return Problem("System failed to register your account."); }
         catch (DatabaseServerException) { return Problem("System failed to register your account."); }
-
-        return Ok(unverifiedUser.Id.ToString());
     }
 
     /// <summary>
@@ -395,14 +392,14 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 200, type: typeof(string))]
     [SwaggerResponse(statusCode: 400, type: typeof(string))]
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
-    public async Task<IActionResult> Retrieve([FromRoute] string filtersString, [FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true)
+    public async Task<IActionResult> Retrieve([FromRoute] int limit, [FromRoute] int iteration, [FromRoute] string? sortBy = null, [FromRoute] bool ascending = true, [FromQuery] string? filtersString = null)
     {
-        System.Console.WriteLine(filtersString);
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
-        Filter? filters;
-        try { filters = JsonSerializer.Deserialize<Filter>(filtersString); }
-        catch (Exception) { return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>(new KeyValuePair<string, string[]>[] { new(nameof(filtersString), new string[] { $"Failure while trying to parse {nameof(filtersString)}" }) }))); }
+        Filter? filters = null;
+        if (filtersString is not null)
+            try { filters = JsonSerializer.Deserialize<Filter>(filtersString); }
+            catch (Exception) { return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>(new KeyValuePair<string, string[]>[] { new(nameof(filtersString), new string[] { $"Failure while trying to parse {nameof(filtersString)}" }) }))); }
 
         if (filters is not null)
         {
@@ -420,7 +417,7 @@ public class UserController : ControllerBase
         try { users = await _userManagement.Retrieve(_authenticated.GetAuthenticatedIdentifier(), _authenticated.GetAuthenticationType() != "JWT", filters, limit, iteration, sortBy, ascending); }
         catch (ArgumentException) { return BadRequest(); }
 
-        return users.Count == 0 ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
+        return (users == null || !users.Any()) ? NotFound() : Ok(user_management.Models.PartialUser.GetReadable(users));
     }
 
     /// <summary>
@@ -436,7 +433,7 @@ public class UserController : ControllerBase
     [SwaggerResponse(statusCode: 404, type: typeof(string))]
     public async Task<IActionResult> Update([FromBody] UserPatchDto userPatchDto)
     {
-        if (!userPatchDto.Updates!.Any()) return BadRequest();
+        if (!userPatchDto.Updates.Any()) return BadRequest();
 
         if (!_authenticated.IsAuthenticated()) return Unauthorized();
 
@@ -504,7 +501,7 @@ public class UserController : ControllerBase
     public const string PATH_POST_REMOVE_CLIENTS = "remove-clients";
     public const string PATH_GET_USER = "user/{userId}";
     public const string PATH_GET_USER_AUTHORIZED_CLIENTS = "user/authorized-clients";
-    public const string PATH_GET_USERS = "users/{filtersString}/{limit}/{iteration}/{sortBy?}/{ascending?}";
+    public const string PATH_GET_USERS = "users/{limit}/{iteration}/{sortBy?}/{ascending?}";
     public const string PATH_PATCH_USERS = "users";
     public const string PATH_GET_USER_MASS_UPDATABLE_PROPERTIES = "user/mass-updatable-properties";
     public const string PATH_GET_USER_MASS_UPDATE_PROTECTED_PROPERTIES = "user/mass-update-protected-properties";

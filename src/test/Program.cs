@@ -10,6 +10,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
+        Filter? filter = JsonSerializer.Deserialize<Filter>($"{{\"Field\":\"username\", \"Operation\": \"Eq\", \"Type\": \"string\", \"Value\": \"hirbod\"}}");
         Func<Document[]> getData = () => new Document[]{
             new() {
                 Int = 1,

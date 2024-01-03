@@ -124,10 +124,7 @@ public class UserRepository : InMemoryAtomicity, IUserRepository
         return true;
     }
 
-    public string GenerateId()
-    {
-        throw new NotImplementedException();
-    }
+    public string GenerateId() => InMemoryContext.Users.Any() ? (long.Parse(InMemoryContext.Users.LastOrDefault()!.Id) + 1).ToString() : "0";
 
     public int GetEstimatedDocumentCount() => InMemoryContext.Users.Count();
 

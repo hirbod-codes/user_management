@@ -1345,7 +1345,7 @@ public class UserRepositoryTest : IAsyncLifetime, IClassFixture<CustomWebApplica
 
         try
         {
-            bool? result = await _userRepository.Update(actor.Id, null, new Update[] { new() { Field = "LastName", Operation = user_management.Data.Logics.Update.SET, Type = Types.STRING, Value = "test_first_name" } });
+            bool? result = await _userRepository.Update(actor.Id, null, new Update[] { new() { Field = user_management.Models.User.FIRST_NAME, Operation = user_management.Data.Logics.Update.SET, Type = Types.STRING, Value = "test_first_name" } });
 
             Assert.True(result);
             List<user_management.Models.User> retrievedUsers = (await _userCollection.FindAsync(Builders<user_management.Models.User>.Filter.Ne("_id", ObjectId.Parse(actor.Id)))).ToList();

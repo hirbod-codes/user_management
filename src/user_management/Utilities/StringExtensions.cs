@@ -42,13 +42,10 @@ public static class StringExtentions
     }
     public static string ToSnakeCase(this string str)
     {
-        if (str == null)
+        if (string.IsNullOrEmpty(str))
             throw new ArgumentNullException(nameof(str));
 
-        if (str.Contains("_"))
-            throw new ArgumentException("_ character is unacceptable.");
-
-        if (str.Length < 2)
+        if (str.Contains('_') || str.Length < 2)
             return str;
 
         char previousChar = str[0];

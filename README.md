@@ -127,8 +127,6 @@ TO DO:
 
 Change environment values in .env file properly when running outside a docker container.
 
-DB_OPTIONS__Host=localhost\
-DB_OPTIONS__Port=the_port_of_db_container\
 DB_OPTIONS__CertificateP12=security/user_management/app.p12
 
 In MongoContext:

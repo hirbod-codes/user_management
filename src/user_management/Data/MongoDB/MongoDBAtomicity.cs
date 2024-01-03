@@ -10,21 +10,29 @@ public class MongoDBAtomicity : IAtomic
 
     public MongoDBAtomicity(IMongoClient mongoClient) => _mongoClient = mongoClient;
 
-    public async Task StartTransaction() => _session = await _mongoClient.StartSessionAsync();
+    public async Task StartTransaction()
+    {
+        _session = await _mongoClient.StartSessionAsync();
+        _session.StartTransaction();
+    }
 
     public async Task CommitTransaction()
     {
-        if (_session is null)
+        if (_session is null || !_session.IsInTransaction)
             throw new InvalidOperationException();
 
         await _session.CommitTransactionAsync();
+        _session.Dispose();
     }
 
     public async Task AbortTransaction()
     {
         if (_session is not null)
-            await _session.AbortTransactionAsync();
+        {
+            if (_session.IsInTransaction)
+                await _session.AbortTransactionAsync();
+            _session.Dispose();
+        }
 
-        _session = null;
     }
 }

@@ -131,8 +131,7 @@ public class ClientRepository : MongoDBAtomicity, IClientRepository
         }
         catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
         catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
-        catch (Exception) { if (_session != null) { await _session.AbortTransactionAsync(); } throw new DatabaseServerException(); }
-        finally { _session?.Dispose(); }
+        catch (Exception) { await AbortTransaction(); throw new DatabaseServerException(); }
 
         return true;
     }
@@ -152,7 +151,7 @@ public class ClientRepository : MongoDBAtomicity, IClientRepository
         }
         catch (MongoDuplicateKeyException) { throw new DuplicationException(); }
         catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { throw new DuplicationException(); }
-        catch (Exception) { if (_session != null) { await _session.AbortTransactionAsync(); } throw new DatabaseServerException(); }
+        catch (Exception) { throw new DatabaseServerException(); }
 
         return true;
     }

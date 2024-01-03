@@ -7,6 +7,7 @@ using global::MongoDB.Bson;
 using user_management.Services.Data;
 using global::MongoDB.Driver.Linq;
 using user_management.Data.MongoDB;
+using user_management.Utilities;
 
 public class UserRepository : MongoDBAtomicity, IUserRepository
 {
@@ -540,9 +541,9 @@ public class UserRepository : MongoDBAtomicity, IUserRepository
         filterDefinitions.Add(GetReaderFilterDefinition(actorId, forClients, requiredFilterFields.Any() ? requiredFilterFields : null));
 
         UpdateDefinition<User>? updateDefinitions = Logics.Update<User>.BuildDefinition(updates).Set(User.UPDATED_AT, DateTime.UtcNow);
-        List<Field> updateFieldsList = updates.ToList().ConvertAll((f) => new Field() { Name = f.Field, IsPermitted = true });
+        List<Field> updateFieldsList = updates.ToList().ConvertAll((f) => new Field() { Name = f.Field.ToSnakeCase(), IsPermitted = true });
         foreach (Field field in User.GetProtectedFieldsAgainstMassUpdating())
-            if (updateFieldsList.FirstOrDefault(f => f != null && f.Name == field.Name, null) != null)
+            if (updateFieldsList.FirstOrDefault(f => f != null && f.Name == field.Name.ToSnakeCase(), null) != null)
                 return false;
 
         filterDefinitions.Add(GetUpdaterFilterDefinition(actorId, forClients, updateFieldsList.Any() ? updateFieldsList : null));
@@ -555,7 +556,7 @@ public class UserRepository : MongoDBAtomicity, IUserRepository
 
         if (result.IsAcknowledged && result.MatchedCount == 0) return null;
 
-        return result.IsAcknowledged && result.MatchedCount > 0 && result.ModifiedCount > 0;
+        return result.IsAcknowledged && result.MatchedCount > 0;
     }
 
     public async Task<bool?> Delete(string actorId, string id, bool forClients = false)

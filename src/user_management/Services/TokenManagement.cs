@@ -96,7 +96,7 @@ public class TokenManagement : ITokenManagement
         string refreshToken = null!;
         await _userRepository.StartTransaction();
 
-        bool? userResult = await _userRepository.AddTokenPrivilegesToUser(user.Id, user.Id, client.Id, user.AuthorizingClient.TokenPrivileges);
+        bool? userResult = await _userRepository.AddTokenPrivilegesToUserWithTransaction(user.Id, user.Id, client.Id, user.AuthorizingClient.TokenPrivileges);
         if (userResult == null)
         {
             await _userRepository.AbortTransaction();
@@ -138,7 +138,7 @@ public class TokenManagement : ITokenManagement
             authorizedClient.Token.Value = hashedTokenValue;
             authorizedClient.Token.ExpirationDate = _dateTimeProvider.ProvideUtcNow().AddMonths(TOKEN_EXPIRATION_MONTHS);
 
-            try { authorizedClientResult = await _userRepository.AddAuthorizedClient(user.Id, authorizedClient); }
+            try { authorizedClientResult = await _userRepository.AddAuthorizedClientWithTransaction(user.Id, authorizedClient); }
             catch (DuplicationException) { safety++; continue; }
 
             if (authorizedClientResult == true) break;
